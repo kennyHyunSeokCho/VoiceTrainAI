@@ -9,3 +9,23 @@ Create wireframes and prototypes for the app's UI using tools like Figma. Focus 
 
 # Test Strategy:
 Conduct user testing sessions to gather feedback on UI/UX design.
+
+# Subtasks:
+## 1. Create Wireframes [pending]
+### Dependencies: None
+### Description: Design initial wireframes for the project to outline the basic structure and layout.
+### Details:
+Use design tools like Sketch or Figma to create low-fidelity wireframes that capture the essential elements and flow of the user interface.
+
+## 2. Develop Prototypes [pending]
+### Dependencies: 9.1
+### Description: Build interactive prototypes based on the wireframes to simulate user interaction.
+### Details:
+Utilize tools such as InVision or Adobe XD to transform wireframes into clickable prototypes that allow for user interaction and navigation.
+
+## 3. Conduct User Testing [pending]
+### Dependencies: 9.2
+### Description: Perform user testing sessions to gather feedback on the prototypes.
+### Details:
+Organize sessions with target users to test the prototypes, collect feedback, and identify areas for improvement.
+

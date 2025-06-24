@@ -9,3 +9,23 @@ Use Firebase Cloud Messaging or similar service to notify users when model train
 
 # Test Strategy:
 Test notification delivery across different devices and network conditions.
+
+# Subtasks:
+## 1. Set up the notification service [pending]
+### Dependencies: None
+### Description: Install and configure the necessary tools and services to enable notifications.
+### Details:
+This involves selecting a notification service provider, setting up accounts, and configuring initial settings.
+
+## 2. Implement notification logic [pending]
+### Dependencies: 13.1
+### Description: Develop the logic required to send notifications based on specific triggers or events.
+### Details:
+This includes writing code to handle different types of notifications and ensuring they are triggered correctly.
+
+## 3. Test delivery reliability [pending]
+### Dependencies: 13.2
+### Description: Conduct tests to ensure notifications are delivered reliably and in a timely manner.
+### Details:
+This involves creating test cases, simulating different scenarios, and verifying the delivery and receipt of notifications.
+
