@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Implement LLM-Based Feedback Generation
+# Status: pending
+# Dependencies: 6, 7
+# Priority: medium
+# Description: Provide natural language feedback on user performance using an LLM.
+# Details:
+Set up a server to interface with GPT-3.5 or a local LLM. Implement the POST /feedback/generate endpoint to process singing data and return feedback.
+
+# Test Strategy:
+Validate feedback generation with sample data, ensuring relevance and clarity.

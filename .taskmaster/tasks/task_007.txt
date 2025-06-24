@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Create Real-Time Pitch Visualization
+# Status: pending
+# Dependencies: 1, 6
+# Priority: high
+# Description: Develop a karaoke-style UI for real-time pitch visualization and comparison.
+# Details:
+Use Flutter to create a responsive UI that displays pitch lines for original and user input. Integrate CREPE or YIN for real-time pitch detection and overlay.
+
+# Test Strategy:
+Test pitch visualization with live singing, ensuring accuracy and responsiveness.

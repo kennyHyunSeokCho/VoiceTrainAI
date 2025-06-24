@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Implement Song Import and Vocal Separation
+# Status: pending
+# Dependencies: 1, 2
+# Priority: medium
+# Description: Allow users to import songs and separate vocals from instrumentals.
+# Details:
+Use ffmpeg and demucs to implement song import and vocal separation. Develop the POST /recordings/upload endpoint to handle song uploads and processing.
+
+# Test Strategy:
+Test song import and separation with various audio formats, ensuring accurate separation.

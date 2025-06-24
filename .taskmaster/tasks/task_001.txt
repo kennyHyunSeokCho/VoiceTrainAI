@@ -1,0 +1,37 @@
+# Task ID: 1
+# Title: Setup Project Repository
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: The project repository has been successfully initialized with version control and a comprehensive structure.
+# Details:
+The Git repository has been initialized, and the project directory structure has been set up. The structure includes directories for frontend (Flutter mobile app), backend (FastAPI backend), model server (RVC V2 model server), documentation, tests, and utility scripts. A main README.md file has been created with the project overview, technology stack, and installation instructions. Additionally, each subdirectory contains its own README.md file detailing specific information.
+
+# Test Strategy:
+Verify the repository setup by cloning and checking the directory structure and the presence of README.md files in each directory.
+
+# Subtasks:
+## 1. Initialize Git repository [done]
+### Dependencies: None
+### Description: Create a .git directory to initialize version control.
+### Details:
+
+
+## 2. Create project directory structure [done]
+### Dependencies: None
+### Description: Set up directories for frontend, backend, model server, documentation, tests, and scripts.
+### Details:
+
+
+## 3. Write main README.md file [done]
+### Dependencies: None
+### Description: Include project overview, technology stack, and installation instructions.
+### Details:
+
+
+## 4. Create README.md files for subdirectories [done]
+### Dependencies: None
+### Description: Write README.md files for frontend, backend, and model server directories.
+### Details:
+
+
