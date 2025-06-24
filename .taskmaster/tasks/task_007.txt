@@ -35,3 +35,78 @@ Develop test cases to assess the accuracy of pitch detection. Collect and analyz
 ### Details:
 Identify potential bottlenecks in the UI that could affect responsiveness. Implement optimizations to maintain smooth performance during real-time pitch detection.
 
+# Task ID: 7
+# Title: Create Real-Time Pitch Visualization
+# Status: pending
+# Dependencies: 1, 6
+# Priority: high
+# Description: Develop a karaoke-style UI for real-time pitch visualization and comparison.
+# Details:
+Use Flutter to create a responsive UI that displays pitch lines for original and user input. Integrate CREPE or YIN for real-time pitch detection and overlay.
+
+# Test Strategy:
+Test pitch visualization with live singing, ensuring accuracy and responsiveness.
+
+# Subtasks:
+## 1. Develop User Interface [pending]
+### Dependencies: None
+### Description: Design and implement the user interface for the application, focusing on user-friendly navigation and layout.
+### Details:
+Create wireframes and mockups for the application. Implement the UI using appropriate front-end technologies. Ensure the design is intuitive and accessible.
+
+## 2. Integrate Pitch Detection [pending]
+### Dependencies: 7.1
+### Description: Implement the pitch detection algorithm and integrate it with the application.
+### Details:
+Research and select a suitable pitch detection algorithm. Integrate the algorithm into the application, ensuring it works seamlessly with the UI.
+
+## 3. Test Accuracy of Pitch Detection [pending]
+### Dependencies: 7.2
+### Description: Conduct tests to evaluate the accuracy of the pitch detection feature.
+### Details:
+Develop test cases to assess the accuracy of pitch detection. Collect and analyze data to identify any discrepancies or areas for improvement.
+
+## 4. Ensure UI Responsiveness [pending]
+### Dependencies: 7.1, 7.2
+### Description: Optimize the application to ensure the UI remains responsive during real-time processing.
+### Details:
+Identify potential bottlenecks in the UI that could affect responsiveness. Implement optimizations to maintain smooth performance during real-time pitch detection.
+
+---
+
+# 태스크 ID: 7
+# 제목: 실시간 피치 시각화 생성
+# 상태: 대기 중
+# 의존성: 1, 6
+# 우선순위: 높음
+# 설명: 실시간 피치 시각화와 비교를 위한 노래방 스타일 UI를 개발합니다.
+# 세부사항:
+원본과 사용자 입력의 피치 라인을 표시하는 반응형 UI를 생성하기 위해 Flutter를 사용합니다. 실시간 피치 감지와 오버레이를 위해 CREPE 또는 YIN을 통합합니다.
+
+# 테스트 전략:
+실시간 노래와 함께 피치 시각화를 테스트하여 정확도와 반응성을 보장합니다.
+
+# 서브태스크:
+## 1. 사용자 인터페이스 개발 [대기 중]
+### 의존성: 없음
+### 설명: 사용자 친화적인 내비게이션과 레이아웃에 중점을 두고 애플리케이션의 사용자 인터페이스를 설계하고 구현합니다.
+### 세부사항:
+애플리케이션을 위한 와이어프레임과 목업을 생성합니다. 적절한 프론트엔드 기술을 사용하여 UI를 구현합니다. 설계가 직관적이고 접근 가능한지 확인합니다.
+
+## 2. 피치 감지 통합 [대기 중]
+### 의존성: 7.1
+### 설명: 피치 감지 알고리즘을 구현하고 애플리케이션과 통합합니다.
+### 세부사항:
+적절한 피치 감지 알고리즘을 연구하고 선택합니다. 알고리즘을 애플리케이션에 통합하여 UI와 원활하게 작동하도록 합니다.
+
+## 3. 피치 감지 정확도 테스트 [대기 중]
+### 의존성: 7.2
+### 설명: 피치 감지 기능의 정확도를 평가하기 위한 테스트를 수행합니다.
+### 세부사항:
+피치 감지의 정확도를 평가하기 위한 테스트 케이스를 개발합니다. 불일치나 개선 영역을 식별하기 위해 데이터를 수집하고 분석합니다.
+
+## 4. UI 반응성 보장 [대기 중]
+### 의존성: 7.1, 7.2
+### 설명: 실시간 처리 중에도 UI가 반응성을 유지하도록 애플리케이션을 최적화합니다.
+### 세부사항:
+반응성에 영향을 줄 수 있는 UI의 잠재적 병목 지점을 식별합니다. 실시간 피치 감지 중에 부드러운 성능을 유지하기 위한 최적화를 구현합니다.

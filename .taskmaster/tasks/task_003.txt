@@ -35,3 +35,78 @@ Decide on file formats, compression techniques, and storage locations for the au
 ### Details:
 Test the recording feature on various operating systems and hardware configurations to ensure consistent performance.
 
+# Task ID: 3
+# Title: Develop Voice Recording Feature
+# Status: pending
+# Dependencies: 1, 2
+# Priority: high
+# Description: Enable users to record their voice for model training.
+# Details:
+Implement a voice recording feature using Flutter's audio recording capabilities. Ensure recordings are of high quality and meet the 3-5 minute requirement. Store recordings temporarily for processing.
+
+# Test Strategy:
+Test recording functionality on various devices, ensuring audio quality and correct duration.
+
+# Subtasks:
+## 1. Implement Basic Recording Functionality [pending]
+### Dependencies: None
+### Description: Develop the core functionality to record audio using the device's microphone.
+### Details:
+Set up the audio recording interface and ensure it can capture audio input from the microphone.
+
+## 2. Ensure Audio Quality [pending]
+### Dependencies: 3.1
+### Description: Enhance the audio recording to ensure high-quality sound capture.
+### Details:
+Implement noise reduction, echo cancellation, and adjust sampling rates to improve audio quality.
+
+## 3. Handle Audio Storage [pending]
+### Dependencies: 3.1
+### Description: Develop functionality to store recorded audio files efficiently.
+### Details:
+Decide on file formats, compression techniques, and storage locations for the audio files.
+
+## 4. Test on Various Devices [pending]
+### Dependencies: 3.1, 3.2, 3.3
+### Description: Conduct testing of the recording functionality across different devices to ensure compatibility.
+### Details:
+Test the recording feature on various operating systems and hardware configurations to ensure consistent performance.
+
+---
+
+# 태스크 ID: 3
+# 제목: 음성 녹음 기능 개발
+# 상태: 대기 중
+# 의존성: 1, 2
+# 우선순위: 높음
+# 설명: 사용자가 모델 학습을 위해 음성을 녹음할 수 있도록 합니다.
+# 세부사항:
+Flutter의 오디오 녹음 기능을 사용하여 음성 녹음 기능을 구현합니다. 녹음이 고품질이며 3-5분 요구사항을 충족하는지 확인합니다. 처리를 위해 녹음을 임시로 저장합니다.
+
+# 테스트 전략:
+다양한 기기에서 녹음 기능을 테스트하여 오디오 품질과 올바른 지속 시간을 보장합니다.
+
+# 서브태스크:
+## 1. 기본 녹음 기능 구현 [대기 중]
+### 의존성: 없음
+### 설명: 기기의 마이크를 사용하여 오디오를 녹음하는 핵심 기능을 개발합니다.
+### 세부사항:
+오디오 녹음 인터페이스를 설정하고 마이크에서 오디오 입력을 캡처할 수 있는지 확인합니다.
+
+## 2. 오디오 품질 보장 [대기 중]
+### 의존성: 3.1
+### 설명: 고품질 사운드 캡처를 보장하기 위해 오디오 녹음을 향상시킵니다.
+### 세부사항:
+노이즈 감소, 에코 제거를 구현하고 오디오 품질을 향상시키기 위해 샘플링 레이트를 조정합니다.
+
+## 3. 오디오 저장 처리 [대기 중]
+### 의존성: 3.1
+### 설명: 녹음된 오디오 파일을 효율적으로 저장하는 기능을 개발합니다.
+### 세부사항:
+오디오 파일의 파일 형식, 압축 기술 및 저장 위치를 결정합니다.
+
+## 4. 다양한 기기에서 테스트 [대기 중]
+### 의존성: 3.1, 3.2, 3.3
+### 설명: 호환성을 보장하기 위해 다양한 기기에서 녹음 기능을 테스트합니다.
+### 세부사항:
+일관된 성능을 보장하기 위해 다양한 운영 체제 및 하드웨어 구성에서 녹음 기능을 테스트합니다.

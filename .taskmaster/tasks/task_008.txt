@@ -35,3 +35,78 @@ This involves creating algorithms to analyze singing data, extract relevant feat
 ### Details:
 Conduct tests to ensure that the feedback generated is relevant and useful to the users. This may involve user testing and iterative improvements.
 
+# Task ID: 8
+# Title: Implement LLM-Based Feedback Generation
+# Status: pending
+# Dependencies: 6, 7
+# Priority: medium
+# Description: Provide natural language feedback on user performance using an LLM.
+# Details:
+Set up a server to interface with GPT-3.5 or a local LLM. Implement the POST /feedback/generate endpoint to process singing data and return feedback.
+
+# Test Strategy:
+Validate feedback generation with sample data, ensuring relevance and clarity.
+
+# Subtasks:
+## 1. Set up the LLM server [pending]
+### Dependencies: None
+### Description: Install and configure the server environment to host the Large Language Model (LLM).
+### Details:
+This involves setting up the necessary hardware and software infrastructure, including installing required libraries and dependencies for the LLM.
+
+## 2. Implement the feedback endpoint [pending]
+### Dependencies: 8.1
+### Description: Develop an API endpoint to receive and process feedback from users.
+### Details:
+Create a RESTful API endpoint that allows users to submit feedback. Ensure the endpoint is secure and can handle concurrent requests.
+
+## 3. Process singing data [pending]
+### Dependencies: 8.2
+### Description: Develop a module to process and analyze singing data for feedback.
+### Details:
+This involves creating algorithms to analyze singing data, extract relevant features, and prepare it for feedback generation.
+
+## 4. Test feedback relevance [pending]
+### Dependencies: 8.3
+### Description: Evaluate the relevance and quality of feedback provided by the system.
+### Details:
+Conduct tests to ensure that the feedback generated is relevant and useful to the users. This may involve user testing and iterative improvements.
+
+---
+
+# 태스크 ID: 8
+# 제목: LLM 기반 피드백 생성 구현
+# 상태: 대기 중
+# 의존성: 6, 7
+# 우선순위: 중간
+# 설명: LLM을 사용하여 사용자 성능에 대한 자연어 피드백을 제공합니다.
+# 세부사항:
+GPT-3.5 또는 로컬 LLM과 인터페이스할 서버를 설정합니다. 노래 데이터를 처리하고 피드백을 반환하는 POST /feedback/generate 엔드포인트를 구현합니다.
+
+# 테스트 전략:
+샘플 데이터로 피드백 생성을 검증하여 관련성과 명확성을 보장합니다.
+
+# 서브태스크:
+## 1. LLM 서버 설정 [대기 중]
+### 의존성: 없음
+### 설명: 대형 언어 모델(LLM)을 호스팅할 서버 환경을 설치하고 구성합니다.
+### 세부사항:
+LLM에 필요한 라이브러리와 의존성 설치를 포함하여 필요한 하드웨어 및 소프트웨어 인프라를 설정하는 것을 포함합니다.
+
+## 2. 피드백 엔드포인트 구현 [대기 중]
+### 의존성: 8.1
+### 설명: 사용자로부터 피드백을 받고 처리하는 API 엔드포인트를 개발합니다.
+### 세부사항:
+사용자가 피드백을 제출할 수 있도록 하는 RESTful API 엔드포인트를 생성합니다. 엔드포인트가 안전하고 동시 요청을 처리할 수 있는지 확인합니다.
+
+## 3. 노래 데이터 처리 [대기 중]
+### 의존성: 8.2
+### 설명: 피드백을 위해 노래 데이터를 처리하고 분석하는 모듈을 개발합니다.
+### 세부사항:
+노래 데이터를 분석하고, 관련 특징을 추출하고, 피드백 생성을 위해 준비하는 알고리즘을 생성하는 것을 포함합니다.
+
+## 4. 피드백 관련성 테스트 [대기 중]
+### 의존성: 8.3
+### 설명: 시스템에서 제공하는 피드백의 관련성과 품질을 평가합니다.
+### 세부사항:
+생성된 피드백이 사용자에게 관련성이 있고 유용한지 확인하기 위한 테스트를 수행합니다. 이는 사용자 테스트와 반복적 개선을 포함할 수 있습니다.
