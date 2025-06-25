@@ -11,33 +11,33 @@ OpenAI의 GPT-4o API를 통합하여 음정, 리듬, 발음 데이터를 처리�
 피드백의 정확성과 관련성을 검증합니다. API 통합 및 응답 시간을 테스트합니다.
 
 # Subtasks:
-## 1. Set up GPT-4o API Client [pending]
+## 1. GPT-4o API 클라이언트 설정 [pending]
 ### Dependencies: None
-### Description: Implement a client to interact with the GPT-4o API using the OpenAI API key.
+### Description: OpenAI API 키를 사용하여 GPT-4o API와 상호작용할 수 있는 클라이언트를 구현합니다.
 ### Details:
-Configure the environment to securely store and access the OpenAI API key. Develop a client module to handle API requests and responses.
+환경을 구성하여 OpenAI API 키를 안전하게 저장하고 액세스합니다. API 요청 및 응답을 처리하는 클라이언트 모듈을 개발합니다.
 
-## 2. Design Prompt for Vocal Coaching Feedback [pending]
+## 2. 보컬 코칭 피드백을 위한 프롬프트 설계 [pending]
 ### Dependencies: None
-### Description: Create an effective prompt structure for generating personalized vocal coaching feedback using user data.
+### Description: 사용자 데이터를 활용하여 개인화된 보컬 코칭 피드백을 생성할 수 있는 효과적인 프롬프트 구조를 만듭니다.
 ### Details:
-Analyze user data types such as pitch, rhythm, and emotion to design prompts that elicit useful feedback from GPT-4o.
+음정, 리듬, 감정과 같은 사용자 데이터 유형을 분석하여 GPT-4o로부터 유용한 피드백을 이끌어낼 수 있는 프롬프트를 설계합니다.
 
-## 3. Develop Feedback Generation API Endpoint [pending]
+## 3. 피드백 생성 API 엔드포인트 개발 [pending]
 ### Dependencies: 7.1, 7.2
-### Description: Create an API endpoint that processes user data, constructs prompts, and retrieves feedback from GPT-4o.
+### Description: 사용자 데이터를 처리하고 프롬프트를 구성하여 GPT-4o로부터 피드백을 가져오는 API 엔드포인트를 만듭니다.
 ### Details:
-Implement the backend logic to accept user input, generate prompts, call the GPT-4o API, and return the feedback.
+사용자 입력을 수락하고, 프롬프트를 생성하고, GPT-4o API를 호출하고, 피드백을 반환하는 백엔드 로직을 구현합니다.
 
-## 4. Refine API Response Data [pending]
+## 4. API 응답 데이터 정제 [pending]
 ### Dependencies: 7.3
-### Description: Clean and format the feedback text from GPT-4o into a user-friendly JSON structure.
+### Description: GPT-4o로부터 받은 피드백 텍스트를 사용자 친화적인 JSON 구조로 정리하고 형식화합니다.
 ### Details:
-Strip unnecessary content from the API response and structure the feedback in a clear, concise JSON format.
+API 응답에서 불필요한 내용을 제거하고 피드백을 명확하고 간결한 JSON 형식으로 구조화합니다.
 
-## 5. Integrate and Test API Functionality [pending]
+## 5. API 기능 통합 및 테스트 [pending]
 ### Dependencies: 7.1, 7.2, 7.3, 7.4
-### Description: Conduct integration testing to ensure the API works seamlessly with the GPT-4o client and prompt design.
+### Description: GPT-4o 클라이언트 및 프롬프트 설계와 API가 원활하게 작동하는지 확인하기 위해 통합 테스트를 수행합니다.
 ### Details:
-Perform end-to-end testing of the API to confirm all components interact correctly and produce the desired feedback.
+API의 모든 구성 요소가 올바르게 상호작용하고 원하는 피드백을 생성하는지 확인하기 위해 종단 간 테스트를 수행합니다.
 

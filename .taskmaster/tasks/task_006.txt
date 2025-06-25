@@ -11,33 +11,33 @@ Flutter 대신 서버 측에서 음정 분석을 수행하고, WebSocket을 통�
 실시간 음정 분석의 정확도와 WebSocket을 통한 데이터 전송의 안정성을 테스트합니다. API의 응답성과 데이터 스트리밍의 연속성을 보장합니다.
 
 # Subtasks:
-## 1. Set Up WebSocket Endpoint [pending]
+## 1. WebSocket 엔드포인트 설정 [pending]
 ### Dependencies: None
-### Description: Configure a WebSocket endpoint to receive real-time audio streams from the frontend.
+### Description: 프론트엔드로부터 실시간 오디오 스트림을 수신하기 위한 WebSocket 엔드포인트를 구성합니다.
 ### Details:
-Implement a WebSocket server that listens for incoming connections and handles audio data streams.
+수신 연결을 수신하고 오디오 데이터 스트림을 처리하는 WebSocket 서버를 구현합니다.
 
-## 2. Implement Pitch Extraction Algorithm [pending]
+## 2. 음정 추출 알고리즘 구현 [pending]
 ### Dependencies: 6.1
-### Description: Develop the logic to extract pitch from audio chunks using CREPE or YIN algorithm.
+### Description: CREPE 또는 YIN 알고리즘을 사용하여 오디오 청크에서 음정을 추출하는 로직을 개발합니다.
 ### Details:
-Integrate the CREPE or YIN algorithm to process incoming audio data and extract pitch information.
+수신된 오디오 데이터를 처리하고 음정 정보를 추출하기 위해 CREPE 또는 YIN 알고리즘을 통합합니다.
 
-## 3. Format Pitch Data for Streaming [pending]
+## 3. 스트리밍을 위한 음정 데이터 포맷팅 [pending]
 ### Dependencies: 6.2
-### Description: Convert extracted pitch data into JSON format for streaming back to the frontend.
+### Description: 추출된 음정 데이터를 프론트엔드로 스트리밍하기 위해 JSON 형식으로 변환합니다.
 ### Details:
-Ensure the pitch data is structured in a JSON format suitable for WebSocket transmission.
+WebSocket 전송에 적합한 JSON 형식으로 음정 데이터를 구조화합니다.
 
-## 4. Stream Pitch Data via WebSocket [pending]
+## 4. WebSocket을 통한 음정 데이터 스트리밍 [pending]
 ### Dependencies: 6.3
-### Description: Stream the formatted pitch data back to the frontend using WebSocket.
+### Description: JSON 형식의 음정 데이터를 WebSocket을 통해 프론트엔드로 스트리밍합니다.
 ### Details:
-Implement the logic to send JSON-formatted pitch data through the WebSocket connection to the client.
+클라이언트로 JSON 형식의 음정 데이터를 WebSocket 연결을 통해 전송하는 로직을 구현합니다.
 
-## 5. Optimize Performance for Real-Time Processing [pending]
+## 5. 실시간 처리 성능 최적화 [pending]
 ### Dependencies: 6.4
-### Description: Enhance the system to handle real-time audio processing efficiently without bottlenecks.
+### Description: 병목 현상 없이 실시간 오디오 처리를 효율적으로 처리할 수 있도록 시스템을 개선합니다.
 ### Details:
-Implement asynchronous processing and buffer management to ensure smooth real-time data handling.
+비동기 처리 및 버퍼 관리를 구현하여 원활한 실시간 데이터 처리를 보장합니다.
 
