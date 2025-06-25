@@ -1,125 +1,133 @@
 {
 	"meta": {
-		"generatedAt": "2025-06-24T04:59:35.141Z",
-		"tasksAnalyzed": 14,
+		"generatedAt": "2025-06-25T02:04:08.000Z",
+		"tasksAnalyzed": 15,
 		"totalTasks": 15,
-		"analysisCount": 14,
+		"analysisCount": 15,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
 		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
+			"taskId": 1,
+			"taskTitle": "프로젝트 저장소 설정",
+			"complexityScore": 4,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Consider adding a subtask for setting up branch protection rules and CI/CD integration.",
+			"reasoning": "The task involves basic setup of a Git repository and directory structure, which is straightforward but could benefit from additional steps for best practices."
+		},
+		{
 			"taskId": 2,
-			"taskTitle": "Implement User Authentication",
+			"taskTitle": "사용자 인증 구현",
 			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down the task into SDK integration, API development, security measures, session management, and testing.",
-			"reasoning": "This task involves integrating two different authentication methods, ensuring security, and managing sessions, which adds complexity."
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Include subtasks for detailed security audits and integration testing across different authentication methods.",
+			"reasoning": "Implementing multiple authentication methods and ensuring security and integration with Firebase Auth is complex."
 		},
 		{
 			"taskId": 3,
-			"taskTitle": "Develop Voice Recording Feature",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divide the task into audio recording implementation, quality assurance, storage management, and device compatibility testing.",
-			"reasoning": "Implementing high-quality voice recording across devices requires careful handling of audio APIs and testing."
+			"taskTitle": "음성 녹음 기능 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Add a subtask for implementing user feedback mechanisms for recording quality.",
+			"reasoning": "The task involves multiple technical components, including audio processing and UI integration, which are moderately complex."
 		},
 		{
 			"taskId": 4,
-			"taskTitle": "Setup RVC V2 Model Training",
+			"taskTitle": "RVC V2 음성 모델 훈련 설정",
 			"complexityScore": 9,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Separate the task into server setup, model training implementation, endpoint development, asynchronous processing, user notification, and testing.",
-			"reasoning": "Setting up a GPU-enabled server and implementing model training with asynchronous processing is complex and resource-intensive."
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Consider adding subtasks for model versioning and deployment pipeline setup.",
+			"reasoning": "Setting up a training environment with asynchronous processing and user notifications is highly complex."
 		},
 		{
 			"taskId": 5,
-			"taskTitle": "Implement Song Import and Vocal Separation",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Outline subtasks for ffmpeg integration, demucs setup, endpoint development, and testing with various audio formats.",
-			"reasoning": "The task involves handling audio processing and ensuring compatibility with multiple formats, which requires careful implementation."
+			"taskTitle": "노래 가져오기 및 음성 교체 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include a subtask for user interface design for song selection and playback.",
+			"reasoning": "The task involves complex audio processing and user interaction, requiring careful handling of different audio formats."
 		},
 		{
 			"taskId": 6,
-			"taskTitle": "Develop Personal Voice Model Synthesis",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Detail subtasks for endpoint development, model integration, quality assurance, synchronization testing, and user feedback.",
-			"reasoning": "Integrating voice models with songs and ensuring quality and synchronization adds significant complexity."
+			"taskTitle": "실시간 음정 시각화 개발",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Add a subtask for optimizing real-time performance and latency reduction.",
+			"reasoning": "Real-time pitch visualization requires precise synchronization and efficient processing, which is technically challenging."
 		},
 		{
 			"taskId": 7,
-			"taskTitle": "Create Real-Time Pitch Visualization",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into UI development, pitch detection integration, real-time processing, and testing for accuracy and responsiveness.",
-			"reasoning": "Real-time processing and visualization require efficient algorithms and responsive UI design."
+			"taskTitle": "GPT-4o 통합을 통한 자연어 피드백",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Consider adding subtasks for API rate limiting and error handling strategies.",
+			"reasoning": "Integrating GPT-4o for natural language processing involves complex API interactions and ensuring feedback relevance."
 		},
 		{
 			"taskId": 8,
-			"taskTitle": "Implement LLM-Based Feedback Generation",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divide into server setup, LLM integration, endpoint development, and feedback quality testing.",
-			"reasoning": "Integrating an LLM for feedback generation involves handling natural language processing and ensuring relevance."
+			"taskTitle": "감정 인식 피드백 구현",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Include subtasks for training data preparation and model evaluation metrics.",
+			"reasoning": "Emotion recognition involves sophisticated machine learning models and data processing, making it a complex task."
 		},
 		{
 			"taskId": 9,
-			"taskTitle": "Design User Interface and Experience",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Outline subtasks for wireframing, prototyping, and user testing.",
-			"reasoning": "Designing UI/UX involves creative processes and user feedback, which are less technically complex but require iteration."
+			"taskTitle": "음역대 및 음색 기반 추천 개발",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Add a subtask for user feedback collection and recommendation algorithm refinement.",
+			"reasoning": "The task requires detailed analysis of audio features and integration with a recommendation system, which is moderately complex."
 		},
 		{
 			"taskId": 10,
-			"taskTitle": "Setup Backend Infrastructure",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Detail subtasks for server deployment, database integration, API setup, WebSocket support, and load testing.",
-			"reasoning": "Establishing scalable backend infrastructure with multiple integrations is technically demanding."
+			"taskTitle": "행동 로그 인사이트 시각화 생성",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Consider adding a subtask for implementing user customization options for the dashboard.",
+			"reasoning": "Visualizing user data involves data processing and UI design, which are moderately complex tasks."
 		},
 		{
 			"taskId": 11,
-			"taskTitle": "Implement Session Management and Data Storage",
+			"taskTitle": "노래 스타일 분석 및 매칭 구현",
 			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into data model design, session management implementation, database operations, and performance testing.",
-			"reasoning": "Efficient session management and data storage require careful design and testing to ensure performance and integrity."
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include a subtask for developing a feedback loop to improve matching accuracy.",
+			"reasoning": "The task involves complex audio analysis and matching algorithms, requiring careful implementation and testing."
 		},
 		{
 			"taskId": 12,
-			"taskTitle": "Optimize Model Training and Inference",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divide into optimization strategies, caching implementation, and benchmarking.",
-			"reasoning": "Optimization involves improving existing processes, which requires analysis and testing but is less complex than initial implementation."
+			"taskTitle": "백엔드 인프라 설정",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Add subtasks for monitoring setup and automated scaling configuration.",
+			"reasoning": "Setting up a scalable and secure backend infrastructure involves multiple components and is technically demanding."
 		},
 		{
 			"taskId": 13,
-			"taskTitle": "Develop Notification System",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Outline subtasks for service integration, notification logic, and delivery testing.",
-			"reasoning": "Implementing a notification system is straightforward but requires ensuring reliability across devices."
+			"taskTitle": "데이터베이스 및 저장 솔루션 구성",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Consider adding a subtask for implementing automated backup and recovery procedures.",
+			"reasoning": "Configuring databases and storage solutions involves ensuring data integrity and security, which is moderately complex."
 		},
 		{
 			"taskId": 14,
-			"taskTitle": "Conduct Security and Compliance Review",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Detail subtasks for security audit, compliance checks, penetration testing, policy review, and documentation.",
-			"reasoning": "Ensuring security and compliance involves thorough audits and testing, which are critical and complex tasks."
+			"taskTitle": "프론트엔드 사용자 인터페이스 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include a subtask for accessibility testing and improvements.",
+			"reasoning": "Developing a responsive and intuitive UI using Flutter is moderately complex, with a focus on user experience."
 		},
 		{
 			"taskId": 15,
-			"taskTitle": "Prepare for Deployment and Launch",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down into final testing, deployment script preparation, documentation, and marketing strategy planning.",
-			"reasoning": "Preparing for deployment involves coordinating multiple aspects, including testing, documentation, and marketing."
+			"taskTitle": "종합 테스트 및 최적화 수행",
+			"complexityScore": 9,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Add subtasks for load testing and performance benchmarking.",
+			"reasoning": "Comprehensive testing and optimization across all features is highly complex, requiring detailed planning and execution."
 		}
 	]
 }

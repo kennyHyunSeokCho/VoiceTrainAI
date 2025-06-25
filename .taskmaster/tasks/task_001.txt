@@ -1,37 +1,43 @@
 # Task ID: 1
-# Title: Setup Project Repository
-# Status: done
+# Title: 프로젝트 저장소 설정
+# Status: pending
 # Dependencies: None
 # Priority: medium
-# Description: The project repository has been successfully initialized with version control and a comprehensive structure.
+# Description: 버전 관리 및 기본 구조로 프로젝트 저장소 초기화.
 # Details:
-The Git repository has been initialized, and the project directory structure has been set up. The structure includes directories for frontend (Flutter mobile app), backend (FastAPI backend), model server (RVC V2 model server), documentation, tests, and utility scripts. A main README.md file has been created with the project overview, technology stack, and installation instructions. Additionally, each subdirectory contains its own README.md file detailing specific information.
+Git 저장소를 생성하고 초기 프로젝트 구조를 설정합니다. 프론트엔드, 백엔드, 문서화 디렉토리를 포함합니다. 프로젝트 개요 및 설정 지침이 포함된 README 파일을 초기화합니다. GitHub 또는 GitLab을 저장소 호스팅에 사용합니다.
 
 # Test Strategy:
-Verify the repository setup by cloning and checking the directory structure and the presence of README.md files in each directory.
+저장소 접근성 및 올바른 디렉토리 구조를 확인합니다.
 
 # Subtasks:
-## 1. Initialize Git repository [done]
+## 1. Git 저장소 생성 [pending]
 ### Dependencies: None
-### Description: Create a .git directory to initialize version control.
+### Description: GitHub 또는 GitLab에서 새로운 저장소를 생성합니다.
 ### Details:
+GitHub 또는 GitLab 계정에 로그인하여 새로운 저장소를 생성하고, 저장소 이름을 'AI-보컬-트레이닝-앱'으로 설정합니다.
 
-
-## 2. Create project directory structure [done]
-### Dependencies: None
-### Description: Set up directories for frontend, backend, model server, documentation, tests, and scripts.
+## 2. 프로젝트 기본 구조 설정 [pending]
+### Dependencies: 1.1
+### Description: 프론트엔드, 백엔드, 문서화 디렉토리를 생성합니다.
 ### Details:
+로컬 환경에서 'frontend', 'backend', 'docs' 디렉토리를 생성하고, 각 디렉토리에 README 파일을 추가합니다.
 
-
-## 3. Write main README.md file [done]
-### Dependencies: None
-### Description: Include project overview, technology stack, and installation instructions.
+## 3. README 파일 초기화 [pending]
+### Dependencies: 1.2
+### Description: 프로젝트 개요 및 설정 지침이 포함된 README 파일을 작성합니다.
 ### Details:
+프로젝트의 목적, 설치 방법, 사용 방법 등을 포함한 README.md 파일을 루트 디렉토리에 작성합니다.
 
-
-## 4. Create README.md files for subdirectories [done]
-### Dependencies: None
-### Description: Write README.md files for frontend, backend, and model server directories.
+## 4. Git 초기화 및 커밋 [pending]
+### Dependencies: 1.2
+### Description: 로컬 저장소를 초기화하고 초기 구조를 커밋합니다.
 ### Details:
+로컬 디렉토리에서 'git init' 명령어를 실행하고, 모든 파일을 스테이징한 후 'Initial commit' 메시지로 커밋합니다.
 
+## 5. 원격 저장소 연결 및 푸시 [pending]
+### Dependencies: 1.4
+### Description: 로컬 저장소를 원격 저장소와 연결하고 초기 커밋을 푸시합니다.
+### Details:
+'git remote add origin <원격 저장소 URL>' 명령어로 원격 저장소를 추가하고, 'git push -u origin main' 명령어로 커밋을 푸시합니다.
 

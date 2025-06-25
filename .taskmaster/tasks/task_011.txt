@@ -1,112 +1,37 @@
 # Task ID: 11
-# Title: Implement Session Management and Data Storage
+# Title: 노래 스타일 분석 및 매칭 구현
 # Status: pending
-# Dependencies: 2, 10
+# Dependencies: 10
 # Priority: medium
-# Description: Develop session management and data storage for user interactions.
+# Description: 노래 스타일을 분석하고 유사한 아티스트와 매칭합니다.
 # Details:
-Design and implement data models for User, Song, and Session. Ensure efficient storage and retrieval of session data in PostgreSQL or Firebase.
+librosa 및 DTW를 사용하여 스타일 분석을 수행합니다. 사용자 노래 스타일을 아티스트 데이터베이스와 비교하고 매칭 피드백을 제공합니다.
 
 # Test Strategy:
-Test data storage and retrieval operations, ensuring data integrity and performance.
+스타일 분석 정확도 및 매칭 관련성을 테스트합니다. 피드백 품질을 검증합니다.
 
 # Subtasks:
-## 1. Design Data Models [pending]
+## 1. 데이터 모델 설계 [pending]
 ### Dependencies: None
-### Description: Create comprehensive data models that define the structure, relationships, and constraints of the data to be managed.
+### Description: AI 보컬 트레이닝 앱에 적합한 데이터 모델을 설계합니다.
 ### Details:
-This involves identifying entities, attributes, and relationships, and creating ER diagrams to visualize the data structure.
+사용자 정보, 트레이닝 기록, 음성 데이터 등을 포함한 엔티티와 관계를 정의합니다.
 
-## 2. Implement Storage Solutions [pending]
+## 2. 저장소 솔루션 구현 [pending]
 ### Dependencies: 11.1
-### Description: Set up the necessary databases and storage systems to support the designed data models.
+### Description: 설계된 데이터 모델에 기반하여 저장소 솔루션을 구현합니다.
 ### Details:
-Choose appropriate database technologies (SQL, NoSQL, etc.) and configure them to store and manage the data efficiently.
+관계형 데이터베이스 또는 NoSQL 데이터베이스를 선택하고, 스키마를 생성합니다.
 
-## 3. Ensure Data Integrity [pending]
+## 3. 데이터 무결성 보장 [pending]
 ### Dependencies: 11.2
-### Description: Implement mechanisms to maintain data accuracy and consistency across the storage solutions.
+### Description: 데이터의 정확성과 일관성을 유지하기 위한 무결성 검사를 구현합니다.
 ### Details:
-This includes setting up validation rules, constraints, and triggers to enforce data integrity.
+트랜잭션 관리, 데이터 유효성 검사, 참조 무결성 제약 조건을 설정합니다.
 
-## 4. Test Performance [pending]
+## 4. 성능 테스트 [pending]
 ### Dependencies: 11.3
-### Description: Conduct performance testing to ensure the data management system meets the required speed and efficiency standards.
+### Description: 데이터베이스의 성능을 테스트하고 최적화합니다.
 ### Details:
-Perform load testing, stress testing, and other performance evaluations to identify and address potential bottlenecks.
+부하 테스트를 수행하고, 쿼리 최적화 및 인덱싱을 통해 성능을 개선합니다.
 
-# Task ID: 11
-# Title: Implement Session Management and Data Storage
-# Status: pending
-# Dependencies: 2, 10
-# Priority: medium
-# Description: Develop session management and data storage for user interactions.
-# Details:
-Design and implement data models for User, Song, and Session. Ensure efficient storage and retrieval of session data in PostgreSQL or Firebase.
-
-# Test Strategy:
-Test data storage and retrieval operations, ensuring data integrity and performance.
-
-# Subtasks:
-## 1. Design Data Models [pending]
-### Dependencies: None
-### Description: Create comprehensive data models that define the structure, relationships, and constraints of the data to be managed.
-### Details:
-This involves identifying entities, attributes, and relationships, and creating ER diagrams to visualize the data structure.
-
-## 2. Implement Storage Solutions [pending]
-### Dependencies: 11.1
-### Description: Set up the necessary databases and storage systems to support the designed data models.
-### Details:
-Choose appropriate database technologies (SQL, NoSQL, etc.) and configure them to store and manage the data efficiently.
-
-## 3. Ensure Data Integrity [pending]
-### Dependencies: 11.2
-### Description: Implement mechanisms to maintain data accuracy and consistency across the storage solutions.
-### Details:
-This includes setting up validation rules, constraints, and triggers to enforce data integrity.
-
-## 4. Test Performance [pending]
-### Dependencies: 11.3
-### Description: Conduct performance testing to ensure the data management system meets the required speed and efficiency standards.
-### Details:
-Perform load testing, stress testing, and other performance evaluations to identify and address potential bottlenecks.
-
----
-
-# 태스크 ID: 11
-# 제목: 세션 관리 및 데이터 저장 구현
-# 상태: 대기 중
-# 의존성: 2, 10
-# 우선순위: 중간
-# 설명: 사용자 상호작용을 위한 세션 관리 및 데이터 저장을 개발합니다.
-# 세부사항:
-User, Song, Session을 위한 데이터 모델을 설계하고 구현합니다. PostgreSQL 또는 Firebase에서 세션 데이터의 효율적인 저장과 검색을 보장합니다.
-
-# 테스트 전략:
-데이터 무결성과 성능을 보장하며 데이터 저장 및 검색 작업을 테스트합니다.
-
-# 서브태스크:
-## 1. 데이터 모델 설계 [대기 중]
-### 의존성: 없음
-### 설명: 관리될 데이터의 구조, 관계 및 제약 조건을 정의하는 포괄적인 데이터 모델을 생성합니다.
-### 세부사항:
-엔티티, 속성 및 관계를 식별하고 데이터 구조를 시각화하기 위한 ER 다이어그램을 생성하는 것을 포함합니다.
-
-## 2. 저장소 솔루션 구현 [대기 중]
-### 의존성: 11.1
-### 설명: 설계된 데이터 모델을 지원하기 위해 필요한 데이터베이스와 저장 시스템을 설정합니다.
-### 세부사항:
-적절한 데이터베이스 기술(SQL, NoSQL 등)을 선택하고 데이터를 효율적으로 저장하고 관리하도록 구성합니다.
-
-## 3. 데이터 무결성 보장 [대기 중]
-### 의존성: 11.2
-### 설명: 저장소 솔루션 전체에서 데이터 정확성과 일관성을 유지하는 메커니즘을 구현합니다.
-### 세부사항:
-데이터 무결성을 강화하기 위한 검증 규칙, 제약 조건 및 트리거 설정을 포함합니다.
-
-## 4. 성능 테스트 [대기 중]
-### 의존성: 11.3
-### 설명: 데이터 관리 시스템이 필요한 속도와 효율성 표준을 충족하는지 확인하기 위해 성능 테스트를 수행합니다.
-### 세부사항:
-잠재적 병목 지점을 식별하고 해결하기 위해 부하 테스트, 스트레스 테스트 및 기타 성능 평가를 수행합니다.

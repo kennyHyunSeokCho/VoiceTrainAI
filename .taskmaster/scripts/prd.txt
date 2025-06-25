@@ -1,193 +1,151 @@
 Overview
-This product is an AI-powered vocal training mobile application that allows users to build their own personalized voice models and receive pitch-based feedback on singing performances. It targets individuals seeking to improve their vocal skills—ranging from casual learners to serious vocal trainees—by providing personalized feedback using advanced machine learning technologies. The app addresses the lack of real-time, user-specific vocal training tools in the current market and provides a more engaging, accessible, and personalized experience compared to traditional voice coaching.
+AI Vocal Training System(AVTS)은 사용자가 자신의 음성을 녹음하여 개인화된 음성 합성 모델을 만들고, 노래를 따라 부르며 실시간 피드백을 받을 수 있는 AI 기반 보컬 트레이닝 앱이다. 이 앱은 기존 보컬 교육에서 부족했던 실시간 피드백, 개인화된 학습, 감정 및 스타일 분석 기능을 통합하여, 초보자부터 입시생까지 폭넓은 사용자가 자기주도적으로 실력을 향상시킬 수 있도록 돕는다.
 
 Core Features
-Personal Voice Model Generation (RVC V2-based)
+Personal Voice Model Generation (RVC V2 기반)
+사용자가 3~5분 정도 자신의 음성을 녹음하면, 이를 기반으로 RVC V2를 학습시켜 개인 보이스 모델을 생성한다. 이 모델은 노래에 사용되어, 사용자의 목소리로 노래를 합성할 수 있게 한다.
 
-What it does: Allows users to record a few minutes of their own voice to generate a personalized voice model.
+Song Import and Voice Replacement
+사용자가 선택한 노래에서 원곡 보컬을 분리하고, 사용자의 보이스 모델로 대체된 버전을 생성하여 원곡과 비교 청취할 수 있도록 한다.
 
-Why it's important: Enables customized training by using the user's own voice to synthesize songs and identify pitch issues.
+Real-Time Pitch Visualization
+노래가 재생되면 노래방처럼 곡의 기준 음정을 시간에 따라 화면에 출력하며, 사용자가 노래를 부를 때 실시간으로 pitch(f0)를 추출하여 시각적으로 비교해 보여준다.
 
-How it works: Users record 3–5 minutes of clean voice data, which is processed to extract pitch (f0) and content features. These features are used to train an RVC V2 model, which is saved for inference use.
+LLM-Based Natural Language Feedback (GPT-4o)
+피치, 리듬, 발음 정확도 등의 분석 결과를 GPT-4o에 전달하여 자연어 기반 피드백을 생성한다. 예: “고음 구간에서 음정이 흔들렸습니다. 복식호흡 연습을 권장합니다.”
 
-Song Import and Voice Replacement Option
+Emotion Recognition Feedback
+감정이 레이블링된 데이터셋을 기반으로 사용자의 노래 감정을 분석하고, 원곡 감정과 비교하여 감정 전달력 피드백을 제공한다. MFCC, Energy, Whisper 등을 활용한다.
 
-What it does: Lets users choose a song and decide between listening to the original version or a version where their personal voice model replaces the original vocals.
+Vocal Range & Timbre-Based Recommendation
+사용자의 음역대(F0 최대/최소)를 추출하고, ECAPA-TDNN 등을 통해 음색 특징을 분석하여, 비슷한 음역대·음색을 가진 가수의 곡을 추천한다.
 
-Why it's important: Provides a clear and engaging method for users to evaluate their own voice performance relative to the original singer.
+Behavior Log Insight Visualization
+사용자의 연습 이력(시간, 장르, 감정 피드백 등)을 저장하고, 실력 변화 및 패턴을 그래프로 시각화하여 트래킹할 수 있게 한다.
 
-How it works: Upon song selection, the app separates the vocal and instrumental tracks. The user’s voice model is applied to generate a personalized version. Both options are presented for playback.
-
-Real-Time Pitch Visualization and Comparison
-
-What it does: Displays a karaoke-style interface showing the correct pitch and the user's real-time pitch input.
-
-Why it's important: Helps users visually understand pitch accuracy and timing in real time.
-
-How it works: The application extracts the pitch curve of the original track. While the user sings, their pitch is extracted using lightweight pitch detection algorithms and overlaid for comparison.
-
-LLM-Based Vocal Performance Feedback
-
-What it does: Provides natural language feedback on the user’s vocal performance after the song ends, highlighting areas for improvement.
-
-Why it's important: Offers actionable, human-readable feedback that helps users identify and focus on weak spots such as breath control or pitch stability.
-
-How it works: After the session, the app analyzes pitch deviations and vocal issues, structures them into a data format, and sends them to an LLM for personalized feedback generation.
-
-Authentication via KakaoTalk or SMS
-
-What it does: Allows users to sign up using KakaoTalk or mobile phone number verification.
-
-Why it's important: Ensures secure access and allows the app to store user-specific data and voice models.
-
-How it works: Integrates Kakao login SDK or third-party SMS verification API to authenticate and register users.
+Singing Style Analysis & Matching
+vibrato, pitch bending, syllable variation 등 창법 특징을 분석하고, 유사한 스타일을 가진 가수와 비교 분석하여 매칭 피드백을 제공한다.
 
 User Experience
-User Personas
-Casual Singers: Individuals who enjoy singing and want light feedback or entertainment.
+사용자는 앱에 로그인 후 자신의 목소리를 녹음하고, 개인화된 모델을 만든 후 곡을 선택하여 합성된 노래와 원곡 중 하나를 선택해 들을 수 있다.
 
-Hobby Vocalists: Users who are actively trying to improve their vocal performance.
+노래 재생 시, 노래방처럼 곡의 기준 음정이 시간 순서에 따라 화면에 출력되며, 사용자의 실시간 피치가 함께 시각적으로 표시된다.
 
-Aspiring Professionals: Serious trainees who need structured, data-backed feedback for improvement.
+노래 후에는 피치, 감정, 창법 등을 종합적으로 분석한 피드백이 제공된다.
 
-Key User Flows
-User signs up using KakaoTalk or SMS verification.
+사용자 유형은 일반 노래 연습자, 취미 보컬, 입시생, 보컬 유튜버 등을 포함한다.
 
-User records voice and generates a personal voice model.
-
-User selects a song and chooses between original and synthesized voice.
-
-User sings along with the karaoke-style pitch UI.
-
-After singing, user receives LLM-generated feedback based on performance.
-
-UI/UX Considerations
-Karaoke-style UI with clearly distinguished pitch lines for original and user input.
-
-Loading and progress indicators during voice model training.
-
-Clear visualization of feedback and performance breakdown.
-
-Lightweight and responsive mobile interface built for cross-platform use.
-
-PRD
 Technical Architecture
-System Components
-Frontend: Flutter-based mobile application for iOS and Android
+Frontend: Flutter 기반 모바일 앱 (iOS, Android 대응)
 
-Backend: RESTful API using FastAPI with WebSocket support for real-time features
+Backend: FastAPI 기반 RESTful API + WebSocket
 
-Model Server: RVC V2 server for training and inference
+Authentication: Firebase Auth (Kakao/Google OAuth, SMS 인증)
 
-Pitch Analysis Engine: Real-time pitch extraction using CREPE or YIN
+Voice Modeling: PyTorch 기반 RVC V2 학습 및 inference 서버
 
-LLM Server: GPT-3.5 or local LLM to generate performance feedback
+Pitch Analysis: CREPE 또는 YIN, pyin
 
-Authentication Service: Kakao SDK and/or third-party SMS API
+Emotion Recognition: MFCC, Energy, Whisper, Wav2Vec2.0
 
-Storage: AWS S3 for audio/model assets, PostgreSQL or Firebase for metadata
+Timbre Analysis: ECAPA-TDNN, Speaker Embedding
 
-Data Models
-User: user_id, nickname, phone_number, voice_model_url, registered_at
+Style Analysis: librosa, DTW, onset detection
 
-Song: song_id, title, artist, pitch_data[], instrumental_url
+LLM Integration: OpenAI GPT-4o API
 
-Session: session_id, user_id, song_id, pitch_score, feedback_text, created_at
+Storage: Firebase Storage 또는 AWS S3
 
-APIs and Integrations
-POST /auth/kakao or /auth/sms – user authentication
+Database: Supabase(PostgreSQL 기반)
 
-POST /recordings/upload – upload user voice data
-
-POST /model/train – trigger RVC model training
-
-POST /model/infer – generate user-voice version of a song
-
-POST /singing/session – store pitch comparison results
-
-POST /feedback/generate – send singing data to LLM and get feedback
-
-Infrastructure Requirements
-GPU-enabled server for RVC model training (e.g., RTX 4090)
-
-Low-latency audio processing backend
-
-Scalable storage and CDN for audio files
-
-Load-balanced API services with real-time WebSocket handling
+Visualization: Plotly, Chart.js (Flutter WebView 연동)
 
 Development Roadmap
 Phase 1 – MVP
-KakaoTalk/SMS-based user authentication
 
-Voice recording and model generation via RVC V2
+사용자 인증 (Kakao/Google/SMS)
 
-Song upload and vocal separation
+음성 녹음 및 RVC 모델 학습
 
-Basic karaoke UI with real-time pitch comparison
+곡 선택 및 보컬 합성
 
-Rule-based feedback placeholder (non-LLM)
+실시간 피치 시각화 UI 구현
 
-Phase 2 – Enhanced Features
-Integration with LLM for personalized feedback
+rule-based 피드백 제공
 
-Vocal performance analytics (e.g., heatmaps, pitch scores)
+Phase 2 – 고도화 기능
 
-UI/UX polish for mobile performance and accessibility
+GPT-4o 기반 자연어 피드백
 
-Phase 3 – Community and Expansion
-Social sharing of user-generated covers
+감정 분석 및 감정 피드백
 
-Leaderboards or challenge modes
+음역대·음색 기반 곡 추천
 
-Subscription model for premium features or songs
+사용자 로그 기반 인사이트 시각화
+
+Phase 3 – 확장 기능
+
+가창 스타일 분석 및 유사 가수 매칭
+
+랭킹, 챌린지 모드 및 커뮤니티 기능
+
+프리미엄 구독 기반 콘텐츠 제공
 
 Logical Dependency Chain
-User authentication is the foundation for managing personal data and voice models.
+사용자 인증 시스템 구축
 
-Voice recording and RVC model training must be operational before voice synthesis.
+모든 기능은 사용자 계정 기반으로 작동하므로, Kakao/Google/SMS 인증을 포함한 로그인/회원가입 기능이 가장 먼저 구현되어야 함.
 
-Song selection and synthesis build upon the trained voice model.
+음성 녹음 및 RVC 보이스 모델 생성
 
-Real-time pitch UI must follow for interaction.
+사용자의 개인화된 보이스 모델이 생성되어야 노래 합성, 분석 기능을 테스트하거나 실제로 작동시킬 수 있음.
 
-LLM feedback is built after core performance data is captured and structured.
+곡 선택 및 원곡/사용자 보이스 합성 기능 구현
 
+곡을 업로드하거나 선택한 후, 원곡 보컬을 제거하고 사용자 보이스 모델로 합성하여 저장할 수 있어야 이후 분석 기능들이 작동 가능함.
+
+실시간 피치 분석 및 시각화 UI 구성
+
+사용자의 노래 실시간 입력을 분석하고 노래방처럼 음정을 시각화하는 기능은 합성 곡이 준비된 후 작동하며, 사용자 경험에 가장 직접적인 영향을 줌.
+
+GPT-4o 기반 피드백 생성
+
+실시간 피치 분석 데이터와 감정/리듬 정보가 수집된 뒤, 이를 기반으로 GPT-4o에게 피드백 요청을 보낼 수 있음.
+
+감정 인식, 음역대/음색 분석 기능 연동
+
+노래 데이터가 충분히 수집되고 피치/에너지/스펙트럼 정보가 확보된 후 작동 가능. 초기엔 오프라인 처리로 시작 가능.
+
+사용자 로그 수집 및 시각화 기능 개발
+
+모든 기능들이 돌아간 이후 연습 이력, 곡 선택, 피드백 등의 행동 로그를 축적한 뒤, 그 데이터를 기반으로 성장 그래프 및 대시보드를 구성함.
+
+가창 스타일 분석 및 유사 가수 매칭
+
+충분한 사용자 노래 데이터가 수집되어야 vibrato, 스타일 등을 정밀 분석할 수 있으므로 가장 마지막 단계에서 구현하는 것이 적절함.
 
 Risks and Mitigations
-Model Training Latency
-Training the RVC model may require a few minutes, which can lead to user drop-off or confusion.
-Mitigation: Use asynchronous processing and implement a user notification system that informs users when training is complete.
+RVC 모델 학습 시간 지연
+→ 비동기 처리 및 완료 알림 기능으로 UX 개선
 
-Pitch Extraction Accuracy
-Real-time pitch extraction may vary depending on the device's microphone quality and processing power.
-Mitigation: Use lightweight and reliable pitch detection models such as CREPE, and optimize for mobile performance.
+피치 분석 정확도 부족
+→ CREPE 기반 고정도 알고리즘 활용 및 모바일 최적화
 
-High Cost of LLM Usage
-Frequent calls to the LLM for feedback generation can incur high operational costs, especially if using GPT-4o.
-Mitigation: Use OpenAI’s GPT-4o efficiently by compressing input data and prompts. For cost-saving purposes, consider batching requests or implementing a feedback quota system for free-tier users.
+GPT-4o API 사용 비용 부담
+→ 입력 압축 및 사용자당 호출 제한 적용
 
-Third-Party Authentication Service Reliability
-Services like KakaoTalk or SMS-based authentication may experience outages or API limitations.
-Mitigation: Provide fallback login options such as email/password authentication or OAuth with other providers.
+감정/창법 분석 정확도 부족
+→ 학습 데이터 품질 향상 및 정제된 feature engineering 지속
 
+인증 API 장애 가능성
+→ 이메일 기반 로그인 및 OAuth 대체 옵션 제공
 
 Appendix
-Research Findings
-Karaoke apps lack personalized voice synthesis and intelligent feedback.
+사용 데이터셋: RAVDESS, EmoDB, NSynth, 커버 음원 DB
 
-RVC V2 has been proven to generate high-quality voice models with limited data.
+활용 모델 및 기술: RVC V2, GPT-4o, CREPE, librosa, Whisper, ECAPA-TDNN, DTW
 
-LLMs like GPT-4o can effectively summarize technical performance metrics into human-friendly advice.
+참고 서비스: Smule, Yousician, SingSharp, Vocaloid Editor
 
-Technical Specifications
-Mobile Framework: Flutter
-
-Backend: FastAPI, PostgreSQL, WebSocket
-
-ML Frameworks: PyTorch (RVC V2), TensorFlow or ONNX (CREPE)
-
-LLM: OpenAI GPT-4o or fine-tuned llama3 via local API
-
-Audio Tools: ffmpeg, demucs, librosa
+사용자 유형: 일반 보컬 사용자, 입시생, 보컬 유튜버, 음악 창작자
 

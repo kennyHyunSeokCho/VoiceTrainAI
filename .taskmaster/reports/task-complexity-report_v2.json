@@ -1,0 +1,133 @@
+{
+	"meta": {
+		"generatedAt": "2025-06-25T02:03:12.626Z",
+		"tasksAnalyzed": 15,
+		"totalTasks": 15,
+		"analysisCount": 15,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "프로젝트 저장소 설정",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "The task involves setting up a basic project repository structure with Git, which is straightforward and already well-defined with existing subtasks."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "사용자 인증 구현",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Consider breaking down the integration of Firebase Auth with FastAPI and Flutter into more granular steps, such as setting up OAuth providers and handling token security.",
+			"reasoning": "Integrating multiple authentication methods and ensuring security across different platforms increases complexity."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "음성 녹음 기능 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Expand on testing and optimizing audio quality across different devices and environments.",
+			"reasoning": "Implementing audio recording with quality optimization and cross-device compatibility adds moderate complexity."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "RVC V2 음성 모델 훈련 설정",
+			"complexityScore": 9,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Consider detailing the setup of the PyTorch environment and the implementation of the training API.",
+			"reasoning": "Setting up a machine learning model training environment with asynchronous processing and user notifications is complex."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "노래 가져오기 및 음성 교체 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include steps for handling different audio formats and ensuring the accuracy of vocal separation.",
+			"reasoning": "Handling audio processing and ensuring accurate vocal replacement requires careful implementation."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "실시간 음정 시각화 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Expand on the integration of pitch detection algorithms with the UI for real-time visualization.",
+			"reasoning": "Real-time pitch visualization requires precise synchronization and UI responsiveness."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "GPT-4o 통합을 통한 자연어 피드백",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Detail the integration process of GPT-4o API and the handling of feedback generation.",
+			"reasoning": "Integrating a complex AI model for generating natural language feedback involves significant complexity."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "감정 인식 피드백 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Consider breaking down the emotion analysis process and the feedback generation into more detailed steps.",
+			"reasoning": "Emotion recognition and feedback generation using machine learning models is moderately complex."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "음역대 및 음색 기반 추천 개발",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Expand on the analysis of pitch and timbre and the recommendation algorithm.",
+			"reasoning": "Analyzing audio features and generating recommendations based on them requires detailed implementation."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "행동 로그 인사이트 시각화 생성",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include steps for integrating data visualization libraries and ensuring data accuracy.",
+			"reasoning": "Visualizing user data with interactive dashboards involves moderate complexity."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "노래 스타일 분석 및 매칭 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Detail the process of style analysis and the matching algorithm with artist databases.",
+			"reasoning": "Analyzing song styles and matching them with artist databases requires careful implementation."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "백엔드 인프라 설정",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Consider expanding on the setup of scalable and secure backend infrastructure.",
+			"reasoning": "Setting up a scalable and secure backend infrastructure for API and WebSocket services is complex."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "데이터베이스 및 저장 솔루션 구성",
+			"complexityScore": 7,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Expand on the configuration of Supabase and Firebase/AWS for data storage and security.",
+			"reasoning": "Configuring databases and storage solutions with security and backup strategies involves moderate complexity."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "프론트엔드 사용자 인터페이스 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Include steps for ensuring cross-platform compatibility and responsive design.",
+			"reasoning": "Developing a responsive and intuitive UI with cross-platform compatibility is moderately complex."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "종합 테스트 및 최적화 수행",
+			"complexityScore": 8,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Detail the comprehensive testing process and the optimization strategies for performance improvement.",
+			"reasoning": "Conducting comprehensive testing and optimization for a complex application involves significant effort."
+		}
+	]
+}
