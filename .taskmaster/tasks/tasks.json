@@ -333,128 +333,138 @@
       {
         "id": 6,
         "title": "실시간 음정 시각화 개발",
-        "description": "노래 재생 중 실시간 음정 시각화를 위한 UI를 만듭니다.",
+        "description": "사용자의 음성 입력을 실시간으로 분석하여 음정(pitch) 데이터를 추출하고, 이를 WebSocket을 통해 프론트엔드에 스트리밍하는 API를 개발합니다. 시각화 구현은 태스크 14에서 담당합니다.",
         "status": "pending",
         "dependencies": [
           5,
           14
         ],
         "priority": "medium",
-        "details": "Flutter를 사용하여 노래방 스타일의 음정 시각화를 개발합니다. CREPE 또는 YIN을 사용하여 음정을 추출하고 노래의 음정 트랙과 함께 표시합니다.",
-        "testStrategy": "실시간 음정 정확도 및 UI 응답성을 테스트합니다. 노래 재생과의 동기화를 보장합니다.",
+        "details": "Flutter 대신 서버 측에서 음정 분석을 수행하고, WebSocket을 통해 실시간으로 데이터를 스트리밍합니다. CREPE 또는 YIN 알고리즘을 사용하여 음정을 추출합니다.",
+        "testStrategy": "실시간 음정 분석의 정확도와 WebSocket을 통한 데이터 전송의 안정성을 테스트합니다. API의 응답성과 데이터 스트리밍의 연속성을 보장합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "합성 엔드포인트 설계 및 구현",
-            "description": "AI 보컬 트레이닝 앱의 합성 엔드포인트를 설계하고 구현합니다.",
+            "title": "Set Up WebSocket Endpoint",
+            "description": "Configure a WebSocket endpoint to receive real-time audio streams from the frontend.",
             "dependencies": [],
-            "details": "RESTful API로 합성 엔드포인트를 설계하고, 필요한 입력 파라미터와 출력 형식을 정의합니다. 엔드포인트는 입력된 텍스트를 기반으로 음성을 합성하는 기능을 포함해야 합니다.",
+            "details": "Implement a WebSocket server that listens for incoming connections and handles audio data streams.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Test the WebSocket connection by sending sample audio data from a client and verifying receipt on the server."
           },
           {
             "id": 2,
-            "title": "보컬 분리 기능 통합",
-            "description": "합성된 음성에서 보컬을 분리하는 기능을 통합합니다.",
+            "title": "Implement Pitch Extraction Algorithm",
+            "description": "Develop the logic to extract pitch from audio chunks using CREPE or YIN algorithm.",
             "dependencies": [
               1
             ],
-            "details": "기존의 보컬 분리 알고리즘을 사용하여 합성된 음성에서 보컬을 분리합니다. 이를 위해 Python 라이브러리인 Spleeter를 활용할 수 있습니다.",
+            "details": "Integrate the CREPE or YIN algorithm to process incoming audio data and extract pitch information.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Validate pitch extraction accuracy using a set of pre-recorded audio samples with known pitch values."
           },
           {
             "id": 3,
-            "title": "다양한 모델을 사용한 테스트",
-            "description": "다양한 음성 합성 모델을 사용하여 합성 엔드포인트를 테스트합니다.",
+            "title": "Format Pitch Data for Streaming",
+            "description": "Convert extracted pitch data into JSON format for streaming back to the frontend.",
             "dependencies": [
-              1,
               2
             ],
-            "details": "Tacotron2, WaveNet 등 다양한 음성 합성 모델을 사용하여 합성 엔드포인트의 성능을 평가합니다. 각 모델의 합성 품질과 처리 속도를 비교합니다.",
+            "details": "Ensure the pitch data is structured in a JSON format suitable for WebSocket transmission.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Check the JSON structure by comparing it against a predefined schema and test with mock data."
           },
           {
             "id": 4,
-            "title": "품질 보증 및 최적화",
-            "description": "합성된 음성의 품질을 보장하고 최적화합니다.",
+            "title": "Stream Pitch Data via WebSocket",
+            "description": "Stream the formatted pitch data back to the frontend using WebSocket.",
             "dependencies": [
               3
             ],
-            "details": "합성된 음성의 품질을 평가하기 위해 사용자 피드백을 수집하고, 이를 기반으로 모델의 파라미터를 조정합니다. 또한, 처리 속도를 최적화하여 사용자 경험을 개선합니다.",
+            "details": "Implement the logic to send JSON-formatted pitch data through the WebSocket connection to the client.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Simulate a client receiving the data and verify the integrity and timeliness of the streamed data."
           },
           {
             "id": 5,
-            "title": "최종 검토 및 배포 준비",
-            "description": "모든 기능을 최종 검토하고 배포 준비를 완료합니다.",
+            "title": "Optimize Performance for Real-Time Processing",
+            "description": "Enhance the system to handle real-time audio processing efficiently without bottlenecks.",
             "dependencies": [
               4
             ],
-            "details": "모든 기능이 제대로 작동하는지 최종 검토를 수행하고, 배포를 위한 문서화 및 환경 설정을 완료합니다. 배포 전 테스트 환경에서 최종 테스트를 수행합니다.",
+            "details": "Implement asynchronous processing and buffer management to ensure smooth real-time data handling.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Conduct stress tests with high-frequency audio data to ensure system stability and performance."
           }
         ]
       },
       {
         "id": 7,
         "title": "GPT-4o 통합을 통한 자연어 피드백",
-        "description": "노래 분석을 기반으로 자연어 피드백을 생성하기 위해 GPT-4o를 사용합니다.",
+        "description": "사용자의 노래 분석 데이터를 입력받아 GPT-4o를 호출하고, 그 결과를 바탕으로 개인화된 자연어 피드백을 생성하여 반환하는 API를 개발합니다. 피드백을 화면에 표시하는 것은 태스크 14에서 담당합니다.",
         "status": "pending",
         "dependencies": [
           6,
           8
         ],
         "priority": "medium",
-        "details": "OpenAI의 GPT-4o API를 통합하여 음정, 리듬, 발음 데이터를 처리합니다. 자연어로 피드백을 생성하고 사용자에게 표시합니다.",
+        "details": "OpenAI의 GPT-4o API를 통합하여 음정, 리듬, 발음 데이터를 처리합니다. API는 개인화된 자연어 피드백을 생성하여 반환합니다.",
         "testStrategy": "피드백의 정확성과 관련성을 검증합니다. API 통합 및 응답 시간을 테스트합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "UI 개발",
-            "description": "AI 보컬 트레이닝 앱의 사용자 인터페이스를 설계하고 구현합니다.",
+            "title": "Set up GPT-4o API Client",
+            "description": "Implement a client to interact with the GPT-4o API using the OpenAI API key.",
             "dependencies": [],
-            "details": "앱의 주요 화면을 설계하고, 사용자가 쉽게 접근할 수 있는 직관적인 UI를 구현합니다. React 또는 Flutter와 같은 프레임워크를 사용하여 반응형 디자인을 적용합니다.",
+            "details": "Configure the environment to securely store and access the OpenAI API key. Develop a client module to handle API requests and responses.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Verify the client can successfully authenticate and make a basic request to the GPT-4o API."
           },
           {
             "id": 2,
-            "title": "피치 감지 통합",
-            "description": "실시간 피치 감지 기능을 앱에 통합합니다.",
-            "dependencies": [
-              1
-            ],
-            "details": "음성 입력을 실시간으로 분석하여 피치를 감지하는 알고리즘을 구현합니다. Web Audio API 또는 Pitch.js와 같은 라이브러리를 활용하여 정확한 피치 감지를 보장합니다.",
+            "title": "Design Prompt for Vocal Coaching Feedback",
+            "description": "Create an effective prompt structure for generating personalized vocal coaching feedback using user data.",
+            "dependencies": [],
+            "details": "Analyze user data types such as pitch, rhythm, and emotion to design prompts that elicit useful feedback from GPT-4o.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Test prompt variations to ensure they produce relevant and actionable feedback from the API."
           },
           {
             "id": 3,
-            "title": "정확도 테스트",
-            "description": "피치 감지 기능의 정확도를 테스트하고 개선합니다.",
+            "title": "Develop Feedback Generation API Endpoint",
+            "description": "Create an API endpoint that processes user data, constructs prompts, and retrieves feedback from GPT-4o.",
             "dependencies": [
+              1,
               2
             ],
-            "details": "다양한 음성 샘플을 사용하여 피치 감지의 정확도를 평가합니다. 테스트 결과를 바탕으로 알고리즘을 조정하여 정확도를 향상시킵니다.",
+            "details": "Implement the backend logic to accept user input, generate prompts, call the GPT-4o API, and return the feedback.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Unit test the endpoint with mock data to ensure it returns expected feedback responses."
           },
           {
             "id": 4,
-            "title": "반응성 보장",
-            "description": "앱의 반응성을 테스트하고 최적화합니다.",
+            "title": "Refine API Response Data",
+            "description": "Clean and format the feedback text from GPT-4o into a user-friendly JSON structure.",
+            "dependencies": [
+              3
+            ],
+            "details": "Strip unnecessary content from the API response and structure the feedback in a clear, concise JSON format.",
+            "status": "pending",
+            "testStrategy": "Validate the JSON output format with sample responses to ensure it meets frontend requirements."
+          },
+          {
+            "id": 5,
+            "title": "Integrate and Test API Functionality",
+            "description": "Conduct integration testing to ensure the API works seamlessly with the GPT-4o client and prompt design.",
             "dependencies": [
               1,
               2,
-              3
+              3,
+              4
             ],
-            "details": "UI와 피치 감지 기능이 실시간으로 원활하게 작동하는지 확인합니다. 성능 병목 현상을 식별하고 최적화하여 사용자 경험을 개선합니다.",
+            "details": "Perform end-to-end testing of the API to confirm all components interact correctly and produce the desired feedback.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Run integration tests with real user data to verify the complete feedback generation process."
           }
         ]
       },
@@ -584,7 +594,7 @@
       {
         "id": 10,
         "title": "행동 로그 인사이트 시각화 생성",
-        "description": "사용자의 연습 활동 데이터를 수집, 분석하여 성장 추적 및 개인화된 인사이트를 시각적으로 제공하는 대시보드 시스템을 구현합니다.",
+        "description": "사용자의 연습 기록을 분석하여 시각화에 필요한 데이터를 제공하는 API를 개발합니다. 이 태스크는 데이터 처리 및 제공에만 집중하고, 실제 UI 구현은 태스크 14에서 담당합니다.",
         "status": "pending",
         "dependencies": [
           9,
@@ -592,61 +602,61 @@
           14
         ],
         "priority": "medium",
-        "details": "사용자의 보컬 연습 활동을 자동으로 로깅하고, 시간에 따른 피치 정확도, 감정 표현력, 음역대 확장 등의 성장 지표를 분석합니다. Chart.js 또는 Plotly를 사용하여 직관적인 그래프와 차트를 생성하고, Flutter WebView를 통해 모바일 앱에 임베드된 대시보드로 사용자에게 개인화된 인사이트를 제공합니다.",
-        "testStrategy": "데이터의 정확성 및 시각화의 명확성을 확인합니다. 대시보드의 상호작용성과 성능을 테스트하여 사용자가 원활하게 인사이트를 얻을 수 있도록 합니다.",
+        "details": "사용자의 보컬 연습 활동을 자동으로 로깅하고, 시간에 따른 피치 정확도, 감정 표현력, 음역대 확장 등의 성장 지표를 분석합니다. 분석된 데이터를 API를 통해 제공하여, 다른 시스템에서 시각화를 위한 데이터를 활용할 수 있도록 합니다.",
+        "testStrategy": "API의 데이터 처리 정확성과 응답 속도를 테스트합니다. 제공된 데이터가 시각화에 적합한지 확인하고, 데이터의 일관성과 신뢰성을 검증합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "사용자 행동 로그 데이터 모델 설계",
-            "description": "사용자의 연습 활동 데이터를 위한 로그 스키마를 정의합니다.",
+            "title": "로그 데이터 모델링",
+            "description": "사용자 행동 데이터를 저장할 DB 스키마를 설계합니다.",
             "dependencies": [],
-            "details": "연습 시간, 피치 점수, 감정 표현력, 선호 장르 등의 데이터를 포함하는 데이터 모델을 설계합니다.",
+            "details": "연습 기록, 점수, 피드백 상호작용 등을 포함한 데이터 모델을 설계합니다.",
             "status": "pending",
-            "testStrategy": "데이터 모델이 모든 필요한 필드를 포함하고 있는지 검증하고, 샘플 데이터를 사용하여 데이터의 일관성을 테스트합니다."
+            "testStrategy": "DB 스키마가 모든 요구사항을 충족하는지 검증하고, 데이터 무결성을 테스트합니다."
           },
           {
             "id": 2,
-            "title": "로그 수집 시스템 구현",
-            "description": "사용자 연습 활동을 자동으로 로깅하는 API 및 실시간 데이터 수집 시스템을 개발합니다.",
+            "title": "로그 수집 API 구현",
+            "description": "사용자 행동 데이터를 수신하고 저장하는 API 엔드포인트를 개발합니다.",
             "dependencies": [
               1
             ],
-            "details": "사용자의 보컬 연습 활동을 자동으로 기록하는 API를 개발하고, 실시간으로 데이터를 수집하여 저장하는 시스템을 구현합니다.",
+            "details": "프론트엔드에서 발생하는 로그 데이터를 수집하여 DB에 저장하는 기능을 구현합니다.",
             "status": "pending",
-            "testStrategy": "API의 응답 시간과 정확성을 테스트하고, 실시간 데이터 수집의 신뢰성을 검증합니다."
+            "testStrategy": "API 엔드포인트가 데이터를 정확히 수신하고 저장하는지 확인하는 테스트를 수행합니다."
           },
           {
             "id": 3,
-            "title": "데이터 분석 엔진 개발",
-            "description": "성장 추세 분석, 약점 분석, 개선 포인트 도출을 위한 알고리즘을 개발합니다.",
+            "title": "데이터 분석 및 집계 로직",
+            "description": "의미있는 통계 데이터를 계산하는 로직을 구현합니다.",
             "dependencies": [
               2
             ],
-            "details": "수집된 데이터를 기반으로 사용자의 성장 추세를 분석하고, 약점을 파악하여 개선 포인트를 도출하는 알고리즘을 개발합니다.",
+            "details": "일간/주간 성장 추이, 평균 점수 등을 계산하는 로직을 개발합니다.",
             "status": "pending",
-            "testStrategy": "알고리즘의 정확성을 검증하기 위해 다양한 데이터 세트를 사용하여 테스트합니다."
+            "testStrategy": "분석 로직이 정확한 통계 데이터를 생성하는지 검증하는 테스트를 수행합니다."
           },
           {
             "id": 4,
-            "title": "시각화 컴포넌트 개발",
-            "description": "Chart.js 또는 Plotly를 사용하여 직관적인 그래프와 차트를 생성합니다.",
+            "title": "인사이트 제공 API 구현",
+            "description": "분석된 통계 데이터를 전달하기 위한 API 엔드포인트를 개발합니다.",
             "dependencies": [
               3
             ],
-            "details": "분석된 데이터를 시각적으로 표현하기 위해 Chart.js 또는 Plotly를 사용하여 다양한 그래프와 차트를 개발합니다.",
+            "details": "프론트엔드 대시보드에 필요한 인사이트 데이터를 제공하는 API를 구현합니다.",
             "status": "pending",
-            "testStrategy": "생성된 그래프와 차트의 정확성과 시각적 명확성을 테스트합니다."
+            "testStrategy": "API가 정확한 데이터를 제공하는지 확인하는 테스트를 수행합니다."
           },
           {
             "id": 5,
-            "title": "Flutter WebView 대시보드 통합",
-            "description": "모바일 앱에 상호작용 가능한 대시보드를 임베드합니다.",
+            "title": "API 문서화 및 최적화",
+            "description": "개발된 API의 문서를 작성하고 성능을 최적화합니다.",
             "dependencies": [
               4
             ],
-            "details": "Flutter WebView를 사용하여 모바일 앱에 대시보드를 통합하고, 사용자에게 개인화된 인사이트를 제공합니다.",
+            "details": "API 사용법을 문서화하고, 성능 및 응답 시간을 최적화합니다.",
             "status": "pending",
-            "testStrategy": "대시보드의 반응성과 상호작용성을 테스트하고, 다양한 모바일 기기에서의 호환성을 검증합니다."
+            "testStrategy": "문서의 정확성을 검토하고, 성능 테스트를 통해 최적화 결과를 확인합니다."
           }
         ]
       },
@@ -853,68 +863,67 @@
       {
         "id": 14,
         "title": "프론트엔드 사용자 인터페이스 개발",
-        "description": "Flutter를 사용하여 모바일 앱 UI를 설계하고 구현합니다.",
+        "description": "Flutter를 사용하여 앱의 전체 UI/UX를 설계하고 구현합니다. 백엔드 API에서 제공하는 데이터를 바탕으로, 실시간 음정 시각화, 자연어 피드백 표시, 사용자 분석 대시보드 등 모든 시각적 요소를 책임집니다.",
         "status": "pending",
         "dependencies": [
           1
         ],
         "priority": "medium",
-        "details": "앱을 위한 반응형이고 직관적인 UI를 만듭니다. 사용자 경험을 향상시키기 위해 Flutter 위젯 및 디자인 원칙을 사용합니다. 크로스 플랫폼 호환성을 보장합니다.",
-        "testStrategy": "사용성 테스트 및 UI 응답성 검사를 수행합니다. 크로스 플랫폼 기능을 검증합니다.",
+        "details": "앱을 위한 반응형이고 직관적인 UI를 만듭니다. 사용자 경험을 향상시키기 위해 Flutter 위젯 및 디자인 원칙을 사용합니다. 크로스 플랫폼 호환성을 보장합니다. 실시간 음정 시각화, 자연어 피드백 표시, 사용자 분석 대시보드 등 다양한 기능을 포함합니다.",
+        "testStrategy": "사용성 테스트 및 UI 응답성 검사를 수행합니다. 크로스 플랫폼 기능을 검증합니다. 실시간 데이터 시각화 및 사용자 피드백 기능의 정확성과 성능을 테스트합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "Flutter 프로젝트 설정",
-            "description": "Flutter 프로젝트를 생성하고, 폴더 구조를 설정하며, 필수 라이브러리를 추가합니다.",
+            "title": "기본 UI 프레임워크 설정",
+            "description": "Flutter 프로젝트 구조, 상태 관리(Riverpod/Bloc), 라우팅, 공통 UI 디자인 시스템을 설정합니다.",
             "dependencies": [],
-            "details": "Flutter SDK를 설치하고, 새로운 프로젝트를 생성한 후, 필요한 폴더 구조를 설정합니다. pubspec.yaml 파일에 필요한 라이브러리를 추가합니다.",
+            "details": "Flutter 프로젝트를 초기화하고, 상태 관리 및 라우팅을 설정하여 기본 UI 프레임워크를 구축합니다.",
             "status": "pending",
-            "testStrategy": "프로젝트가 정상적으로 빌드되고 실행되는지 확인합니다."
+            "testStrategy": "프로젝트가 정상적으로 빌드되고, 기본 라우팅 및 상태 관리가 작동하는지 확인합니다."
           },
           {
             "id": 2,
-            "title": "상태 관리 설정",
-            "description": "Riverpod 또는 Bloc을 사용하여 앱의 상태 관리 아키텍처를 설계하고 설정합니다.",
+            "title": "실시간 음정 시각화 UI 구현",
+            "description": "WebSocket으로 수신한 음정 데이터를 사용하여 노래방 스타일의 실시간 그래프 또는 노트를 그립니다.",
             "dependencies": [
               1
             ],
-            "details": "앱의 상태 관리를 위해 Riverpod 또는 Bloc을 선택하고, 해당 패키지를 설치한 후, 기본적인 상태 관리 구조를 설정합니다.",
+            "details": "WebSocket을 통해 음정 데이터를 수신하고, 이를 실시간으로 시각화하는 UI를 구현합니다.",
             "status": "pending",
-            "testStrategy": "상태 변경이 UI에 올바르게 반영되는지 확인합니다."
+            "testStrategy": "WebSocket 연결을 통해 데이터를 수신하고, 그래프가 실시간으로 업데이트되는지 확인합니다."
           },
           {
             "id": 3,
-            "title": "UI 디자인 시스템 구현",
-            "description": "Figma 디자인을 바탕으로 공통 UI 컴포넌트와 테마를 코드로 구현합니다.",
+            "title": "자연어 피드백 UI 구현",
+            "description": "분석 결과를 보기 좋은 카드나 대화 형태로 표시하고, 사용자가 피드백과 상호작용할 수 있는 UI를 구현합니다.",
             "dependencies": [
               1
             ],
-            "details": "Figma에서 제공된 디자인을 참고하여 버튼, 입력 필드, 카드 등의 공통 UI 컴포넌트와 색상, 폰트 등의 테마를 구현합니다.",
+            "details": "자연어 피드백을 카드 또는 대화 형태로 표시하고, 사용자 상호작용 기능을 추가합니다.",
             "status": "pending",
-            "testStrategy": "디자인과 구현된 UI가 일치하는지 시각적으로 확인합니다."
+            "testStrategy": "피드백이 올바르게 표시되고, 상호작용 기능이 정상적으로 작동하는지 확인합니다."
           },
           {
             "id": 4,
-            "title": "주요 화면 UI 구현",
-            "description": "로그인/회원가입, 메인 대시보드, 노래 목록, 녹음 화면 등 주요 화면의 UI를 구현합니다.",
+            "title": "사용자 분석 대시보드 구현",
+            "description": "성장 추이, 연습 기록 등을 보여주는 차트와 그래프를 포함한 대시보드 화면을 구현합니다.",
             "dependencies": [
-              3
+              1
             ],
-            "details": "각 화면의 레이아웃을 설계하고, 필요한 위젯을 사용하여 UI를 구현합니다.",
+            "details": "사용자 데이터를 기반으로 차트와 그래프를 생성하여 대시보드 화면을 구성합니다.",
             "status": "pending",
-            "testStrategy": "각 화면이 디자인에 맞게 구현되었는지 확인하고, 네비게이션이 올바르게 작동하는지 테스트합니다."
+            "testStrategy": "대시보드가 올바르게 데이터를 표시하고, 차트와 그래프가 정확한지 확인합니다."
           },
           {
             "id": 5,
-            "title": "API 연동 및 네트워킹 설정",
-            "description": "백엔드 API와 통신하기 위한 네트워킹 레이어를 설정하고, Dio 또는 http 라이브러리를 구성합니다.",
+            "title": "API 연동 및 상태 관리",
+            "description": "모든 백엔드 API와 통신하고, 앱의 전반적인 상태를 관리하는 로직을 구현합니다.",
             "dependencies": [
-              2,
-              4
+              1
             ],
-            "details": "Dio 또는 http 라이브러리를 사용하여 API 호출을 위한 네트워킹 레이어를 설정하고, 필요한 엔드포인트와 데이터 모델을 정의합니다.",
+            "details": "백엔드 API와의 통신을 설정하고, 앱의 상태를 관리하는 로직을 구현합니다.",
             "status": "pending",
-            "testStrategy": "API 호출이 성공적으로 이루어지고, 데이터가 올바르게 처리되는지 확인합니다."
+            "testStrategy": "API 호출이 성공적으로 이루어지고, 상태 관리가 올바르게 작동하는지 확인합니다."
           }
         ]
       },

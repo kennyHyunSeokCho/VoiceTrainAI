@@ -3,35 +3,41 @@
 # Status: pending
 # Dependencies: 6, 8
 # Priority: medium
-# Description: 노래 분석을 기반으로 자연어 피드백을 생성하기 위해 GPT-4o를 사용합니다.
+# Description: 사용자의 노래 분석 데이터를 입력받아 GPT-4o를 호출하고, 그 결과를 바탕으로 개인화된 자연어 피드백을 생성하여 반환하는 API를 개발합니다. 피드백을 화면에 표시하는 것은 태스크 14에서 담당합니다.
 # Details:
-OpenAI의 GPT-4o API를 통합하여 음정, 리듬, 발음 데이터를 처리합니다. 자연어로 피드백을 생성하고 사용자에게 표시합니다.
+OpenAI의 GPT-4o API를 통합하여 음정, 리듬, 발음 데이터를 처리합니다. API는 개인화된 자연어 피드백을 생성하여 반환합니다.
 
 # Test Strategy:
 피드백의 정확성과 관련성을 검증합니다. API 통합 및 응답 시간을 테스트합니다.
 
 # Subtasks:
-## 1. UI 개발 [pending]
+## 1. Set up GPT-4o API Client [pending]
 ### Dependencies: None
-### Description: AI 보컬 트레이닝 앱의 사용자 인터페이스를 설계하고 구현합니다.
+### Description: Implement a client to interact with the GPT-4o API using the OpenAI API key.
 ### Details:
-앱의 주요 화면을 설계하고, 사용자가 쉽게 접근할 수 있는 직관적인 UI를 구현합니다. React 또는 Flutter와 같은 프레임워크를 사용하여 반응형 디자인을 적용합니다.
+Configure the environment to securely store and access the OpenAI API key. Develop a client module to handle API requests and responses.
 
-## 2. 피치 감지 통합 [pending]
-### Dependencies: 7.1
-### Description: 실시간 피치 감지 기능을 앱에 통합합니다.
+## 2. Design Prompt for Vocal Coaching Feedback [pending]
+### Dependencies: None
+### Description: Create an effective prompt structure for generating personalized vocal coaching feedback using user data.
 ### Details:
-음성 입력을 실시간으로 분석하여 피치를 감지하는 알고리즘을 구현합니다. Web Audio API 또는 Pitch.js와 같은 라이브러리를 활용하여 정확한 피치 감지를 보장합니다.
+Analyze user data types such as pitch, rhythm, and emotion to design prompts that elicit useful feedback from GPT-4o.
 
-## 3. 정확도 테스트 [pending]
-### Dependencies: 7.2
-### Description: 피치 감지 기능의 정확도를 테스트하고 개선합니다.
+## 3. Develop Feedback Generation API Endpoint [pending]
+### Dependencies: 7.1, 7.2
+### Description: Create an API endpoint that processes user data, constructs prompts, and retrieves feedback from GPT-4o.
 ### Details:
-다양한 음성 샘플을 사용하여 피치 감지의 정확도를 평가합니다. 테스트 결과를 바탕으로 알고리즘을 조정하여 정확도를 향상시킵니다.
+Implement the backend logic to accept user input, generate prompts, call the GPT-4o API, and return the feedback.
 
-## 4. 반응성 보장 [pending]
-### Dependencies: 7.1, 7.2, 7.3
-### Description: 앱의 반응성을 테스트하고 최적화합니다.
+## 4. Refine API Response Data [pending]
+### Dependencies: 7.3
+### Description: Clean and format the feedback text from GPT-4o into a user-friendly JSON structure.
 ### Details:
-UI와 피치 감지 기능이 실시간으로 원활하게 작동하는지 확인합니다. 성능 병목 현상을 식별하고 최적화하여 사용자 경험을 개선합니다.
+Strip unnecessary content from the API response and structure the feedback in a clear, concise JSON format.
+
+## 5. Integrate and Test API Functionality [pending]
+### Dependencies: 7.1, 7.2, 7.3, 7.4
+### Description: Conduct integration testing to ensure the API works seamlessly with the GPT-4o client and prompt design.
+### Details:
+Perform end-to-end testing of the API to confirm all components interact correctly and produce the desired feedback.
 
