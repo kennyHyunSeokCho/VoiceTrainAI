@@ -1,7 +1,7 @@
 # Task ID: 4
 # Title: RVC V2 음성 모델 훈련 설정
 # Status: pending
-# Dependencies: 3
+# Dependencies: 3, 12
 # Priority: high
 # Description: RVC V2를 사용하여 개인화된 음성 모델을 훈련하기 위한 백엔드를 구성합니다.
 # Details:

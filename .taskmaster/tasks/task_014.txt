@@ -1,7 +1,7 @@
 # Task ID: 14
 # Title: 프론트엔드 사용자 인터페이스 개발
 # Status: pending
-# Dependencies: 13
+# Dependencies: 1
 # Priority: medium
 # Description: Flutter를 사용하여 모바일 앱 UI를 설계하고 구현합니다.
 # Details:
@@ -11,39 +11,33 @@
 사용성 테스트 및 UI 응답성 검사를 수행합니다. 크로스 플랫폼 기능을 검증합니다.
 
 # Subtasks:
-## 1. 보안 감사 계획 수립 [pending]
+## 1. Flutter 프로젝트 설정 [pending]
 ### Dependencies: None
-### Description: AI 보컬 트레이닝 앱의 보안 감사를 위한 계획을 수립합니다.
+### Description: Flutter 프로젝트를 생성하고, 폴더 구조를 설정하며, 필수 라이브러리를 추가합니다.
 ### Details:
-감사 범위 정의, 필요한 리소스 식별, 감사 일정 수립
+Flutter SDK를 설치하고, 새로운 프로젝트를 생성한 후, 필요한 폴더 구조를 설정합니다. pubspec.yaml 파일에 필요한 라이브러리를 추가합니다.
 
-## 2. 컴플라이언스 표준 검토 [pending]
+## 2. 상태 관리 설정 [pending]
 ### Dependencies: 14.1
-### Description: 앱이 준수해야 할 컴플라이언스 표준을 검토합니다.
+### Description: Riverpod 또는 Bloc을 사용하여 앱의 상태 관리 아키텍처를 설계하고 설정합니다.
 ### Details:
-관련 법규 및 산업 표준 조사, 앱의 현재 상태와 비교 분석
+앱의 상태 관리를 위해 Riverpod 또는 Bloc을 선택하고, 해당 패키지를 설치한 후, 기본적인 상태 관리 구조를 설정합니다.
 
-## 3. 취약점 분석 및 침투 테스트 계획 [pending]
-### Dependencies: 14.2
-### Description: 앱의 취약점을 분석하고 침투 테스트 계획을 수립합니다.
+## 3. UI 디자인 시스템 구현 [pending]
+### Dependencies: 14.1
+### Description: Figma 디자인을 바탕으로 공통 UI 컴포넌트와 테마를 코드로 구현합니다.
 ### Details:
-위협 모델링, 테스트 범위 및 방법론 정의
+Figma에서 제공된 디자인을 참고하여 버튼, 입력 필드, 카드 등의 공통 UI 컴포넌트와 색상, 폰트 등의 테마를 구현합니다.
 
-## 4. 침투 테스트 수행 [pending]
+## 4. 주요 화면 UI 구현 [pending]
 ### Dependencies: 14.3
-### Description: 계획된 침투 테스트를 수행하여 보안 취약점을 식별합니다.
+### Description: 로그인/회원가입, 메인 대시보드, 노래 목록, 녹음 화면 등 주요 화면의 UI를 구현합니다.
 ### Details:
-도구 및 스크립트를 사용하여 시스템 및 네트워크 테스트, 결과 기록
+각 화면의 레이아웃을 설계하고, 필요한 위젯을 사용하여 UI를 구현합니다.
 
-## 5. 보안 감사 결과 문서화 [pending]
-### Dependencies: 14.4
-### Description: 보안 감사 및 침투 테스트의 결과를 문서화합니다.
+## 5. API 연동 및 네트워킹 설정 [pending]
+### Dependencies: 14.2, 14.4
+### Description: 백엔드 API와 통신하기 위한 네트워킹 레이어를 설정하고, Dio 또는 http 라이브러리를 구성합니다.
 ### Details:
-발견된 취약점 및 컴플라이언스 불일치 사항 기록, 개선 권고사항 포함
-
-## 6. 개선 조치 계획 수립 [pending]
-### Dependencies: 14.5
-### Description: 문서화된 결과를 바탕으로 개선 조치 계획을 수립합니다.
-### Details:
-취약점 수정 우선순위 결정, 수정 작업 일정 수립
+Dio 또는 http 라이브러리를 사용하여 API 호출을 위한 네트워킹 레이어를 설정하고, 필요한 엔드포인트와 데이터 모델을 정의합니다.
 

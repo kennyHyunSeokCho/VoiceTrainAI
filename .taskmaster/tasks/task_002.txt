@@ -1,7 +1,7 @@
 # Task ID: 2
 # Title: 사용자 인증 구현
 # Status: pending
-# Dependencies: 1
+# Dependencies: 12, 13, 14
 # Priority: high
 # Description: Firebase Auth를 사용하여 Kakao/Google OAuth 및 SMS 인증을 통한 사용자 인증 개발.
 # Details:

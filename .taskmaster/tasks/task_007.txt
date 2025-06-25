@@ -1,7 +1,7 @@
 # Task ID: 7
 # Title: GPT-4o 통합을 통한 자연어 피드백
 # Status: pending
-# Dependencies: 6
+# Dependencies: 6, 8
 # Priority: medium
 # Description: 노래 분석을 기반으로 자연어 피드백을 생성하기 위해 GPT-4o를 사용합니다.
 # Details:

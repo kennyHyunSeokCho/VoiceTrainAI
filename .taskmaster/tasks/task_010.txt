@@ -1,54 +1,43 @@
 # Task ID: 10
 # Title: 행동 로그 인사이트 시각화 생성
 # Status: pending
-# Dependencies: 9
+# Dependencies: 9, 11, 14
 # Priority: medium
-# Description: 사용자 연습 기록 및 성과 인사이트를 시각화합니다.
+# Description: 사용자의 연습 활동 데이터를 수집, 분석하여 성장 추적 및 개인화된 인사이트를 시각적으로 제공하는 대시보드 시스템을 구현합니다.
 # Details:
-사용자 연습 데이터를 수집하고 Plotly 또는 Chart.js를 사용하여 시각화합니다. Flutter WebView에 인사이트 대시보드를 구현합니다.
+사용자의 보컬 연습 활동을 자동으로 로깅하고, 시간에 따른 피치 정확도, 감정 표현력, 음역대 확장 등의 성장 지표를 분석합니다. Chart.js 또는 Plotly를 사용하여 직관적인 그래프와 차트를 생성하고, Flutter WebView를 통해 모바일 앱에 임베드된 대시보드로 사용자에게 개인화된 인사이트를 제공합니다.
 
 # Test Strategy:
-데이터 정확도 및 시각화 명확성을 확인합니다. 대시보드의 상호작용성 및 성능을 테스트합니다.
+데이터의 정확성 및 시각화의 명확성을 확인합니다. 대시보드의 상호작용성과 성능을 테스트하여 사용자가 원활하게 인사이트를 얻을 수 있도록 합니다.
 
 # Subtasks:
-## 1. FastAPI 배포 환경 설정 [pending]
+## 1. 사용자 행동 로그 데이터 모델 설계 [pending]
 ### Dependencies: None
-### Description: FastAPI 애플리케이션을 배포할 환경을 설정합니다.
+### Description: 사용자의 연습 활동 데이터를 위한 로그 스키마를 정의합니다.
 ### Details:
-1. Python 가상 환경을 생성하고 FastAPI 및 필요한 패키지를 설치합니다.
-2. Dockerfile을 작성하여 FastAPI 애플리케이션을 컨테이너화합니다.
-3. Docker Compose를 사용하여 데이터베이스와 함께 FastAPI를 실행할 수 있도록 설정합니다.
-4. Nginx를 리버스 프록시로 설정하여 FastAPI에 대한 요청을 처리합니다.
+연습 시간, 피치 점수, 감정 표현력, 선호 장르 등의 데이터를 포함하는 데이터 모델을 설계합니다.
 
-## 2. 데이터 저장소 통합 [pending]
+## 2. 로그 수집 시스템 구현 [pending]
 ### Dependencies: 10.1
-### Description: FastAPI 애플리케이션과 데이터 저장소를 통합합니다.
+### Description: 사용자 연습 활동을 자동으로 로깅하는 API 및 실시간 데이터 수집 시스템을 개발합니다.
 ### Details:
-1. PostgreSQL 데이터베이스를 설정하고 필요한 테이블을 생성합니다.
-2. SQLAlchemy를 사용하여 데이터베이스 모델을 정의합니다.
-3. FastAPI 애플리케이션에서 데이터베이스 연결을 설정하고 CRUD 엔드포인트를 구현합니다.
+사용자의 보컬 연습 활동을 자동으로 기록하는 API를 개발하고, 실시간으로 데이터를 수집하여 저장하는 시스템을 구현합니다.
 
-## 3. WebSocket 지원 설정 [pending]
-### Dependencies: 10.1
-### Description: FastAPI 애플리케이션에 WebSocket 지원을 추가합니다.
+## 3. 데이터 분석 엔진 개발 [pending]
+### Dependencies: 10.2
+### Description: 성장 추세 분석, 약점 분석, 개선 포인트 도출을 위한 알고리즘을 개발합니다.
 ### Details:
-1. FastAPI에서 WebSocket 라우트를 설정합니다.
-2. 클라이언트와 서버 간의 실시간 통신을 위한 WebSocket 핸들러를 구현합니다.
-3. WebSocket 연결 상태를 관리하고 메시지 전송 로직을 추가합니다.
+수집된 데이터를 기반으로 사용자의 성장 추세를 분석하고, 약점을 파악하여 개선 포인트를 도출하는 알고리즘을 개발합니다.
 
-## 4. 로드 테스트 계획 수립 [pending]
-### Dependencies: 10.1, 10.2, 10.3
-### Description: 애플리케이션의 성능을 평가하기 위한 로드 테스트 계획을 수립합니다.
+## 4. 시각화 컴포넌트 개발 [pending]
+### Dependencies: 10.3
+### Description: Chart.js 또는 Plotly를 사용하여 직관적인 그래프와 차트를 생성합니다.
 ### Details:
-1. Locust 또는 JMeter와 같은 도구를 사용하여 로드 테스트 시나리오를 작성합니다.
-2. 주요 API 엔드포인트에 대한 부하를 시뮬레이션할 테스트 케이스를 정의합니다.
-3. 테스트 환경을 설정하고 초기 테스트를 실행하여 결과를 분석합니다.
+분석된 데이터를 시각적으로 표현하기 위해 Chart.js 또는 Plotly를 사용하여 다양한 그래프와 차트를 개발합니다.
 
-## 5. 로드 테스트 실행 및 결과 분석 [pending]
+## 5. Flutter WebView 대시보드 통합 [pending]
 ### Dependencies: 10.4
-### Description: 로드 테스트를 실행하고 결과를 분석하여 성능 개선점을 도출합니다.
+### Description: 모바일 앱에 상호작용 가능한 대시보드를 임베드합니다.
 ### Details:
-1. 설정된 로드 테스트를 실행하여 애플리케이션의 성능을 측정합니다.
-2. 테스트 결과를 수집하고 응답 시간, 처리량, 오류율 등을 분석합니다.
-3. 성능 병목 지점을 식별하고 개선 방안을 제안합니다.
+Flutter WebView를 사용하여 모바일 앱에 대시보드를 통합하고, 사용자에게 개인화된 인사이트를 제공합니다.
 

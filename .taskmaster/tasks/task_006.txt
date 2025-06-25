@@ -1,7 +1,7 @@
 # Task ID: 6
 # Title: 실시간 음정 시각화 개발
 # Status: pending
-# Dependencies: 5
+# Dependencies: 5, 14
 # Priority: medium
 # Description: 노래 재생 중 실시간 음정 시각화를 위한 UI를 만듭니다.
 # Details:

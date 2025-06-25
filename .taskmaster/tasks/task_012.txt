@@ -11,35 +11,33 @@ RESTful API 및 WebSocket 서비스를 위해 FastAPI를 설정합니다. 확장
 API 엔드포인트 및 WebSocket 연결을 테스트합니다. 확장성 및 보안 조치를 검증합니다.
 
 # Subtasks:
-## 1. 현재 성능 분석 [pending]
+## 1. FastAPI 프로젝트 설정 [pending]
 ### Dependencies: None
-### Description: AI 보컬 트레이닝 앱의 현재 성능을 분석하여 최적화가 필요한 부분을 식별합니다.
+### Description: FastAPI 프로젝트의 기본 구조를 설정하고, 주요 의존성을 관리합니다.
 ### Details:
-1. 앱의 주요 성능 지표(KPI) 정의
-2. 현재 성능 데이터 수집 및 분석
-3. 성능 병목 현상 및 개선 가능 영역 식별
+FastAPI 프로젝트를 생성하고, 필요한 패키지와 의존성을 requirements.txt 또는 pyproject.toml에 추가합니다.
 
-## 2. 최적화 구현 [pending]
+## 2. 환경 변수 관리 [pending]
 ### Dependencies: 12.1
-### Description: 식별된 성능 병목 현상을 해결하기 위한 최적화 작업을 수행합니다.
+### Description: 개발, 스테이징, 프로덕션 환경에 대한 설정 파일을 구성합니다.
 ### Details:
-1. 코드 최적화: 비효율적인 알고리즘 개선
-2. 데이터베이스 쿼리 최적화
-3. 리소스 사용량 감소를 위한 메모리 관리 개선
+.env 파일을 사용하여 환경별 설정을 관리하고, python-decouple 또는 dotenv 패키지를 사용하여 환경 변수를 로드합니다.
 
-## 3. 개선 사항 테스트 [pending]
-### Dependencies: 12.2
-### Description: 구현된 최적화가 성능에 미치는 영향을 테스트합니다.
+## 3. Docker 컨테이너화 [pending]
+### Dependencies: 12.1, 12.2
+### Description: FastAPI 애플리케이션을 Dockerize하여 배포 용이성을 확보합니다.
 ### Details:
-1. 테스트 케이스 작성 및 실행
-2. 성능 지표 비교 분석
-3. 최적화 전후 성능 차이 평가
+Dockerfile을 작성하여 FastAPI 애플리케이션을 컨테이너화하고, docker-compose를 사용하여 로컬 개발 환경을 설정합니다.
 
-## 4. 변경 사항 문서화 [pending]
-### Dependencies: 12.3
-### Description: 최적화 및 테스트 결과를 문서화하여 향후 참조할 수 있도록 합니다.
+## 4. API 라우터 및 미들웨어 설정 [pending]
+### Dependencies: 12.1
+### Description: API 엔드포인트를 위한 라우터를 구성하고, 로깅 및 CORS와 같은 미들웨어를 설정합니다.
 ### Details:
-1. 최적화 구현 세부사항 기록
-2. 테스트 결과 및 성능 개선 사항 문서화
-3. 향후 개선을 위한 제안 사항 포함
+FastAPI의 APIRouter를 사용하여 엔드포인트를 구성하고, CORS 및 로깅 미들웨어를 추가합니다.
+
+## 5. 기본 배포 설정 [pending]
+### Dependencies: 12.3, 12.4
+### Description: AWS 또는 GCP와 같은 클라우드 플랫폼에 초기 배포를 위한 설정을 구성하고, Nginx를 리버스 프록시로 설정합니다.
+### Details:
+AWS EC2 또는 GCP Compute Engine에 Docker 컨테이너를 배포하고, Nginx를 사용하여 리버스 프록시를 설정합니다.
 
