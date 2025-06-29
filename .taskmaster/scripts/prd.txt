@@ -2,7 +2,7 @@
 Task 와 Subtasks들은 한국어로 설명되어야함 
 
 Overview
-AI Vocal Training System(AVTS)은 사용자가 자신의 음성을 녹음하여 개인화된 음성 합성 모델을 만들고, 노래를 따라 부르며 실시간 피드백을 받을 수 있는 AI 기반 보컬 트레이닝 앱이다. 이 앱은 기존 보컬 교육에서 부족했던 실시간 피드백, 개인화된 학습, 감정 및 스타일 분석 기능을 통합하여, 초보자부터 입시생까지 폭넓은 사용자가 자기주도적으로 실력을 향상시킬 수 있도록 돕는다.
+AI Vocal Training System(AVTS)은 사용자가 자신의 음성을 녹음하여 개인화된 음성 합성 모델을 만들고, 노래를 따라 부르며 실시간 피드백을 받을 수 있는 AI 기반 보컬 트레이닝 앱이다. 이 앱은 기존 보컬 교육에서 부족했던 실시간 피드백, 개인화된 학습, RVC 기반 음성 비교 분석 기능을 통합하여, 초보자부터 입시생까지 폭넓은 사용자가 자기주도적으로 실력을 향상시킬 수 있도록 돕는다.
 
 Core Features
 Personal Voice Model Generation (RVC V2 기반)
@@ -15,16 +15,16 @@ Real-Time Pitch Visualization
 노래가 재생되면 노래방처럼 곡의 기준 음정을 시간에 따라 화면에 출력하며, 사용자가 노래를 부를 때 실시간으로 pitch(f0)를 추출하여 시각적으로 비교해 보여준다.
 
 LLM-Based Natural Language Feedback (GPT-4o)
-피치, 리듬, 발음 정확도 등의 분석 결과를 GPT-4o에 전달하여 자연어 기반 피드백을 생성한다. 예: “고음 구간에서 음정이 흔들렸습니다. 복식호흡 연습을 권장합니다.”
+피치, 리듬, 발음 정확도 등의 분석 결과를 GPT-4o에 전달하여 자연어 기반 피드백을 생성한다. 예: "고음 구간에서 음정이 흔들렸습니다. 복식호흡 연습을 권장합니다."
 
-Emotion Recognition Feedback
-감정이 레이블링된 데이터셋을 기반으로 사용자의 노래 감정을 분석하고, 원곡 감정과 비교하여 감정 전달력 피드백을 제공한다. MFCC, Energy, Whisper 등을 활용한다.
+RVC V2 기반 음성 비교 피드백
+RVC V2 모델을 활용하여 사용자의 노래를 원곡 가수의 목소리로 변환하고, 원곡-변환된 노래-사용자 실제 녹음을 3-way 비교 분석한다. 피치, 톤, 발음의 차이를 정량화하여 구체적인 가이드라인을 제공한다. 예: "2분 15초 구간에서 음정이 반음 높습니다. 가수 스타일에 더 가깝게 부르려면..." 이 기능은 사용자가 특정 가수의 창법을 학습하고 모방할 수 있도록 도와준다.
 
 Vocal Range & Timbre-Based Recommendation
 사용자의 음역대(F0 최대/최소)를 추출하고, ECAPA-TDNN 등을 통해 음색 특징을 분석하여, 비슷한 음역대·음색을 가진 가수의 곡을 추천한다.
 
 Behavior Log Insight Visualization
-사용자의 연습 이력(시간, 장르, 감정 피드백 등)을 저장하고, 실력 변화 및 패턴을 그래프로 시각화하여 트래킹할 수 있게 한다.
+사용자의 연습 이력(시간, 장르, RVC 비교 분석 등)을 저장하고, 실력 변화 및 패턴을 그래프로 시각화하여 트래킹할 수 있게 한다.
 
 Singing Style Analysis & Matching
 vibrato, pitch bending, syllable variation 등 창법 특징을 분석하고, 유사한 스타일을 가진 가수와 비교 분석하여 매칭 피드백을 제공한다.
@@ -34,7 +34,7 @@ User Experience
 
 노래 재생 시, 노래방처럼 곡의 기준 음정이 시간 순서에 따라 화면에 출력되며, 사용자의 실시간 피치가 함께 시각적으로 표시된다.
 
-노래 후에는 피치, 감정, 창법 등을 종합적으로 분석한 피드백이 제공된다.
+노래 후에는 피치, RVC 기반 음성 비교, 창법 등을 종합적으로 분석한 피드백이 제공된다. 특히 RVC로 변환된 가수 버전과의 상세 비교를 통해 구체적인 개선점을 제시한다.
 
 사용자 유형은 일반 노래 연습자, 취미 보컬, 입시생, 보컬 유튜버 등을 포함한다.
 
@@ -49,7 +49,9 @@ Voice Modeling: PyTorch 기반 RVC V2 학습 및 inference 서버
 
 Pitch Analysis: CREPE 또는 YIN, pyin
 
-Emotion Recognition: MFCC, Energy, Whisper, Wav2Vec2.0
+Audio Comparison: DTW (Dynamic Time Warping), MFCC, Mel-spectrogram 비교
+
+RVC Voice Conversion: Real-time audio processing pipeline
 
 Timbre Analysis: ECAPA-TDNN, Speaker Embedding
 
@@ -80,7 +82,7 @@ Phase 2 – 고도화 기능
 
 GPT-4o 기반 자연어 피드백
 
-감정 분석 및 감정 피드백
+RVC V2 기반 음성 비교 분석 및 가이드라인 제공
 
 음역대·음색 기반 곡 추천
 
@@ -111,11 +113,15 @@ Logical Dependency Chain
 
 사용자의 노래 실시간 입력을 분석하고 노래방처럼 음정을 시각화하는 기능은 합성 곡이 준비된 후 작동하며, 사용자 경험에 가장 직접적인 영향을 줌.
 
+RVC V2 기반 음성 비교 피드백 시스템 구현
+
+RVC 모델이 완성되고 사용자 녹음 데이터가 충분히 수집된 후, 원곡-변환음성-사용자녹음을 3-way 비교하여 구체적인 가이드라인을 제공할 수 있음.
+
 GPT-4o 기반 피드백 생성
 
-실시간 피치 분석 데이터와 감정/리듬 정보가 수집된 뒤, 이를 기반으로 GPT-4o에게 피드백 요청을 보낼 수 있음.
+실시간 피치 분석 데이터와 RVC 비교 분석 정보가 수집된 뒤, 이를 기반으로 GPT-4o에게 피드백 요청을 보낼 수 있음.
 
-감정 인식, 음역대/음색 분석 기능 연동
+음역대/음색 분석 기능 연동
 
 노래 데이터가 충분히 수집되고 피치/에너지/스펙트럼 정보가 확보된 후 작동 가능. 초기엔 오프라인 처리로 시작 가능.
 
@@ -134,19 +140,22 @@ RVC 모델 학습 시간 지연
 피치 분석 정확도 부족
 → CREPE 기반 고정도 알고리즘 활용 및 모바일 최적화
 
+RVC 음성 변환 품질 및 속도 문제
+→ 모델 최적화 및 GPU 서버 활용, 사전 처리된 변환 음성 캐싱
+
 GPT-4o API 사용 비용 부담
 → 입력 압축 및 사용자당 호출 제한 적용
 
-감정/창법 분석 정확도 부족
-→ 학습 데이터 품질 향상 및 정제된 feature engineering 지속
+음성 비교 분석 정확도 부족
+→ DTW 알고리즘 최적화 및 다양한 오디오 feature 조합 실험
 
 인증 API 장애 가능성
 → 이메일 기반 로그인 및 OAuth 대체 옵션 제공
 
 Appendix
-사용 데이터셋: RAVDESS, EmoDB, NSynth, 커버 음원 DB
+사용 데이터셋: RAVDESS, EmoDB, NSynth, 커버 음원 DB, RVC 학습용 가수 음성 데이터
 
-활용 모델 및 기술: RVC V2, GPT-4o, CREPE, librosa, Whisper, ECAPA-TDNN, DTW
+활용 모델 및 기술: RVC V2, GPT-4o, CREPE, librosa, DTW, MFCC, Mel-spectrogram, ECAPA-TDNN
 
 참고 서비스: Smule, Yousician, SingSharp, Vocaloid Editor
 
