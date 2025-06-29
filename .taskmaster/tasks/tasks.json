@@ -470,58 +470,57 @@
       },
       {
         "id": 8,
-        "title": "감정 인식 피드백 구현",
-        "description": "사용자 노래의 감정적 내용을 분석하고 피드백을 제공합니다.",
+        "title": "RVC V2 기반 음성 비교 피드백 구현",
+        "description": "RVC V2 모델을 사용하여 사용자의 노래를 가수 목소리로 변환하고, 원곡과 비교하여 잘못 부른 부분을 찾아 가이드라인을 제공합니다.",
         "status": "pending",
         "dependencies": [
-          6
+          "4"
         ],
         "priority": "medium",
-        "details": "MFCC, Energy, Whisper를 사용하여 감정적 내용을 분석합니다. 원래 노래의 감정과 비교하여 피드백을 제공합니다. 적절한 머신러닝 모델을 사용하여 구현합니다.",
-        "testStrategy": "라벨이 지정된 데이터셋으로 감정 인식 정확성을 테스트합니다. 피드백의 명확성과 유용성을 확인합니다.",
+        "details": "Task 4번에서 구현된 RVC V2 모델 훈련 결과를 활용하여 음성 비교 및 피드백 시스템을 구축합니다. 오디오 비교 알고리즘 (DTW, MFCCs, 스펙트럴 분석)을 사용하여 잘못 부른 구간 감지 및 분석 시스템을 구현합니다. 실시간 피드백 생성 및 가이드라인 제공 API와 사용자 친화적인 비교 시각화 인터페이스를 제공합니다.",
+        "testStrategy": "다양한 장르와 난이도의 노래로 음성 변환 품질과 비교 분석 정확도를 테스트합니다. 실제 보컬 트레이너의 피드백과 시스템 결과를 비교하여 검증합니다.",
         "subtasks": [
           {
             "id": 1,
-            "title": "LLM 서버 설정",
-            "description": "AI 보컬 트레이닝 앱을 위한 LLM 서버를 설정합니다.",
-            "dependencies": [],
-            "details": "서버 환경을 구성하고 필요한 라이브러리 및 패키지를 설치합니다. LLM 모델을 다운로드하고 서버에 배포합니다.",
+            "title": "RVC 변환된 음성 데이터 준비",
+            "description": "Task 4번의 결과물을 활용하여 비교를 위한 데이터를 준비합니다.",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [],
+            "details": "1. Task 4번에서 생성된 변환된 음성 데이터를 수집\n2. 원곡 및 사용자 음성과 함께 비교를 위한 데이터셋 구성\n3. 데이터 품질 검증 및 전처리",
+            "testStrategy": "Ensure that the prepared data is correctly formatted and ready for comparison analysis."
           },
           {
             "id": 2,
-            "title": "피드백 엔드포인트 구현",
-            "description": "사용자 피드백을 수집하고 처리할 수 있는 엔드포인트를 구현합니다.",
+            "title": "3-way 오디오 비교 분석 알고리즘 구현",
+            "description": "원곡, 변환된 버전, 실제 사용자 녹음을 3-way 비교하여 잘못 부른 부분을 감지합니다.",
+            "status": "pending",
             "dependencies": [
               1
             ],
-            "details": "RESTful API를 설계하고 엔드포인트를 구현합니다. 피드백 데이터를 수집하고 저장할 수 있는 데이터베이스를 설정합니다.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Use DTW, MFCCs, and spectral analysis to detect discrepancies in pitch, timing, and pronunciation between the recordings.\n1. MFCC(멜 주파수 켑스트럴 계수) 특징 추출\n2. DTW(Dynamic Time Warping) 정렬 알고리즘 구현\n3. 음정 차이 분석 (F0 추출 및 비교)\n4. 박자/리듬 분석 (템포 및 비트 감지)\n5. 스펙트럴 분석을 통한 음색/발음 비교\n6. 에러 구간 세그멘테이션 및 분류\n7. 비교 결과 데이터 구조 설계",
+            "testStrategy": "Run tests with known discrepancies to ensure the algorithm accurately identifies errors."
           },
           {
             "id": 3,
-            "title": "노래 데이터 처리",
-            "description": "사용자의 노래 데이터를 처리하여 LLM 모델에 입력할 수 있는 형식으로 변환합니다.",
-            "dependencies": [
-              1
-            ],
-            "details": "오디오 데이터를 텍스트로 변환하는 알고리즘을 구현합니다. 변환된 데이터를 LLM 모델에 입력할 수 있는 형식으로 정제합니다.",
+            "title": "실시간 피드백 및 가이드라인 시스템 개발",
+            "description": "감지된 오류 구간에 대해 구체적인 피드백과 개선 가이드라인을 제공하는 시스템을 구현합니다.",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              2
+            ],
+            "details": "Design a feedback mechanism that offers specific advice on pitch, timing, and pronunciation errors detected in the user's singing.\n1. 오류 타입별 피드백 메시지 템플릿 작성 (음정, 박자, 발음)\n2. 개선 방안 추천 알고리즘 구현\n3. 피드백 생성 API 엔드포인트 (/generate-feedback POST)\n4. 음성 가이드 생성 (TTS로 발음 교정 예시)\n5. 연습 방법 제안 시스템\n6. 난이도별 맞춤 가이드라인 제공\n7. 진행률 추적 및 학습 기록 관리",
+            "testStrategy": "Validate the feedback system by comparing its output against expert evaluations of the same recordings."
           },
           {
             "id": 4,
-            "title": "피드백 관련성 테스트",
-            "description": "LLM 모델이 제공하는 피드백의 관련성을 테스트하고 평가합니다.",
+            "title": "음성 비교 시각화 인터페이스 개발",
+            "description": "사용자가 쉽게 이해할 수 있는 시각적 비교 인터페이스를 구현합니다.",
+            "status": "pending",
             "dependencies": [
-              2,
               3
             ],
-            "details": "테스트 케이스를 작성하고 다양한 시나리오에서 피드백의 정확성과 관련성을 평가합니다. 결과를 분석하여 개선점을 도출합니다.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create an interface that displays waveforms and spectrograms to help users understand their singing performance compared to the original.\n1. 파형(Waveform) 시각화 컴포넌트 개발\n2. 스펙트로그램 비교 뷰 구현\n3. 3-way 동기화된 오디오 플레이어 (원곡/변환/사용자)\n4. 오류 구간 하이라이팅 및 클릭 네비게이션\n5. 음정 그래프 및 피치 컨투어 표시\n6. 실시간 재생 위치 동기화\n7. 반응형 웹 인터페이스 구현 (Vue.js/React)\n8. 모바일 친화적 터치 제스처 지원",
+            "testStrategy": "Conduct user testing to ensure the interface is intuitive and effectively communicates the comparison results."
           }
         ]
       },
