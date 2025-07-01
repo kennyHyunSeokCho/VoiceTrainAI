@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'record/recording_provider.dart';
+import 'features/record/providers/recording_provider.dart';
 
 // 웹 환경 조건부 import
-import 'web_download_stub.dart'
-    if (dart.library.html) 'web_download_web.dart';
+import 'core/utils/web_download_stub.dart'
+    if (dart.library.html) 'core/utils/web_download_web.dart';
 
 void main() {
   runApp(const MyApp());

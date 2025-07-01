@@ -18,8 +18,8 @@ import 'dart:io';     // File, Directory 등 파일 시스템 접근을 위한 �
 // 웹 환경에서 파일 다운로드를 위한 조건부 import
 // 웹 환경일 때만 web_download_web.dart를 import하고, 
 // 다른 환경에서는 web_download_stub.dart를 import
-import '../web_download_stub.dart'
-    if (dart.library.html) '../web_download_web.dart';
+import '../../../core/utils/web_download_stub.dart'
+    if (dart.library.html) '../../../core/utils/web_download_web.dart';
 
 // 📱 녹음된 음성 파일의 정보를 담는 데이터 모델 클래스
 // 각 녹음 파일의 메타데이터를 구조화하여 관리합니다.
