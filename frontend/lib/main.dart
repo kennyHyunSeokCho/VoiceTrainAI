@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/record/providers/recording_provider.dart';
+import 'features/record/widgets/audio_threshold_control_widget.dart';
 
 // 웹 환경 조건부 import
 import 'core/utils/web_download_stub.dart'
@@ -53,22 +54,47 @@ class VoiceTrainingApp extends StatelessWidget {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 🎤 녹음 상태 및 시간 표시
-                  _buildRecordingStatus(recordingProvider),
-                  
-                  const SizedBox(height: 60),
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - 
+                               kToolbarHeight - 
+                               MediaQuery.of(context).padding.top - 
+                               MediaQuery.of(context).padding.bottom - 48,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 🎤 녹음 상태 및 시간 표시
+                    _buildRecordingStatus(recordingProvider),
+                    
+                    const SizedBox(height: 40),
 
-                  // 🎵 메인 녹음 버튼
-                  _buildMainRecordButton(context, recordingProvider),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // 💡 간단한 안내 메시지
+                    // 🎚️ 데시벨 임계값 컨트롤
+                    Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: AudioThresholdControlWidget(),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+
+                    // 🎵 메인 녹음 버튼
+                    _buildMainRecordButton(context, recordingProvider),
+                    
+                    const SizedBox(height: 40),
+                    
+                                      // 💡 간단한 안내 메시지
                   _buildHelpText(recordingProvider),
                 ],
+                ),
+                ),
               ),
             ),
           );
@@ -94,9 +120,13 @@ class VoiceTrainingApp extends StatelessWidget {
             ),
           ),
           child: Icon(
-            provider.isRecording ? Icons.graphic_eq : Icons.mic_none,
+            provider.isRecording 
+                ? (provider.isActuallyRecording ? Icons.graphic_eq : Icons.mic_none_outlined)
+                : Icons.mic_none,
             size: 60,
-            color: provider.isRecording ? Colors.red : Colors.grey[600],
+            color: provider.isRecording 
+                ? (provider.isActuallyRecording ? Colors.red : Colors.orange)
+                : Colors.grey[600],
           ),
         ),
         
@@ -106,19 +136,23 @@ class VoiceTrainingApp extends StatelessWidget {
         if (provider.isRecording) ...[
           Text(
             _formatDuration(provider.recordingDuration),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 48,
               fontWeight: FontWeight.w300,
               fontFamily: 'monospace',
-              color: Colors.red,
+              color: provider.isActuallyRecording ? Colors.red : Colors.orange,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '녹음 중...',
+            provider.waitingForVoice 
+                ? '🎤 음성을 기다리는 중...' 
+                : provider.isActuallyRecording 
+                    ? '🔴 실제 녹음 중!' 
+                    : '녹음 중...',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[600],
+              color: provider.isActuallyRecording ? Colors.red : Colors.orange,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -296,18 +330,30 @@ class VoiceTrainingApp extends StatelessWidget {
   // 도움말 텍스트
   Widget _buildHelpText(RecordingProvider provider) {
     if (provider.isRecording) {
-      return Text(
-        '버튼을 눌러 녹음을 중지하세요',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey[600],
-          height: 1.5,
-        ),
-      );
+      if (provider.waitingForVoice) {
+        return Text(
+          '🎚️ 임계값 설정에 따라 음성을 기다리고 있습니다\n더 큰 소리로 말하거나 임계값을 낮춰보세요',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.orange[700],
+            height: 1.5,
+          ),
+        );
+      } else {
+        return Text(
+          '🔴 실제 녹음 중입니다!\n버튼을 눌러 녹음을 중지하세요',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.red[600],
+            height: 1.5,
+          ),
+        );
+      }
     } else {
       return Text(
-        '큰 버튼을 눌러 녹음을 시작하세요\n${kIsWeb ? '완료 후 자동으로 다운로드됩니다' : '파일이 로컬에 저장됩니다'}',
+        '큰 버튼을 눌러 녹음을 시작하세요\n🎚️ 위의 임계값 설정으로 잡음을 차단할 수 있습니다\n${kIsWeb ? '완료 후 자동으로 다운로드됩니다' : '파일이 로컬에 저장됩니다'}',
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 16,
