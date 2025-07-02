@@ -26,3 +26,17 @@ node_modules/
 
 # API keys and sensitive configuration
 .cursor/mcp.json
+
+# 보컬 분리 테스트 폴더들 (용량이 클 수 있어서 제외)
+backend/src/vocal/test_data/
+backend/src/vocal/test_result/
+
+# Python 관련
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
