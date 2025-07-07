@@ -40,3 +40,7 @@ __pycache__/
 venv/
 env/
 ENV/
+
+data/music_file/
+data/music_png/
+data/info/
