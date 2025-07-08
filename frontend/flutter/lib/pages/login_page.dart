@@ -95,7 +95,12 @@ class LoginPage extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         elevation: 5,
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          146,
+                          119,
+                          223,
+                        ),
                         foregroundColor: Colors.white,
                         minimumSize: Size(
                           double.infinity,
