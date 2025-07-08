@@ -1,18 +1,59 @@
 import 'package:flutter/material.dart';
-import 'pages/login_page.dart';
+import 'models/song.dart';
+import 'pages/record_page.dart';
+import 'pages/ai_vocal_loading_page.dart';
+import 'pages/ai_vocal_ready_page.dart';
+import 'pages/ai_vocal_play_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Song sampleSong = Song(
+    title: 'Never Ending Story',
+    artist: 'IU',
+    albumCover: '',
+    difficulty: '중급',
+    range: 'F3 ~ D5',
+    lyrics: '그리워하면 언젠가 만나게 되는 ... (가사 생략)',
+    duration: '3:40',
+  );
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: const LoginPage(),
+      title: 'SingSang',
+      initialRoute: '/ai-vocal-loading',
+      onGenerateRoute: (settings) {
+        if (settings.name == '/ai-vocal-loading') {
+          return MaterialPageRoute(
+            builder: (context) => AiVocalLoadingPage(),
+            settings: RouteSettings(arguments: sampleSong),
+          );
+        }
+        if (settings.name == '/ai-vocal-ready') {
+          return MaterialPageRoute(
+            builder: (context) => AiVocalReadyPage(),
+            settings: RouteSettings(arguments: sampleSong),
+          );
+        }
+        if (settings.name == '/ai-vocal-play') {
+          return MaterialPageRoute(
+            builder: (context) => AiVocalPlayPage(),
+            settings: RouteSettings(arguments: sampleSong),
+          );
+        }
+        if (settings.name == '/record') {
+          return MaterialPageRoute(
+            builder: (context) => RecordPage(),
+            settings: RouteSettings(arguments: sampleSong),
+          );
+        }
+        return null;
+      },
     );
   }
 }
+
+// ... (MyApp 클래스 등)
