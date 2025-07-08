@@ -38,7 +38,8 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _controller = TextEditingController();
   Timer? _debounce;
 
-  int _selectedFilter = 0; // 0=노래명,1=가수명,2=유저명
+  // 0=노래명,1=가수명,2=유저명
+  int _selectedFilter = 0;
   final _filterLabels = ['노래명', '가수명', '유저명'];
 
   final List<SearchResult> _allResults = List.generate(
@@ -52,23 +53,36 @@ class _SearchPageState extends State<SearchPage> {
     ),
   );
 
+  // 추천 검색어 목록
+  final List<String> _suggestions = [
+    'Never Ending Story',
+    '미인',
+    'Drowning',
+    'IU',
+    'WOODZ',
+  ];
+
+  // 검색 결과 필터링
   List<SearchResult> get _filteredResults {
     final q = _controller.text.trim();
-    if (q.isEmpty) return _allResults;
-
     final isHangul = RegExp(r'[ㄱ-ㅎㅏ-ㅣ가-힣]').hasMatch(q);
+
     return _allResults.where((r) {
       if (isHangul) {
         return r.songTitle.contains(q) ||
             r.singer.contains(q) ||
             r.nickname.contains(q);
       }
-      final field = [
-        r.songTitle.toLowerCase().contains(q.toLowerCase()),
-        r.singer.toLowerCase().contains(q.toLowerCase()),
-        r.nickname.toLowerCase().contains(q.toLowerCase()),
-      ][_selectedFilter];
-      return field;
+      switch (_selectedFilter) {
+        case 0:
+          return r.songTitle.toLowerCase().contains(q.toLowerCase());
+        case 1:
+          return r.singer.toLowerCase().contains(q.toLowerCase());
+        case 2:
+          return r.nickname.toLowerCase().contains(q.toLowerCase());
+        default:
+          return false;
+      }
     }).toList();
   }
 
@@ -105,7 +119,7 @@ class _SearchPageState extends State<SearchPage> {
                   bottom: BorderSide(
                     width: 2,
                     color: _selectedFilter == i
-                        ? Colors.purpleAccent
+                        ? Color(0xff8917E3)
                         : Colors.transparent,
                   ),
                 ),
@@ -116,9 +130,7 @@ class _SearchPageState extends State<SearchPage> {
                   fontWeight: _selectedFilter == i
                       ? FontWeight.w600
                       : FontWeight.w400,
-                  color: _selectedFilter == i
-                      ? Colors.purpleAccent
-                      : Colors.grey,
+                  color: _selectedFilter == i ? Color(0xff8917E3) : Colors.grey,
                 ),
               ),
             ),
@@ -130,6 +142,8 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final query = _controller.text.trim();
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -157,79 +171,104 @@ class _SearchPageState extends State<SearchPage> {
             _buildFilterTabs(),
             const SizedBox(height: 12),
 
-            // ▶ 검색 결과 리스트 (각 항목 가로 배치)
+            // 검색 전: 추천 검색어 / 검색 후: 결과 리스트
             Expanded(
-              child: _filteredResults.isEmpty
-                  ? const Center(child: Text('검색 결과가 없습니다'))
-                  : ListView.separated(
-                      itemCount: _filteredResults.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, idx) {
-                        final r = _filteredResults[idx];
-                        return Row(
-                          children: [
-                            // 앨범 커버(50×50), 네트워크 실패 시 에셋으로 대체
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: r.albumImageUrl.isNotEmpty
-                                  // 실제 앨범 URL
-                                  ? Image.network(
-                                      r.albumImageUrl,
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) => Image.asset(
-                                        'assets/images/cat.webp', // 대체 asset
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  // 앨범 URL이 없으면 바로 플레이스홀더 URL
-                                  : Image.asset(
-                                      'assets/images/cat.webp',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // 제목·가수명
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r.songTitle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    r.singer,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+              child: query.isEmpty ? _buildSuggestions() : _buildResults(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('추천 검색어', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _suggestions.map((s) {
+            return ActionChip(
+              label: Text(s),
+              onPressed: () {
+                _controller.text = s;
+                _controller.selection = TextSelection.collapsed(
+                  offset: s.length,
+                );
+                setState(() {});
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResults() {
+    final results = _filteredResults;
+    if (results.isEmpty) {
+      return const Center(child: Text('검색 결과가 없습니다'));
+    }
+    return ListView.separated(
+      itemCount: results.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, idx) {
+        final r = results[idx];
+        return Row(
+          children: [
+            // 앨범 자켓
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: r.albumImageUrl.isNotEmpty
+                  ? Image.network(
+                      r.albumImageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Image.asset(
+                        'assets/images/cat.webp',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
+                      'assets/images/cat.webp',
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // 제목·가수명
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r.songTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    r.singer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
