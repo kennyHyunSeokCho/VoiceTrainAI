@@ -17,85 +17,58 @@ class SongCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const SongDetailPage()),
         );
       },
-      child: Container(
-        width: 160,
+      child: SizedBox(
+        width: 140, // 카드 가로 크기
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 앨범커버
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  imagePath,
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stack) {
-                    return Container(
-                      width: 160,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.music_note,
-                        color: Colors.grey[400],
-                        size: 40,
-                      ),
-                    );
-                  },
-                ),
+            // 1) 앨범 아트/커버 이미지
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                imagePath,
+                width: 140,
+                height: 140,
+                fit: BoxFit.contain,
+                // 에러 시 로딩 이미지 아이콘
+                errorBuilder: (context, error, stack) {
+                  return Container(
+                    width: 140,
+                    height: 90,
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
-            // 곡 제목
+            // 2) 제목
             Text(
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                letterSpacing: -0.3,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 4),
 
-            // 아티스트
+            // 3) 아티스트
             Text(
               artist,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w400,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
