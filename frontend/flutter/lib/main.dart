@@ -29,14 +29,12 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       theme: ThemeData(
         // Google Fonts를 사용한 한글 폰트 설정
-        textTheme: GoogleFonts.notoSansKrTextTheme(
-          Theme.of(context).textTheme,
-        ),
-        
+        textTheme: GoogleFonts.notoSansKrTextTheme(Theme.of(context).textTheme),
+        scaffoldBackgroundColor: Colors.white, // 스캐폴드 배경색(흰색)
         // 색상 테마
         primarySwatch: Colors.purple,
         primaryColor: Colors.purple[600],
-        
+
         // 앱바 테마
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
@@ -48,7 +46,7 @@ class MyApp extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        
+
         // 버튼 테마
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -58,22 +56,16 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // 입력 필드 테마
         inputDecorationTheme: InputDecorationTheme(
-          labelStyle: GoogleFonts.notoSansKr(
-            color: Colors.grey[600],
-          ),
-          hintStyle: GoogleFonts.notoSansKr(
-            color: Colors.grey[500],
-          ),
+          labelStyle: GoogleFonts.notoSansKr(color: Colors.grey[600]),
+          hintStyle: GoogleFonts.notoSansKr(color: Colors.grey[500]),
         ),
       ),
       onGenerateRoute: (settings) {
         if (settings.name == '/login') {
-          return MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          );
+          return MaterialPageRoute(builder: (context) => const LoginPage());
         }
         if (settings.name == '/record') {
           final song = settings.arguments as Song;

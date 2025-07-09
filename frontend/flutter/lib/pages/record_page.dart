@@ -70,18 +70,27 @@ class _RecordPageState extends State<RecordPage> {
               Center(
                 child: Column(
                   children: [
-                    Text(song.artist, style: TextStyle(fontSize: 18, color: Colors.grey[700])),
+                    Text(
+                      song.artist,
+                      style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                    ),
                     SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Chip(
-                          label: Text(song.difficulty, style: TextStyle(fontSize: 14)),
+                          label: Text(
+                            song.difficulty,
+                            style: TextStyle(fontSize: 14),
+                          ),
                           backgroundColor: Colors.deepPurple[50],
                         ),
                         SizedBox(width: 8),
                         Chip(
-                          label: Text(song.range, style: TextStyle(fontSize: 14)),
+                          label: Text(
+                            song.range,
+                            style: TextStyle(fontSize: 14),
+                          ),
                           backgroundColor: Colors.deepPurple[50],
                         ),
                       ],
@@ -96,9 +105,15 @@ class _RecordPageState extends State<RecordPage> {
                 children: [
                   Icon(Icons.star, color: Colors.amber, size: 20),
                   SizedBox(width: 4),
-                  Text('76/100', style: TextStyle(fontSize: 16, color: Colors.deepPurple)),
+                  Text(
+                    '76/100',
+                    style: TextStyle(fontSize: 16, color: Colors.deepPurple),
+                  ),
                   SizedBox(width: 12),
-                  Text('+5points', style: TextStyle(fontSize: 12, color: Colors.purple[200])),
+                  Text(
+                    '+5points',
+                    style: TextStyle(fontSize: 12, color: Colors.purple[200]),
+                  ),
                 ],
               ),
               SizedBox(height: 24),
@@ -106,7 +121,11 @@ class _RecordPageState extends State<RecordPage> {
               Center(
                 child: Text(
                   '🎵 Lyrics',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
                 ),
               ),
               SizedBox(height: 8),
@@ -132,7 +151,10 @@ class _RecordPageState extends State<RecordPage> {
               // 재생 바
               Row(
                 children: [
-                  Text('1:20', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  Text(
+                    '1:20',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
                   Expanded(
                     child: Slider(
                       value: 80,
@@ -143,7 +165,10 @@ class _RecordPageState extends State<RecordPage> {
                       inactiveColor: Colors.grey[300],
                     ),
                   ),
-                  Text(song.duration, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  Text(
+                    song.duration,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
                 ],
               ),
               SizedBox(height: 8),
@@ -152,12 +177,21 @@ class _RecordPageState extends State<RecordPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      icon: Icon(isRecording ? Icons.pause_circle_filled : Icons.mic, size: 28),
-                      label: Text(isRecording ? '일시정지' : '녹음 시작', style: TextStyle(fontSize: 18)),
+                      icon: Icon(
+                        isRecording ? Icons.pause_circle_filled : Icons.mic,
+                        size: 28,
+                        color: Colors.black,
+                      ),
+                      label: Text(
+                        isRecording ? '일시정지' : '녹음 시작',
+                        style: TextStyle(fontSize: 18, color: Colors.black),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         minimumSize: Size(double.infinity, 54),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
                         elevation: 2,
                       ),
                       onPressed: () {

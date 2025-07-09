@@ -8,9 +8,11 @@ class AiVocalPlayPage extends StatelessWidget {
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('AI Vocal 합성', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          'AI Vocal 합성',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -127,7 +129,10 @@ class AiVocalPlayPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.deepPurple[50],
                         borderRadius: BorderRadius.circular(20),
@@ -143,7 +148,10 @@ class AiVocalPlayPage extends StatelessWidget {
                     ),
                     SizedBox(width: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.purple[50],
                         borderRadius: BorderRadius.circular(20),
@@ -277,10 +285,7 @@ class AiVocalPlayPage extends StatelessWidget {
                     SizedBox(width: 8),
                     Text(
                       'AI 보컬 합성 완료',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 ),

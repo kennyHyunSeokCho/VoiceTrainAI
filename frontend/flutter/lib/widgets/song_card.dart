@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import '../pages/song_detail_page.dart';
 
 class SongCard extends StatelessWidget {
-  final String imagePath;
   final String title;
   final String artist;
+  final String imagePath;
 
   const SongCard({
     super.key,
-    required this.imagePath,
     required this.title,
     required this.artist,
+    required this.imagePath,
   });
 
   @override
@@ -21,7 +21,13 @@ class SongCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SongDetailPage()),
+          MaterialPageRoute(
+            builder: (context) => SongDetailPage(
+              title: title,
+              artist: artist,
+              imagePath: imagePath,
+            ),
+          ),
         );
       },
       child: SizedBox(

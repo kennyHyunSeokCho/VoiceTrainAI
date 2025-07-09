@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/song_card.dart';
+import 'song_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -12,24 +13,40 @@ class _SearchPageState extends State<SearchPage> {
   bool _isSearching = false;
 
   final List<String> categories = ['전체', '가요', '팝', '랩', '재즈', '클래식'];
-  
+
   // 예시 곡 데이터
   final List<Map<String, String>> songs = [
-    {'title': 'Never Ending Story', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
-    {'title': 'Drowning', 'artist': 'WOODZ', 'image': 'assets/images/no_pain.webp'},
-    {'title': 'FAMOUS', 'artist': 'Allday Project', 'image': 'assets/images/famous.webp'},
-    {'title': 'NO PAIN', 'artist': '실리카겔', 'image': 'assets/images/no_pain.webp'},
+    {
+      'title': 'Never Ending Story',
+      'artist': 'IU',
+      'image': 'assets/images/iu.webp',
+    },
+    {
+      'title': 'Drowning',
+      'artist': 'WOODZ',
+      'image': 'assets/images/no_pain.webp',
+    },
+    {
+      'title': 'FAMOUS',
+      'artist': 'Allday Project',
+      'image': 'assets/images/famous.webp',
+    },
+    {
+      'title': 'NO PAIN',
+      'artist': '실리카겔',
+      'image': 'assets/images/no_pain.webp',
+    },
     {'title': 'Celebrity', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
     {'title': 'Blueming', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
   ];
 
   List<Map<String, String>> get filteredSongs {
     if (_searchController.text.isEmpty) return songs;
-    
+
     return songs.where((song) {
       final query = _searchController.text.toLowerCase();
       return song['title']!.toLowerCase().contains(query) ||
-             song['artist']!.toLowerCase().contains(query);
+          song['artist']!.toLowerCase().contains(query);
     }).toList();
   }
 
@@ -56,17 +73,17 @@ class _SearchPageState extends State<SearchPage> {
               },
               decoration: InputDecoration(
                 hintText: '노래, 아티스트 검색',
-                hintStyle: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 16,
-                ),
+                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
                 prefixIcon: Icon(
                   Icons.search,
                   color: Colors.grey[600],
                   size: 20,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -82,7 +99,7 @@ class _SearchPageState extends State<SearchPage> {
             itemBuilder: (context, index) {
               final category = categories[index];
               final isSelected = _selectedCategory == category;
-              
+
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -104,7 +121,9 @@ class _SearchPageState extends State<SearchPage> {
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.grey[600],
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                 ),
@@ -127,17 +146,13 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildSearchResults() {
     final results = filteredSongs;
-    
+
     if (results.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               '검색 결과가 없습니다',
@@ -150,10 +165,7 @@ class _SearchPageState extends State<SearchPage> {
             SizedBox(height: 8),
             Text(
               '다른 키워드로 검색해보세요',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -165,62 +177,74 @@ class _SearchPageState extends State<SearchPage> {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final song = results[index];
-        return Container(
-          margin: EdgeInsets.only(bottom: 16),
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  song['image']!,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
+        return InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SongDetailPage(
+                  title: song['title']!,
+                  artist: song['artist']!,
+                  imagePath: song['image']!,
                 ),
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      song['title']!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      song['artist']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+            );
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: 16),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-              ),
-              Icon(
-                Icons.play_circle_outline,
-                color: Colors.grey[600],
-                size: 24,
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    song['image']!,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song['title']!,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        song['artist']!,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.grey[600],
+                  size: 24,
+                ),
+              ],
+            ),
           ),
         );
       },
