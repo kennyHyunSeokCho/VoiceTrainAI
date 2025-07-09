@@ -1,274 +1,309 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-
-/// 검색 결과 모델
-class SearchResult {
-  final String songTitle;
-  final String singer;
-  final String nickname;
-  final String count;
-  final String albumImageUrl;
-
-  SearchResult({
-    required this.songTitle,
-    required this.singer,
-    required this.nickname,
-    required this.count,
-    required this.albumImageUrl,
-  });
-
-  factory SearchResult.fromJson(Map<String, dynamic> json) {
-    return SearchResult(
-      songTitle: json['song_title'] as String? ?? '',
-      singer: json['singer'] as String? ?? '',
-      nickname: json['nickname'] as String? ?? '',
-      count: json['count'] as String? ?? '0',
-      albumImageUrl: json['album_image_url'] as String? ?? '',
-    );
-  }
-}
+import '../widgets/song_card.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  _SearchPageState createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-  final TextEditingController _controller = TextEditingController();
-  Timer? _debounce;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedCategory = '전체';
+  bool _isSearching = false;
 
-  // 0=노래명,1=가수명,2=유저명
-  int _selectedFilter = 0;
-  final _filterLabels = ['노래명', '가수명', '유저명'];
-
-  final List<SearchResult> _allResults = List.generate(
-    20,
-    (i) => SearchResult(
-      songTitle: i.isEven ? 'Never Ending Story' : '미인',
-      singer: i.isEven ? 'IU' : '신용재',
-      nickname: i % 3 == 0 ? 'Alice' : 'Bob',
-      count: '${i + 3}k',
-      albumImageUrl: i.isEven ? 'https://via.placeholder.com/50' : '',
-    ),
-  );
-
-  // 추천 검색어 목록
-  final List<String> _suggestions = [
-    'Never Ending Story',
-    '미인',
-    'Drowning',
-    'IU',
-    'WOODZ',
+  final List<String> categories = ['전체', '가요', '팝', '랩', '재즈', '클래식'];
+  
+  // 예시 곡 데이터
+  final List<Map<String, String>> songs = [
+    {'title': 'Never Ending Story', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
+    {'title': 'Drowning', 'artist': 'WOODZ', 'image': 'assets/images/no_pain.webp'},
+    {'title': 'FAMOUS', 'artist': 'Allday Project', 'image': 'assets/images/famous.webp'},
+    {'title': 'NO PAIN', 'artist': '실리카겔', 'image': 'assets/images/no_pain.webp'},
+    {'title': 'Celebrity', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
+    {'title': 'Blueming', 'artist': 'IU', 'image': 'assets/images/iu.webp'},
   ];
 
-  // 검색 결과 필터링
-  List<SearchResult> get _filteredResults {
-    final q = _controller.text.trim();
-    final isHangul = RegExp(r'[ㄱ-ㅎㅏ-ㅣ가-힣]').hasMatch(q);
-
-    return _allResults.where((r) {
-      if (isHangul) {
-        return r.songTitle.contains(q) ||
-            r.singer.contains(q) ||
-            r.nickname.contains(q);
-      }
-      switch (_selectedFilter) {
-        case 0:
-          return r.songTitle.toLowerCase().contains(q.toLowerCase());
-        case 1:
-          return r.singer.toLowerCase().contains(q.toLowerCase());
-        case 2:
-          return r.nickname.toLowerCase().contains(q.toLowerCase());
-        default:
-          return false;
-      }
+  List<Map<String, String>> get filteredSongs {
+    if (_searchController.text.isEmpty) return songs;
+    
+    return songs.where((song) {
+      final query = _searchController.text.toLowerCase();
+      return song['title']!.toLowerCase().contains(query) ||
+             song['artist']!.toLowerCase().contains(query);
     }).toList();
-  }
-
-  void _onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () => setState(() {}));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _controller.removeListener(_onSearchChanged);
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildFilterTabs() {
-    return Row(
-      children: [
-        for (var i = 0; i < _filterLabels.length; i++)
-          GestureDetector(
-            onTap: () => setState(() => _selectedFilter = i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    width: 2,
-                    color: _selectedFilter == i
-                        ? Color(0xff8917E3)
-                        : Colors.transparent,
-                  ),
-                ),
-              ),
-              child: Text(
-                _filterLabels[i],
-                style: TextStyle(
-                  fontWeight: _selectedFilter == i
-                      ? FontWeight.w600
-                      : FontWeight.w400,
-                  color: _selectedFilter == i ? Color(0xff8917E3) : Colors.grey,
-                ),
-              ),
-            ),
-          ),
-        const Spacer(),
-      ],
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final query = _controller.text.trim();
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 검색창
-            TextField(
-              controller: _controller,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: '검색어를 입력하세요',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onSubmitted: (_) => setState(() {}),
-            ),
-
-            const SizedBox(height: 12),
-            _buildFilterTabs(),
-            const SizedBox(height: 12),
-
-            // 검색 전: 추천 검색어 / 검색 후: 결과 리스트
-            Expanded(
-              child: query.isEmpty ? _buildSuggestions() : _buildResults(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestions() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('추천 검색어', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _suggestions.map((s) {
-            return ActionChip(
-              label: Text(s),
-              onPressed: () {
-                _controller.text = s;
-                _controller.selection = TextSelection.collapsed(
-                  offset: s.length,
-                );
-                setState(() {});
+        // 검색바
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _isSearching = value.isNotEmpty;
+                });
               },
-            );
-          }).toList(),
+              decoration: InputDecoration(
+                hintText: '노래, 아티스트 검색',
+                hintStyle: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 16,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+            ),
+          ),
+        ),
+
+        // 카테고리 필터
+        Container(
+          height: 40,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              final isSelected = _selectedCategory == category;
+              
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                },
+                child: Container(
+                  margin: EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.black87 : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? Colors.black87 : Colors.grey[300]!,
+                    ),
+                  ),
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        SizedBox(height: 20),
+
+        // 검색 결과 또는 추천 곡
+        Expanded(
+          child: _isSearching || _selectedCategory != '전체'
+              ? _buildSearchResults()
+              : _buildRecommendations(),
         ),
       ],
     );
   }
 
-  Widget _buildResults() {
-    final results = _filteredResults;
+  Widget _buildSearchResults() {
+    final results = filteredSongs;
+    
     if (results.isEmpty) {
-      return const Center(child: Text('검색 결과가 없습니다'));
-    }
-    return ListView.separated(
-      itemCount: results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, idx) {
-        final r = results[idx];
-        return Row(
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 앨범 자켓
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: r.albumImageUrl.isNotEmpty
-                  ? Image.network(
-                      r.albumImageUrl,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Image.asset(
-                        'assets/images/cat.webp',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Image.asset(
-                      'assets/images/cat.webp',
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                    ),
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey[400],
             ),
-
-            const SizedBox(width: 12),
-
-            // 제목·가수명
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r.songTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    r.singer,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
+            SizedBox(height: 16),
+            Text(
+              '검색 결과가 없습니다',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '다른 키워드로 검색해보세요',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
               ),
             ),
           ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final song = results[index];
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  song['image']!,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song['title']!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      song['artist']!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.play_circle_outline,
+                color: Colors.grey[600],
+                size: 24,
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildRecommendations() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            '인기 검색어',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          height: 40,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            itemCount: ['IU', 'BTS', 'NewJeans', 'LE SSERAFIM'].length,
+            itemBuilder: (context, index) {
+              final keyword = ['IU', 'BTS', 'NewJeans', 'LE SSERAFIM'][index];
+              return Container(
+                margin: EdgeInsets.only(right: 12),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  keyword,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 24),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            '추천 곡',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: songs.length,
+            itemBuilder: (context, index) {
+              final song = songs[index];
+              return SongCard(
+                imagePath: song['image']!,
+                title: song['title']!,
+                artist: song['artist']!,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
