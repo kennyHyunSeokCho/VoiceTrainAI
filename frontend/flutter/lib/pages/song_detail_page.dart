@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/song.dart';
 
 class SongDetailPage extends StatelessWidget {
   const SongDetailPage({super.key});
@@ -51,7 +52,25 @@ class SongDetailPage extends StatelessWidget {
               children: [
                 _iconLabel(Icons.schedule, '연습현황'),
                 _iconLabel(Icons.history, '피드백 히스토리'),
-                _iconLabel(Icons.library_music, '녹음파일'),
+                GestureDetector(
+                  onTap: () {
+                    final song = Song(
+                      title: 'Never Ending Story',
+                      artist: 'IU',
+                      albumCover: 'assets/images/iu.webp',
+                      difficulty: '중급',
+                      range: 'F3 ~ D5',
+                      lyrics: '''손 닿을 수 없는 저기 어딘가\n오늘도 난 숨 쉬고 있지만\n너와 머물던 작은 의자 위에\n같은 모습의 바람이 지나네\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대여\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에''',
+                      duration: '3:40',
+                    );
+                    Navigator.pushNamed(
+                      context,
+                      '/ai-vocal-loading',
+                      arguments: song,
+                    );
+                  },
+                  child: _iconLabel(Icons.graphic_eq, 'AI 보컬 합성'),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -143,7 +162,23 @@ class SongDetailPage extends StatelessWidget {
           width: double.infinity,
           child: FloatingActionButton.extended(
             backgroundColor: const Color(0xFF9A82DB),
-            onPressed: () {},
+            onPressed: () {
+              // Song 객체 생성 (실제 데이터 연동 시 수정)
+              final song = Song(
+                title: 'Never Ending Story',
+                artist: 'IU',
+                albumCover: 'assets/images/iu.webp',
+                difficulty: '중급',
+                range: 'F3 ~ D5',
+                lyrics: '''손 닿을 수 없는 저기 어딘가\n오늘도 난 숨 쉬고 있지만\n너와 머물던 작은 의자 위에\n같은 모습의 바람이 지나네\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대여\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에''',
+                duration: '3:40',
+              );
+              Navigator.pushNamed(
+                context,
+                '/record',
+                arguments: song,
+              );
+            },
             label: const Text('녹음하기', style: TextStyle(color: Colors.black54)),
             icon: const Icon(Icons.mic, color: Colors.black54),
           ),
