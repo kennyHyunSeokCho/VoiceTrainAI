@@ -42,10 +42,7 @@ class HomePage extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.purple[400]!,
-                  Colors.pink[400]!,
-                ],
+                colors: [Colors.purple[400]!, Colors.pink[400]!],
               ),
             ),
             child: Stack(
@@ -117,7 +114,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 140,
+            height: 170,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -177,7 +174,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 200,
+            height: 220, // 넉넉하게! (새로운 곡과 동일)
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -276,7 +273,9 @@ class HomePage extends StatelessWidget {
                 LinearProgressIndicator(
                   value: 0.85,
                   backgroundColor: Colors.grey[300],
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[600]!),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.purple[600]!,
+                  ),
                 ),
               ],
             ),
@@ -308,7 +307,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 200,
+            height: 220, // 넉넉하게!
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -379,11 +378,7 @@ class LevelCard extends StatelessWidget {
                 color: iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                Icons.music_note,
-                color: iconColor,
-                size: 20,
-              ),
+              child: Icon(Icons.music_note, color: iconColor, size: 20),
             ),
             SizedBox(height: 12),
             Text(
@@ -397,10 +392,7 @@ class LevelCard extends StatelessWidget {
             SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             Spacer(),
             Row(

@@ -27,50 +27,47 @@ class SongCard extends StatelessWidget {
       child: Container(
         width: 160,
         child: Column(
+          mainAxisSize: MainAxisSize.min, // 추가!
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 앨범커버
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.music_note,
+                          color: Colors.grey[400],
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  imagePath,
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stack) {
-                    return Container(
-                      width: 160,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.music_note,
-                        color: Colors.grey[400],
-                        size: 40,
-                      ),
-                    );
-                  },
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 8), // 12 → 8로 줄여도 충분
             // 곡 제목
             Text(
               title,
@@ -84,8 +81,7 @@ class SongCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 4),
-
+            const SizedBox(height: 2), // 4 → 2로 줄임
             // 아티스트
             Text(
               artist,
