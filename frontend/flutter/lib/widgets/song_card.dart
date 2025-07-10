@@ -47,7 +47,7 @@ class SongCard extends StatelessWidget {
                 errorBuilder: (context, error, stack) {
                   return Container(
                     width: 140,
-                    height: 90,
+                    height: 140,
                     color: Colors.grey.shade200,
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
