@@ -234,9 +234,28 @@ class PitchAnalyzer:
                 return None
             
             print(f"📋 총 {len(analysis_data)}개의 분석 데이터 발견")
-            
-            # 2. Adaptive Weight 계산
-            weighted_data = self._calculate_adaptive_weights(analysis_data)
+
+            # 2. 가중치 전략 분기
+            if len(analysis_data) <= 3:
+                print("\n⚖️ 초기 3회는 동일 가중치(평균)로 누적 프로필을 계산합니다.")
+                weighted_data = []
+                for data in analysis_data:
+                    weighted_data.append({
+                        **data,
+                        'weights': {
+                            'time_weight': 1.0,
+                            'stability_weight': 1.0,
+                            'frequency_weight': 1.0,
+                            'quality_weight': 1.0,
+                            'combined_weight': 1.0
+                        },
+                        'days_ago': 0
+                    })
+                weight_strategy = 'uniform'
+            else:
+                print("\n⚖️ 4회차부터는 스마트 가중치(시간, 안정성, 품질 등)로 누적 프로필을 계산합니다.")
+                weighted_data = self._calculate_adaptive_weights(analysis_data)
+                weight_strategy = 'adaptive'
             
             # 3. 누적 프로필 계산
             accumulated_profile = self._calculate_weighted_accumulated_profile(weighted_data)
@@ -251,7 +270,7 @@ class PitchAnalyzer:
                 'last_updated': datetime.now().isoformat(),
                 'total_analyses': len(analysis_data),
                 'profile_type': 'adaptive_weighted_accumulated',
-                'weight_strategy': 'time_stability_frequency'
+                'weight_strategy': weight_strategy
             }
             
             # 5. 로컬에 누적 프로필 저장
