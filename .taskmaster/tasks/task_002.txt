@@ -3,56 +3,71 @@
 # Status: pending
 # Dependencies: 12, 13, 14
 # Priority: high
-# Description: Firebase Auth를 사용하여 Kakao/Google OAuth 및 SMS 인증을 통한 사용자 인증 개발.
+# Description: Spring Security + JWT + OAuth2를 사용하여 Kakao/Google OAuth 및 SMS 인증을 통한 사용자 인증 개발.
 # Details:
-FastAPI를 사용하여 백엔드에 Firebase Auth를 통합합니다. Kakao 및 Google의 OAuth와 SMS 인증을 구현합니다. 인증 토큰 및 사용자 데이터의 안전한 처리를 보장합니다. 프론트엔드에서 인증을 처리하기 위해 Flutter의 Firebase SDK를 사용합니다.
+Spring Boot 3.x + Spring Security를 사용하여 백엔드에 JWT 기반 인증을 통합합니다. Kakao 및 Google의 OAuth2와 SMS 인증을 구현합니다. 인증 토큰 및 사용자 데이터의 안전한 처리를 보장하며, Supabase PostgreSQL에 사용자 정보를 저장합니다. 프론트엔드에서 인증을 처리하기 위해 Flutter의 HTTP 클라이언트와 JWT 토큰 관리를 사용합니다.
 
 # Test Strategy:
-Kakao, Google 및 SMS를 통한 로그인 및 등록 흐름을 테스트합니다. 토큰 보안 및 사용자 데이터 보호를 확인합니다.
+Kakao, Google 및 SMS를 통한 로그인 및 등록 흐름을 테스트합니다. JWT 토큰 보안 및 Spring Security 설정을 확인합니다. Supabase 연동 테스트를 수행합니다.
 
 # Subtasks:
-## 1. KakaoTalk SDK 통합 [pending]
+## 1. Spring Security 설정 [pending]
 ### Dependencies: None
-### Description: AI 보컬 트레이닝 앱에 KakaoTalk SDK를 통합합니다.
+### Description: AI 보컬 트레이닝 앱에 Spring Security를 설정하고 JWT 인증을 구성합니다.
 ### Details:
-1. Kakao Developers에 앱 등록
-2. SDK 다운로드 및 프로젝트에 추가
-3. AndroidManifest.xml에 필요한 권한 및 설정 추가
-4. 로그인 기능 구현 및 테스트
+1. Spring Security 의존성 추가 및 기본 설정
+2. JWT 토큰 생성 및 검증 로직 구현 (JwtUtils 클래스)
+3. SecurityConfig 클래스에서 인증/인가 설정
+4. UserDetailsService 커스텀 구현
+5. PasswordEncoder 설정 (BCrypt)
 
-## 2. SMS API 통합 [pending]
+## 2. OAuth2 통합 (Kakao/Google) [pending]
 ### Dependencies: None
-### Description: AI 보컬 트레이닝 앱에 SMS API를 통합합니다.
+### Description: Spring Security OAuth2를 사용하여 Kakao 및 Google 로그인을 통합합니다.
+### Details:
+1. Kakao Developers 및 Google Cloud Console에 앱 등록
+2. application.yml에 OAuth2 클라이언트 설정 추가
+3. OAuth2UserService 커스텀 구현
+4. OAuth2 로그인 성공 핸들러 구현
+5. 소셜 로그인 후 JWT 토큰 발급 로직
+
+## 3. 인증 REST API 개발 [pending]
+### Dependencies: 2.1
+### Description: 사용자 인증을 위한 Spring MVC REST 엔드포인트를 개발합니다.
+### Details:
+1. AuthController 클래스 생성 (@RestController)
+2. 회원가입/로그인/로그아웃 엔드포인트 구현
+3. JWT 토큰 갱신(refresh) 엔드포인트
+4. @Valid를 사용한 입력 데이터 검증
+5. @ControllerAdvice를 통한 글로벌 예외 처리
+
+## 4. Supabase 사용자 데이터 저장 [pending]
+### Dependencies: 2.3
+### Description: Spring Data JPA를 사용하여 Supabase PostgreSQL에 사용자 데이터를 안전하게 저장합니다.
+### Details:
+1. User 엔티티 클래스 생성 (@Entity)
+2. UserRepository 인터페이스 구현 (JpaRepository 상속)
+3. UserService 클래스에서 비즈니스 로직 구현
+4. 비밀번호 암호화 및 사용자 데이터 검증
+5. @Transactional 어노테이션을 통한 트랜잭션 관리
+
+## 5. Redis 세션 관리 [pending]
+### Dependencies: 2.3
+### Description: Spring Boot Data Redis를 사용하여 사용자 세션을 관리하는 기능을 개발합니다.
+### Details:
+1. Redis 연결 설정 (application.yml)
+2. RedisTemplate 설정 및 JWT 토큰 캐싱
+3. 세션 만료 로직 구현 (@Scheduled)
+4. 토큰 블랙리스트 관리 (로그아웃 시)
+5. Redis 기반 사용자 활성 세션 추적
+
+## 6. SMS 인증 서비스 통합 [pending]
+### Dependencies: 2.1
+### Description: Spring WebClient를 사용하여 SMS API를 통합합니다.
 ### Details:
 1. SMS API 제공업체 선택 및 계정 생성
-2. API 키 및 인증 정보 확보
-3. API 문서에 따라 SMS 전송 기능 구현
-4. SMS 전송 테스트 및 오류 처리
-
-## 3. 인증 엔드포인트 개발 [pending]
-### Dependencies: 2.1, 2.2
-### Description: 사용자 인증을 위한 엔드포인트를 개발합니다.
-### Details:
-1. 로그인 및 회원가입 엔드포인트 설계
-2. JWT 또는 OAuth2를 사용한 인증 토큰 발급
-3. 엔드포인트 보안 및 유효성 검사 구현
-4. 테스트 케이스 작성 및 검증
-
-## 4. 보안 저장소 구현 [pending]
-### Dependencies: 2.3
-### Description: 사용자 데이터를 안전하게 저장하기 위한 보안 저장소를 구현합니다.
-### Details:
-1. 데이터 암호화 방식 선택 (AES, RSA 등)
-2. 암호화 및 복호화 모듈 개발
-3. 사용자 데이터 저장 및 조회 기능 구현
-4. 보안 취약점 테스트 및 개선
-
-## 5. 세션 관리 [pending]
-### Dependencies: 2.3
-### Description: 사용자 세션을 관리하는 기능을 개발합니다.
-### Details:
-1. 세션 생성 및 만료 로직 구현
-2. 세션 저장소 선택 및 설정 (Redis 등)
-3. 세션 유효성 검사 및 갱신 기능 개발
-4. 부하 테스트 및 성능 최적화
+2. SmsService 클래스 구현 (@Service)
+3. Spring WebClient를 통한 SMS 발송 로직
+4. 인증번호 생성 및 Redis 캐싱
+5. SMS 인증 검증 엔드포인트 구현
 
