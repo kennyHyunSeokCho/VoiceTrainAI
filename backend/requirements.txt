@@ -1,98 +1,56 @@
-# ================================
-# DEPRECATED - 더 이상 사용하지 않음
-# ================================
-# 이 프로젝트는 Spring Boot + Maven으로 마이그레이션되었습니다.
-# 의존성 관리는 이제 pom.xml 파일에서 처리됩니다.
-# 
-# Maven 의존성 설치: mvn clean install
-# Spring Boot 실행: mvn spring-boot:run
-# 
-# 아래는 참고용으로 기존 Python 의존성 목록입니다.
-# ================================
+# Voice Training AI Backend Dependencies
 
-# FastAPI 기반 백엔드 (DEPRECATED)
-# fastapi==0.104.1
-# uvicorn[standard]==0.24.0
-# supabase==2.0.2
-# pydantic>=2.6.0
-# pydantic-settings==2.1.0
-# sqlalchemy==2.0.23
-# asyncpg>=0.30.0
-# python-multipart==0.0.6
-# python-jose[cryptography]==3.3.0
-# passlib[bcrypt]==1.7.4
-# websockets==12.0
-# librosa==0.10.1
-# numpy>=1.26.0
-# matplotlib>=3.7.0
-# torch>=2.2.0
-# torchaudio>=2.2.0
-# openai==1.3.0
-# python-dotenv==1.0.0
-# httpx>=0.24.0,<0.25.0
-# aiofiles==23.2.1
+# FastAPI 기반 백엔드
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic>=2.6.0
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+websockets==12.0
+python-dotenv==1.0.0
+httpx>=0.24.0,<0.25.0
+aiofiles==23.2.1
+
+# 오디오 처리 관련
+librosa==0.10.1
+numpy>=1.26.0
+matplotlib>=3.7.0
+torch>=2.2.0
+torchaudio>=2.2.0
+soundfile>=0.12.1
+nnAudio
 
 # 보컬 분리 관련
-# demucs>=4.0.1
+demucs>=4.0.1
 
 # 음성인식 관련
-# openai-whisper>=20231117
-# ffmpeg-python>=0.2.0
+openai-whisper>=20231117
+ffmpeg-python>=0.2.0
 
 # Google Cloud Speech-to-Text
-<<<<<<< HEAD
 google-cloud-speech>=2.21.0
 google-auth>=2.23.0
 
-yt-dlp
+# S3 업로드를 위한 AWS SDK
+boto3>=1.34.0
 
+# ssl-singer-identity 관련
+huggingface-hub>=0.16.0
+transformers>=4.30.0
+
+# 데이터 처리
 pandas
 openpyxl
 
+# 웹 스크래핑
 selenium
 beautifulsoup4
 webdriver-manager
 requests
 
-google-search-results 
-
-syncedlyrics 
-=======
-# google-cloud-speech>=2.21.0
-# google-auth>=2.23.0
-
-# S3 업로드를 위한 AWS SDK
-# boto3>=1.34.0
-
-# ssl-singer-identity 관련
-# git+https://github.com/SonyCSLParis/ssl-singer-identity.git  # 코드에서 동적 설치
-# huggingface-hub>=0.16.0  # HuggingFace Hub 지원
-# transformers>=4.30.0  # 모델 로딩용
-# soundfile>=0.12.1  # 오디오 파일 처리
-
-# 추가 유틸리티
-# python-dotenv>=0.19.0 
-
-# ================================
-# Spring Boot 마이그레이션 참고사항:
-# ================================
-# Python → Java 17
-# FastAPI → Spring Boot + Spring MVC
-# SQLAlchemy → Spring Data JPA
-# AsyncIO → Spring WebFlux + @Async
-# WebSocket → Spring WebSocket + STOMP
-# JWT → Spring Security + JWT
-# S3 → Spring Boot AWS S3 SDK
-# Database → Supabase (PostgreSQL) + Spring Data JPA
-# Caching → Spring Boot Data Redis
-# 
-# 자세한 설정은 pom.xml과 application.yml을 참고하세요. 
-
-  boto3
-  torch
-  torchvision
-  soundfile
-  librosa
-  nnAudio
-  numpy 
->>>>>>> origin/Feature_YJ
+# 기타 유틸리티
+google-search-results
+syncedlyrics
+yt-dlp
