@@ -159,26 +159,159 @@ class MyPage extends StatelessWidget {
 
               const SizedBox(height: 24),
               // 분석 요약
-              const Text(
-                '분석 요약',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '• 12월에 확실한 톤을 유지했음\n'
-                '• 일정 구간에서 목소리가 불안정하게 떨림',
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.blue.shade50, Colors.purple.shade50],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.analytics_outlined,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          '분석 요약',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _analysisItem(
+                      icon: Icons.check_circle_outline,
+                      iconColor: Colors.green,
+                      text: '12월에 확실한 톤을 유지했음',
+                      isPositive: true,
+                    ),
+                    const SizedBox(height: 12),
+                    _analysisItem(
+                      icon: Icons.warning_amber_outlined,
+                      iconColor: Colors.orange,
+                      text: '일정 구간에서 목소리가 불안정하게 떨림',
+                      isPositive: false,
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 24),
               // 다음 연습 제안
-              const Text(
-                '다음 연습 제안',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '• 중음 위주의 목소리 강화\n'
-                '• 높은 음역대 도전',
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.green.shade50, Colors.teal.shade50],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.lightbulb_outline,
+                            color: Colors.green.shade700,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          '다음 연습 제안',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _suggestionItem(
+                      icon: Icons.volume_up_outlined,
+                      text: '중음 위주의 목소리 강화',
+                      difficulty: '보통',
+                    ),
+                    const SizedBox(height: 12),
+                    _suggestionItem(
+                      icon: Icons.trending_up_outlined,
+                      text: '높은 음역대 도전',
+                      difficulty: '어려움',
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_circle_outline,
+                            color: Colors.green.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '연습 시작하기',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 80),
@@ -246,5 +379,50 @@ class MyPage extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
     ),
+  );
+
+  Widget _analysisItem({
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+    required bool isPositive,
+  }) => Row(
+    children: [
+      Icon(icon, color: iconColor, size: 20),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _suggestionItem({
+    required IconData icon,
+    required String text,
+    required String difficulty,
+  }) => Row(
+    children: [
+      Icon(icon, color: Colors.grey.shade700, size: 20),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(text, style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(
+              difficulty,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    ],
   );
 }
