@@ -562,7 +562,9 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
     // 기준선 통과 시 콜백(한 번만)
     if (!passed && _isPassingCenter()) {
       final acc = _randomAccuracy();
-      widget.onPassed(acc);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onPassed(acc);
+      });
       lastAccuracy = acc;
       passed = true;
     }

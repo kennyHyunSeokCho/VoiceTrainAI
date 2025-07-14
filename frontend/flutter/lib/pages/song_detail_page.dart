@@ -187,6 +187,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       Row(
                         children: [
                           Expanded(
+                            flex: 3,
                             child: Container(
                               height: 64,
                               decoration: BoxDecoration(
@@ -232,48 +233,51 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          Container(
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFFE0E7FF),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF8B5CF6,
-                                  ).withOpacity(0.1),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
+                          Expanded(
+                            flex: 2,
+                            child: Container(
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
-                                onTap: () {},
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.favorite_border_rounded,
-                                      color: const Color(0xFF8B5CF6),
-                                      size: 28,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      '즐겨찾기',
-                                      style: TextStyle(
+                                border: Border.all(
+                                  color: const Color(0xFFE0E7FF),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF8B5CF6,
+                                    ).withOpacity(0.1),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {},
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_border_rounded,
                                         color: const Color(0xFF8B5CF6),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
+                                        size: 28,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        '즐겨찾기',
+                                        style: TextStyle(
+                                          color: const Color(0xFF8B5CF6),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
