@@ -13,19 +13,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FF),
       body: Stack(
         children: [
-          // 배경 그라데이션
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.purple[50]!, Colors.white, Colors.pink[50]!],
-              ),
-            ),
-          ),
-
           // 메인 콘텐츠
           CustomScrollView(
             slivers: [
@@ -34,27 +24,28 @@ class _SongDetailPageState extends State<SongDetailPage> {
                 expandedHeight: 0,
                 floating: true,
                 pinned: true,
-                backgroundColor: Colors.white.withOpacity(0.8),
+                backgroundColor: const Color(0xFFF8F7FF),
                 elevation: 0,
                 leading: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: IconButton(
                     icon: Icon(
-                      Icons.arrow_back_ios,
+                      Icons.arrow_back_ios_rounded,
                       size: 20,
-                      color: Colors.black87,
+                      color: const Color(0xFF6B46C1),
                     ),
                     onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                flexibleSpace: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(color: Colors.transparent),
                   ),
                 ),
               ),
@@ -71,20 +62,22 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       // 앨범 아트 (더 큰 크기, 부드러운 그림자)
                       Center(
                         child: Container(
-                          width: 280,
-                          height: 280,
+                          width: 300,
+                          height: 300,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+                                color: const Color(
+                                  0xFF8B5CF6,
+                                ).withOpacity(0.15),
+                                blurRadius: 30,
+                                offset: const Offset(0, 12),
                               ),
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             child: Image.asset(
                               'assets/images/iu.webp',
                               fit: BoxFit.cover,
@@ -102,19 +95,19 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             Text(
                               'IU',
                               style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5,
+                                fontSize: 18,
+                                color: const Color(0xFF8B5CF6),
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.0,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Never Ending Story',
                               style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1F2937),
                                 letterSpacing: -0.5,
                               ),
                               textAlign: TextAlign.center,
@@ -123,7 +116,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // 태그 (더 세련된 디자인)
                       Center(
@@ -131,7 +124,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildTag('F3 - D5', Colors.purple[100]!),
+                            _buildTag('F3 - D5', const Color(0xFFE0E7FF)),
                             _buildDifficultyTag('중급'),
                           ],
                         ),
@@ -143,22 +136,24 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey[200]!),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                              color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildQuickAction(Icons.schedule, '연습현황'),
-                            _buildQuickAction(Icons.history, '피드백 히스토리'),
+                            _buildQuickAction(Icons.schedule_rounded, '연습현황'),
+                            _buildQuickAction(
+                              Icons.history_rounded,
+                              '피드백 히스토리',
+                            ),
                             GestureDetector(
                               onTap: () {
                                 final song = Song(
@@ -178,7 +173,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 );
                               },
                               child: _buildQuickAction(
-                                Icons.graphic_eq,
+                                Icons.graphic_eq_rounded,
                                 'AI 보컬 합성',
                               ),
                             ),
@@ -188,44 +183,49 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
                       const SizedBox(height: 32),
 
-                      // 메인 액션 버튼들 (더 세련된 디자인)
+                      // 메인 액션 버튼들 (연보라색 테마)
                       Row(
                         children: [
                           Expanded(
                             child: Container(
-                              height: 56,
+                              height: 64,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.purple[400]!,
-                                    Colors.pink[400]!,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
+                                color: const Color(0xFF8B5CF6),
+                                borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.purple[300]!.withOpacity(0.3),
-                                    blurRadius: 15,
+                                    color: const Color(
+                                      0xFF8B5CF6,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
-                              child: ElevatedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.play_arrow, size: 24),
-                                label: const Text(
-                                  '전체 듣기',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  foregroundColor: Colors.white,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {},
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.play_arrow_rounded,
+                                        color: Colors.white,
+                                        size: 32,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        '전체 듣기',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -233,39 +233,48 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           ),
                           const SizedBox(width: 16),
                           Container(
-                            height: 56,
+                            height: 64,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFE0E7FF),
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
+                                  color: const Color(
+                                    0xFF8B5CF6,
+                                  ).withOpacity(0.1),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-                            child: OutlinedButton.icon(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.favorite_border,
-                                color: Colors.grey[600],
-                              ),
-                              label: Text(
-                                '즐겨찾기',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () {},
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.favorite_border_rounded,
+                                      color: const Color(0xFF8B5CF6),
+                                      size: 28,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      '즐겨찾기',
+                                      style: TextStyle(
+                                        color: const Color(0xFF8B5CF6),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(120, 56),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                side: BorderSide.none,
                               ),
                             ),
                           ),
@@ -278,13 +287,19 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       _buildSectionTitle('Cover Song'),
                       const SizedBox(height: 20),
 
-                      // Cover Song 카드 (새로운 디자인)
+                      // Cover Song 카드 (연보라색 테마)
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[200]!),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
@@ -292,7 +307,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 image: const DecorationImage(
                                   image: AssetImage('assets/images/iu.webp'),
                                   fit: BoxFit.cover,
@@ -308,8 +323,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                     'Never Ending Story',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1F2937),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -317,16 +332,17 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                     'IU • Cover Version',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: const Color(0xFF8B5CF6),
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             Icon(
-                              Icons.play_circle_outline,
-                              color: Colors.grey[600],
-                              size: 32,
+                              Icons.play_circle_outline_rounded,
+                              color: const Color(0xFF8B5CF6),
+                              size: 36,
                             ),
                           ],
                         ),
@@ -338,16 +354,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       _buildSectionTitle('가사'),
                       const SizedBox(height: 20),
 
-                      // 가사 컨테이너 (더 세련된 디자인)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
-                        child: Text(
-                          '''손 닿을 수 없는 저기 어딘가
+                      // 가사 (완전한 중앙 정렬)
+                      Center(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            '''손 닿을 수 없는 저기 어딘가
 오늘도 난 숨 쉬고 있지만
 너와 머물던 작은 의자 위에
 같은 모습의 바람이 지나네
@@ -374,11 +387,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
 어느 영화와 같은 일들이 이뤄져 가기를
 힘겨워 한 날에 너를 지킬 수 없었던
 아름다운 시절 속에 머문 그대이기에''',
-                          style: TextStyle(
-                            height: 1.6,
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w400,
+                            style: TextStyle(
+                              height: 2.0,
+                              fontSize: 16,
+                              color: const Color(0xFF374151),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -391,30 +406,28 @@ class _SongDetailPageState extends State<SongDetailPage> {
             ],
           ),
 
-          // 하단 녹음 버튼 (더 세련된 디자인)
+          // 하단 녹음 버튼 (연보라색 테마)
           Positioned(
-            bottom: 20,
+            bottom: 24,
             left: 20,
             right: 20,
             child: Container(
-              height: 64,
+              height: 72,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.purple[400]!, Colors.pink[400]!],
-                ),
-                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFF8B5CF6),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.purple[300]!.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    color: const Color(0xFF8B5CF6).withOpacity(0.4),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
                   ),
                 ],
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   onTap: () {
                     final song = Song(
                       title: 'Never Ending Story',
@@ -431,14 +444,15 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.mic, color: Colors.white, size: 24),
+                      Icon(Icons.mic_rounded, color: Colors.white, size: 32),
                       const SizedBox(width: 12),
                       Text(
                         '녹음하기',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
@@ -454,17 +468,18 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   Widget _buildTag(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF6B46C1),
         ),
       ),
     );
@@ -474,28 +489,22 @@ class _SongDetailPageState extends State<SongDetailPage> {
     return Column(
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 60,
+          height: 60,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            color: const Color(0xFFF8F7FF),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE0E7FF)),
           ),
-          child: Icon(icon, size: 24, color: Colors.grey[700]),
+          child: Icon(icon, size: 28, color: const Color(0xFF8B5CF6)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF6B46C1),
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -505,10 +514,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: Colors.black87,
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFF1F2937),
         letterSpacing: -0.5,
       ),
     );
@@ -522,45 +531,45 @@ class _SongDetailPageState extends State<SongDetailPage> {
     switch (difficulty.toLowerCase()) {
       case '초급':
       case 'beginner':
-        backgroundColor = Colors.green[100]!;
-        textColor = Colors.green[700]!;
-        icon = Icons.star;
+        backgroundColor = const Color(0xFFDCFCE7);
+        textColor = const Color(0xFF166534);
+        icon = Icons.star_rounded;
         break;
       case '중급':
       case 'intermediate':
-        backgroundColor = Colors.orange[100]!;
-        textColor = Colors.orange[700]!;
-        icon = Icons.star;
+        backgroundColor = const Color(0xFFFEF3C7);
+        textColor = const Color(0xFF92400E);
+        icon = Icons.star_rounded;
         break;
       case '고급':
       case 'advanced':
-        backgroundColor = Colors.red[100]!;
-        textColor = Colors.red[700]!;
-        icon = Icons.star;
+        backgroundColor = const Color(0xFFFEE2E2);
+        textColor = const Color(0xFF991B1B);
+        icon = Icons.star_rounded;
         break;
       default:
-        backgroundColor = Colors.grey[100]!;
-        textColor = Colors.grey[700]!;
-        icon = Icons.star;
+        backgroundColor = const Color(0xFFF3F4F6);
+        textColor = const Color(0xFF6B7280);
+        icon = Icons.star_rounded;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: textColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: textColor.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: textColor),
+          Icon(icon, size: 18, color: textColor),
           const SizedBox(width: 6),
           Text(
             difficulty,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: textColor,
             ),
           ),

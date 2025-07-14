@@ -125,66 +125,85 @@ class _RecordPageState extends State<RecordPage> {
     final double centerLineX = barAreaWidth * 0.35; // 기준선을 좀 더 오른쪽으로
     double currentTime = progress * totalDuration;
     return Scaffold(
-      body: Container(
-        color: Color(0xFFF6F2FF),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // 상단 점수/정보
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: 16,
-                  left: 24,
-                  right: 24,
-                  bottom: 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.amber, size: 24),
-                        SizedBox(width: 6),
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          child: Text(
-                            '$score/100',
-                            key: ValueKey(score),
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple,
-                            ),
+      backgroundColor: const Color(0xFFF8F7FF),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 상단 점수/정보
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 16,
+                left: 24,
+                right: 24,
+                bottom: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        color: const Color(0xFFF59E0B),
+                        size: 24,
+                      ),
+                      SizedBox(width: 6),
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: Text(
+                          '$score/100',
+                          key: ValueKey(score),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF8B5CF6),
                           ),
                         ),
-                        SizedBox(width: 12),
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          child: Text(
-                            pointDelta > 0
-                                ? '+$pointDelta points'
+                      ),
+                      SizedBox(width: 12),
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: Text(
+                          pointDelta > 0
+                              ? '+$pointDelta points'
+                              : pointDelta < 0
+                              ? '$pointDelta points'
+                              : '',
+                          key: ValueKey(pointDelta),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: pointDelta > 0
+                                ? const Color(0xFF10B981)
                                 : pointDelta < 0
-                                ? '$pointDelta points'
-                                : '',
-                            key: ValueKey(pointDelta),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: pointDelta > 0
-                                  ? Colors.blue[400]
-                                  : pointDelta < 0
-                                  ? Colors.red[400]
-                                  : Colors.grey[400],
-                              fontWeight: FontWeight.w600,
-                            ),
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    IconButton(
+                    child: IconButton(
                       icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.pink[400] : Colors.pink[200],
-                        size: 28,
+                        isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isFavorite
+                            ? const Color(0xFFEC4899)
+                            : const Color(0xFF8B5CF6),
+                        size: 24,
                       ),
                       onPressed: () {
                         if (!mounted) return;
@@ -193,250 +212,251 @@ class _RecordPageState extends State<RecordPage> {
                         });
                       },
                     ),
-                  ],
-                ),
-              ),
-              // 노래 정보
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 0),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withOpacity(0.10),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          song.albumCover.isNotEmpty
-                              ? song.albumCover
-                              : 'assets/images/Img.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/Img.png',
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      song.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      song.artist,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildTag(
-                          song.difficulty,
-                          Colors.orange[100]!,
-                          Colors.orange[700]!,
-                        ),
-                        SizedBox(width: 8),
-                        _buildTag(
-                          song.range,
-                          Colors.purple[100]!,
-                          Colors.purple[700]!,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 18),
-              // 퍼펙트스코어 바 + 세로 기준선 (왼쪽→중앙)
-              SizedBox(
-                width: barAreaWidth,
-                height: barAreaHeight + 16,
-                child: Stack(
-                  children: [
-                    // 세로 기준선 (중앙보다 왼쪽)
-                    Positioned(
-                      left: centerLineX - 2,
-                      top: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
-                    for (int i = 0; i < melodyBars.length; i++)
-                      _MelodyBarWidget(
-                        bar: melodyBars[i],
-                        progress: progress,
-                        totalDuration: totalDuration,
-                        barAreaWidth: barAreaWidth,
-                        barAreaHeight: barAreaHeight,
-                        centerLineX: centerLineX,
-                        onPassed: (accuracy) {
-                          if (!mounted) return;
-                          setState(() {
-                            int delta = 0;
-                            switch (accuracy) {
-                              case _Accuracy.Perfect:
-                                delta = 5;
-                                break;
-                              case _Accuracy.Great:
-                                delta = 3;
-                                break;
-                              case _Accuracy.Good:
-                                delta = 0;
-                                break;
-                              case _Accuracy.Normal:
-                                delta = -3;
-                                break;
-                              case _Accuracy.Bad:
-                                delta = -5;
-                                break;
-                            }
-                            score = max(0, score + delta);
-                            pointDelta = delta;
-                          });
-                        },
-                        currentTime: currentTime,
-                        enableGradient: true,
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 18),
-              // 중앙 가사(11줄) - 클릭 이동만 지원
-              Expanded(
-                child: Center(
-                  child: _LyricSliderN(
-                    lyricLines: lyricLines,
-                    currentIndex: currentLyricIndex,
-                    visibleCount: 11, // 강조 가사 위/아래 5줄씩 보이게
-                    onTap: (idx) {
-                      if (!mounted) return;
-                      setState(() {
-                        currentLyricIndex = idx;
-                        progress = lyricLines[idx].time / totalDuration;
-                      });
-                    },
                   ),
-                ),
+                ],
               ),
-              // Spacer() 제거 (가사 중앙 배치 위해)
-              // 하단 재생 시간/재생바/컨트롤
-              Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 16,
-                  left: 24,
-                  right: 24,
-                  top: 0,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          _formatTime(progress * totalDuration),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Expanded(
-                          child: Slider(
-                            value: progress,
-                            min: 0,
-                            max: 1,
-                            onChanged: (v) {
-                              _onSeek(v);
-                            },
-                            activeColor: Colors.purple[400],
-                            inactiveColor: Colors.grey[300],
-                          ),
-                        ),
-                        Text(
-                          _formatTime(totalDuration),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
+            ),
+            // 노래 정보
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 0),
+              child: Column(
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.purple[400]!, Colors.pink[400]!],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple[300]!.withOpacity(0.15),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        song.albumCover.isNotEmpty
+                            ? song.albumCover
+                            : 'assets/images/Img.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/Img.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: _togglePlay,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                isPlaying
-                                    ? Icons.pause_circle_filled
-                                    : Icons.play_circle_fill,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    song.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    song.artist,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: const Color(0xFF8B5CF6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTag(
+                        song.difficulty,
+                        const Color(0xFFFEF3C7),
+                        const Color(0xFF92400E),
+                      ),
+                      SizedBox(width: 8),
+                      _buildTag(
+                        song.range,
+                        const Color(0xFFE0E7FF),
+                        const Color(0xFF6B46C1),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 18),
+            // 퍼펙트스코어 바 + 세로 기준선 (왼쪽→중앙)
+            SizedBox(
+              width: barAreaWidth,
+              height: barAreaHeight + 16,
+              child: Stack(
+                children: [
+                  // 세로 기준선 (중앙보다 왼쪽)
+                  Positioned(
+                    left: centerLineX - 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
+                  for (int i = 0; i < melodyBars.length; i++)
+                    _MelodyBarWidget(
+                      bar: melodyBars[i],
+                      progress: progress,
+                      totalDuration: totalDuration,
+                      barAreaWidth: barAreaWidth,
+                      barAreaHeight: barAreaHeight,
+                      centerLineX: centerLineX,
+                      onPassed: (accuracy) {
+                        if (!mounted) return;
+                        setState(() {
+                          int delta = 0;
+                          switch (accuracy) {
+                            case _Accuracy.Perfect:
+                              delta = 5;
+                              break;
+                            case _Accuracy.Great:
+                              delta = 3;
+                              break;
+                            case _Accuracy.Good:
+                              delta = 0;
+                              break;
+                            case _Accuracy.Normal:
+                              delta = -3;
+                              break;
+                            case _Accuracy.Bad:
+                              delta = -5;
+                              break;
+                          }
+                          score = max(0, score + delta);
+                          pointDelta = delta;
+                        });
+                      },
+                      currentTime: currentTime,
+                      enableGradient: false,
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: 18),
+            // 중앙 가사(11줄) - 클릭 이동만 지원
+            Expanded(
+              child: Center(
+                child: _LyricSliderN(
+                  lyricLines: lyricLines,
+                  currentIndex: currentLyricIndex,
+                  visibleCount: 11, // 강조 가사 위/아래 5줄씩 보이게
+                  onTap: (idx) {
+                    if (!mounted) return;
+                    setState(() {
+                      currentLyricIndex = idx;
+                      progress = lyricLines[idx].time / totalDuration;
+                    });
+                  },
+                ),
+              ),
+            ),
+            // Spacer() 제거 (가사 중앙 배치 위해)
+            // 하단 재생 시간/재생바/컨트롤
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 16,
+                left: 24,
+                right: 24,
+                top: 0,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _formatTime(progress * totalDuration),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: progress,
+                          min: 0,
+                          max: 1,
+                          onChanged: (v) {
+                            _onSeek(v);
+                          },
+                          activeColor: const Color(0xFF8B5CF6),
+                          inactiveColor: const Color(0xFFE5E7EB),
+                        ),
+                      ),
+                      Text(
+                        _formatTime(totalDuration),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: _togglePlay,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_fill_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              isPlaying ? '일시정지' : '재생',
+                              style: TextStyle(
                                 color: Colors.white,
-                                size: 26,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.3,
                               ),
-                              SizedBox(width: 10),
-                              Text(
-                                isPlaying ? '일시정지' : '재생',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -444,14 +464,15 @@ class _RecordPageState extends State<RecordPage> {
 
   Widget _buildTag(String text, Color bg, Color fg) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: fg.withOpacity(0.2)),
       ),
       child: Text(
         text,
-        style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
+        style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 12),
       ),
     );
   }
@@ -587,41 +608,19 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
   }
 
   Color _barColor() {
-    if (lastAccuracy == null) return Colors.purple[200]!;
+    if (lastAccuracy == null) return const Color(0xFFE0E7FF);
     switch (lastAccuracy!) {
       case _Accuracy.Perfect:
-        return Colors.blue[400]!;
+        return const Color(0xFF10B981);
       case _Accuracy.Great:
-        return Colors.green[400]!;
+        return const Color(0xFF22C55E);
       case _Accuracy.Good:
-        return Colors.yellow[700]!;
+        return const Color(0xFFF59E0B);
       case _Accuracy.Normal:
-        return Colors.purple[400]!;
+        return const Color(0xFF8B5CF6);
       case _Accuracy.Bad:
-        return Colors.red[400]!;
+        return const Color(0xFFEF4444);
     }
-  }
-
-  Color _interpolatedColor(double left, double width) {
-    // 기준선 전: 기본색, 기준선~끝: 점수색으로 점진적 변화
-    if (!widget.enableGradient || lastAccuracy == null) return _barColor();
-    double center = widget.centerLineX;
-    if (left + width < center) return Colors.purple[200]!;
-    if (left > center) return Colors.purple[200]!;
-    double ratio = ((left + width) - center) / width;
-    ratio = ratio.clamp(0.0, 1.0);
-    Color from = Colors.purple[200]!;
-    Color to = _barColor();
-    return Color.lerp(from, to, ratio)!;
-  }
-
-  _Accuracy _randomAccuracy() {
-    int r = Random().nextInt(100);
-    if (r < 20) return _Accuracy.Perfect;
-    if (r < 45) return _Accuracy.Great;
-    if (r < 70) return _Accuracy.Good;
-    if (r < 90) return _Accuracy.Normal;
-    return _Accuracy.Bad;
   }
 
   @override
@@ -640,31 +639,24 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
           boxShadow: [
             if (lastAccuracy != null)
               BoxShadow(
-                color: _barColor().withOpacity(0.18),
-                blurRadius: 6,
-                offset: Offset(0, 2),
+                color: _barColor().withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
           ],
-          color: null,
-          gradient: widget.enableGradient && lastAccuracy != null
-              ? LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    left + width < widget.centerLineX
-                        ? Colors.purple[200]!
-                        : _interpolatedColor(left, width),
-                    _barColor(),
-                  ],
-                  stops: [
-                    ((widget.centerLineX - left) / width).clamp(0.0, 1.0),
-                    1.0,
-                  ],
-                )
-              : null,
+          color: _barColor(),
         ),
       ),
     );
+  }
+
+  _Accuracy _randomAccuracy() {
+    int r = Random().nextInt(100);
+    if (r < 20) return _Accuracy.Perfect;
+    if (r < 45) return _Accuracy.Great;
+    if (r < 70) return _Accuracy.Good;
+    if (r < 90) return _Accuracy.Normal;
+    return _Accuracy.Bad;
   }
 }
 
@@ -698,10 +690,15 @@ class _LyricSliderN extends StatelessWidget {
         duration: Duration(milliseconds: 200),
         style: TextStyle(
           fontSize: isCurrent ? 28 : 16,
-          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w400,
-          color: isCurrent ? Colors.pink[400] : Colors.grey[600],
+          fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+          color: isCurrent ? const Color(0xFF8B5CF6) : const Color(0xFF6B7280),
           shadows: isCurrent
-              ? [Shadow(color: Colors.pink[100]!, blurRadius: 8)]
+              ? [
+                  Shadow(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                    blurRadius: 8,
+                  ),
+                ]
               : [],
         ),
         child: Text(
@@ -712,7 +709,7 @@ class _LyricSliderN extends StatelessWidget {
         ),
       );
       if (!isCurrent) {
-        textWidget = Opacity(opacity: 0.3, child: textWidget);
+        textWidget = Opacity(opacity: 0.4, child: textWidget);
       }
       lines.add(
         GestureDetector(
