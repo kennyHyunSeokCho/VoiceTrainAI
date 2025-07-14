@@ -199,14 +199,6 @@ class MyPage extends StatelessWidget {
     ),
   );
 
-  Widget _iconLabel(IconData icon, String label) => Column(
-    children: [
-      Icon(icon, size: 28, color: Colors.grey.shade700),
-      const SizedBox(height: 4),
-      Text(label, style: const TextStyle(fontSize: 12)),
-    ],
-  );
-
   Widget _songTile(String title) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [

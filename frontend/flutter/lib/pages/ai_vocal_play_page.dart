@@ -74,6 +74,16 @@ class AiVocalPlayPage extends StatelessWidget {
                           width: 200,
                           height: 200,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 200,
+                              height: 200,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(Icons.music_note, color: Colors.grey),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       // 재생 중 표시

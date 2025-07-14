@@ -157,6 +157,16 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                           width: 160,
                           height: 160,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 160,
+                              height: 160,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(Icons.music_note, color: Colors.grey),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       // 로딩 애니메이션 효과

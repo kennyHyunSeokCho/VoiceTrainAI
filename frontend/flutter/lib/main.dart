@@ -6,6 +6,7 @@ import 'pages/ai_vocal_loading_page.dart';
 import 'pages/ai_vocal_ready_page.dart';
 import 'pages/ai_vocal_play_page.dart';
 import 'pages/login_page.dart';
+import 'pages/admin/admin_main.dart';
 
 void main() {
   runApp(MyApp());
@@ -82,15 +83,17 @@ class MyApp extends StatelessWidget {
           );
         }
         if (settings.name == '/ai-vocal-ready') {
+          final song = settings.arguments as Song;
           return MaterialPageRoute(
             builder: (context) => AiVocalReadyPage(),
-            settings: RouteSettings(arguments: sampleSong),
+            settings: RouteSettings(arguments: song),
           );
         }
         if (settings.name == '/ai-vocal-play') {
+          final song = settings.arguments as Song;
           return MaterialPageRoute(
             builder: (context) => AiVocalPlayPage(),
-            settings: RouteSettings(arguments: sampleSong),
+            settings: RouteSettings(arguments: song),
           );
         }
         return null;

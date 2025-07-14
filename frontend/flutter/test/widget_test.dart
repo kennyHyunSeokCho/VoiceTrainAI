@@ -1,65 +1,22 @@
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
 import 'package:flutter/material.dart';
-import 'models/song.dart';
-import 'pages/record_page.dart';
-import 'pages/ai_vocal_loading_page.dart';
-import 'pages/ai_vocal_ready_page.dart';
-import 'pages/ai_vocal_play_page.dart';
-import 'pages/login_page.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:flutter_application_1/main.dart';
 
 void main() {
-  runApp(MyApp());
+  testWidgets('App starts at login page', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(MyApp());
+
+    // Verify that the login page is shown.
+    expect(find.text('AVTS'), findsOneWidget); // App name on login page
+    expect(find.byType(ElevatedButton), findsNWidgets(3));
+  });
 }
-
-class MyApp extends StatelessWidget {
-  final Song sampleSong = Song(
-    title: 'Never Ending Story',
-    artist: 'IU',
-    albumCover: '',
-    difficulty: '중급',
-    range: 'F3 ~ D5',
-    lyrics: '그리워하면 언젠가 만나게 되는 ... (가사 생략)',
-    duration: '3:40',
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SingSang',
-      initialRoute: '/login',
-      onGenerateRoute: (settings) {
-        if (settings.name == '/login') {
-          return MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          );
-        }
-        if (settings.name == '/ai-vocal-loading') {
-          return MaterialPageRoute(
-            builder: (context) => AiVocalLoadingPage(),
-            settings: RouteSettings(arguments: sampleSong),
-          );
-        }
-        if (settings.name == '/ai-vocal-ready') {
-          return MaterialPageRoute(
-            builder: (context) => AiVocalReadyPage(),
-            settings: RouteSettings(arguments: sampleSong),
-          );
-        }
-        if (settings.name == '/ai-vocal-play') {
-          return MaterialPageRoute(
-            builder: (context) => AiVocalPlayPage(),
-            settings: RouteSettings(arguments: sampleSong),
-          );
-        }
-        if (settings.name == '/record') {
-          return MaterialPageRoute(
-            builder: (context) => RecordPage(),
-            settings: RouteSettings(arguments: sampleSong),
-          );
-        }
-        return null;
-      },
-    );
-  }
-}
-
-// ... (MyApp 클래스 등)

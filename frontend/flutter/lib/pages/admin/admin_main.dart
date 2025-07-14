@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/admin/admin_user_manage.dart';
+
+import '../login_page.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -57,7 +60,12 @@ class _AdminPageState extends State<AdminPage> {
               children: [
                 ElevatedButton.icon(
                   onPressed: () {
-                    // TODO : 회원 관리 페이지 연결
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (context) => AdminUserManage(),
+                      ),
+                      (route) => false,
+                    );
                   },
                   icon: const Icon(Icons.person),
                   label: const Text('회원 관리'),
@@ -101,9 +109,12 @@ class _AdminPageState extends State<AdminPage> {
                     leading: const CircleAvatar(child: Icon(Icons.person)),
                     title: Text(admin['name']!),
                     subtitle: Text('이메일: ${admin['email']}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
+                    trailing: TextButton.icon(
                       onPressed: () => _removeAdmin(i),
+                      label: const Text(
+                        '삭제',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   );
                 },
@@ -117,6 +128,13 @@ class _AdminPageState extends State<AdminPage> {
                     onPressed: () {
                       // TODO : 뭘 설정하는지?
                     },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     child: const Text('설정'),
                   ),
                 ),
@@ -125,7 +143,22 @@ class _AdminPageState extends State<AdminPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       // TODO : 로그아웃 로직
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => LoginPage(),
+                        ), // 로그아웃 시 로그인 페이지로 이동
+                        (route) => false,
+                      );
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // 배경색
+                      foregroundColor: Colors.white, // 글자색
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     child: const Text('로그아웃'),
                   ),
                 ),
