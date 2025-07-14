@@ -40,3 +40,5 @@ webdriver-manager
 requests
 
 google-search-results 
+
+syncedlyrics 
