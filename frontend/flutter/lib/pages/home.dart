@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/song_card.dart';
+import '../models/song.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -179,21 +180,39 @@ class HomePage extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               children: [
                 SongCard(
-                  imagePath: 'assets/images/iu.webp',
-                  title: 'Never Ending Story',
-                  artist: 'IU',
+                  song: Song(
+                    title: 'Never Ending Story',
+                    artist: 'IU',
+                    albumCover: 'assets/images/iu.webp',
+                    difficulty: '중급',
+                    range: 'F3 ~ D5',
+                    lyrics: '그리워하면 언젠가 만나게 되는 ...',
+                    duration: '3:40',
+                  ),
                 ),
                 SizedBox(width: 12),
                 SongCard(
-                  imagePath: 'assets/images/no_pain.webp',
-                  title: 'Drowning',
-                  artist: 'WOODZ',
+                  song: Song(
+                    title: 'Drowning',
+                    artist: 'WOODZ',
+                    albumCover: 'assets/images/no_pain.webp',
+                    difficulty: '초급',
+                    range: 'C4 ~ C5',
+                    lyrics: '가사 없음',
+                    duration: '3:00',
+                  ),
                 ),
                 SizedBox(width: 12),
                 SongCard(
-                  imagePath: 'assets/images/famous.webp',
-                  title: 'FAMOUS',
-                  artist: 'Allday Project',
+                  song: Song(
+                    title: 'FAMOUS',
+                    artist: 'Allday Project',
+                    albumCover: 'assets/images/famous.webp',
+                    difficulty: '고급',
+                    range: 'E4 ~ G5',
+                    lyrics: '가사 없음',
+                    duration: '4:10',
+                  ),
                 ),
               ],
             ),
@@ -312,21 +331,39 @@ class HomePage extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               children: [
                 SongCard(
-                  imagePath: 'assets/images/no_pain.webp',
-                  title: 'NO PAIN',
-                  artist: '실리카겔',
+                  song: Song(
+                    title: 'NO PAIN',
+                    artist: '실리카겔',
+                    albumCover: 'assets/images/no_pain.webp',
+                    difficulty: '중급',
+                    range: 'D4 ~ F5',
+                    lyrics: '가사 없음',
+                    duration: '3:50',
+                  ),
                 ),
                 SizedBox(width: 12),
                 SongCard(
-                  imagePath: 'assets/images/famous.webp',
-                  title: 'FAMOUS',
-                  artist: 'Allday Project',
+                  song: Song(
+                    title: 'FAMOUS',
+                    artist: 'Allday Project',
+                    albumCover: 'assets/images/famous.webp',
+                    difficulty: '고급',
+                    range: 'E4 ~ G5',
+                    lyrics: '가사 없음',
+                    duration: '4:10',
+                  ),
                 ),
                 SizedBox(width: 12),
                 SongCard(
-                  imagePath: 'assets/images/iu.webp',
-                  title: 'Celebrity',
-                  artist: 'IU',
+                  song: Song(
+                    title: 'Celebrity',
+                    artist: 'IU',
+                    albumCover: 'assets/images/iu.webp',
+                    difficulty: '초급',
+                    range: 'C4 ~ C5',
+                    lyrics: '가사 없음',
+                    duration: '3:30',
+                  ),
                 ),
               ],
             ),

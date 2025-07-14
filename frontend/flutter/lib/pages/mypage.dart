@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/song.dart';
+import '../widgets/song_card.dart';
 
 class MyPage extends StatelessWidget {
   const MyPage({super.key});
@@ -121,11 +123,35 @@ class MyPage extends StatelessWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    _songTile('Drowning'),
+                    _songTile(Song(
+                      title: 'Drowning',
+                      artist: 'WOODZ',
+                      albumCover: 'assets/images/no_pain.webp',
+                      difficulty: '초급',
+                      range: 'C4 ~ C5',
+                      lyrics: '가사 없음',
+                      duration: '3:00',
+                    )),
                     const SizedBox(width: 12),
-                    _songTile('Never Ending'),
+                    _songTile(Song(
+                      title: 'Never Ending',
+                      artist: 'IU',
+                      albumCover: 'assets/images/iu.webp',
+                      difficulty: '중급',
+                      range: 'F3 ~ D5',
+                      lyrics: '가사 없음',
+                      duration: '3:40',
+                    )),
                     const SizedBox(width: 12),
-                    _songTile('Another Song'),
+                    _songTile(Song(
+                      title: 'Another Song',
+                      artist: 'Various',
+                      albumCover: 'assets/images/cat.webp',
+                      difficulty: '고급',
+                      range: 'G4 ~ A5',
+                      lyrics: '가사 없음',
+                      duration: '4:00',
+                    )),
                   ],
                 ),
               ),
@@ -199,21 +225,8 @@ class MyPage extends StatelessWidget {
     ),
   );
 
-  Widget _songTile(String title) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.asset(
-          'assets/images/cat.webp',
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-        ),
-      ),
-      const SizedBox(height: 4),
-      Text(title, style: const TextStyle(fontSize: 12)),
-    ],
+  Widget _songTile(Song song) => SongCard(
+    song: song,
   );
 
   Widget _scoreBox(String label, String score) => Container(

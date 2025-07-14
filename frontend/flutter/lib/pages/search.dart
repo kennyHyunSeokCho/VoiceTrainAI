@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/song_card.dart';
 import 'song_detail_page.dart';
+import '../models/song.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -180,14 +181,19 @@ class _SearchPageState extends State<SearchPage> {
         return InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
+            final selectedSong = Song(
+              title: song['title']!,
+              artist: song['artist']!,
+              albumCover: song['image']!,
+              difficulty: '초급', // 임시 값
+              range: 'C4 ~ C5', // 임시 값
+              lyrics: '가사 없음', // 임시 값
+              duration: '0:00', // 임시 값
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => SongDetailPage(
-                  title: song['title']!,
-                  artist: song['artist']!,
-                  imagePath: song['image']!,
-                ),
+                builder: (context) => SongDetailPage(song: selectedSong),
               ),
             );
           },
@@ -318,11 +324,18 @@ class _SearchPageState extends State<SearchPage> {
             ),
             itemCount: songs.length,
             itemBuilder: (context, index) {
-              final song = songs[index];
+              final songData = songs[index];
+              final song = Song(
+                title: songData['title']!,
+                artist: songData['artist']!,
+                albumCover: songData['image']!,
+                difficulty: '초급', // 임시 값
+                range: 'C4 ~ C5', // 임시 값
+                lyrics: '가사 없음', // 임시 값
+                duration: '0:00', // 임시 값
+              );
               return SongCard(
-                imagePath: song['image']!,
-                title: song['title']!,
-                artist: song['artist']!,
+                song: song,
               );
             },
           ),

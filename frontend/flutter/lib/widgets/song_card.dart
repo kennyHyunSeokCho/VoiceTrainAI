@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../pages/song_detail_page.dart';
+import '../models/song.dart';
 
 class SongCard extends StatelessWidget {
-  final String title;
-  final String artist;
-  final String imagePath;
+  final Song song;
 
   const SongCard({
     super.key,
-    required this.title,
-    required this.artist,
-    required this.imagePath,
+    required this.song,
   });
 
   @override
@@ -22,11 +19,7 @@ class SongCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SongDetailPage(
-              title: title,
-              artist: artist,
-              imagePath: imagePath,
-            ),
+            builder: (context) => SongDetailPage(song: song),
           ),
         );
       },
@@ -39,7 +32,7 @@ class SongCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
-                imagePath,
+                song.albumCover,
                 width: 140,
                 height: 140,
                 fit: BoxFit.contain,
@@ -61,7 +54,7 @@ class SongCard extends StatelessWidget {
 
             // 2) 제목
             Text(
-              title,
+              song.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -71,7 +64,7 @@ class SongCard extends StatelessWidget {
 
             // 3) 아티스트
             Text(
-              artist,
+              song.artist,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
