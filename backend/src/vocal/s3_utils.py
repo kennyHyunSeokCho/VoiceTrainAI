@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 import logging
 from typing import Optional, List, Dict
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 logger = logging.getLogger(__name__)
 
