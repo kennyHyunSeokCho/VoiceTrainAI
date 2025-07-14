@@ -85,6 +85,7 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   void _togglePlay() {
+    if (!mounted) return;
     setState(() {
       isPlaying = !isPlaying;
       if (isPlaying) {
@@ -186,6 +187,7 @@ class _RecordPageState extends State<RecordPage> {
                         size: 28,
                       ),
                       onPressed: () {
+                        if (!mounted) return;
                         setState(() {
                           isFavorite = !isFavorite;
                         });
@@ -296,6 +298,7 @@ class _RecordPageState extends State<RecordPage> {
                         barAreaHeight: barAreaHeight,
                         centerLineX: centerLineX,
                         onPassed: (accuracy) {
+                          if (!mounted) return;
                           setState(() {
                             int delta = 0;
                             switch (accuracy) {
