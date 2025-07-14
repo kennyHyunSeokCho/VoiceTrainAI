@@ -52,7 +52,8 @@ def main():
         print("S3 클라이언트 초기화 실패")
         return
     model = load_model('byol')
-    model.eval()
+    if model is not None:
+        model.eval()
     singers = get_singer_list_from_s3(s3, bucket_name, vocal_prefix)
     print(f"발견된 가수: {singers}")
     for singer in singers:
@@ -75,10 +76,19 @@ def main():
                     audio = librosa.resample(audio, orig_sr=sr, target_sr=44100)
                 embedding = extract_embedding(audio, model, target_sr=44100)
                 singer_embeddings.append(embedding)
+                # 곡 정보 추출
+                import datetime
+                timestamp = datetime.datetime.now().isoformat()
+                song_filename = os.path.basename(local_wav)
+                song_name = os.path.splitext(song_filename)[0]
+                model_name = 'byol/singer-identity'  # 실제 모델명에 맞게 수정
                 embedding_json = {
-                    "singer": singer,
-                    "song_key": song['key'],
-                    "embedding": embedding.tolist(),
+                    "timestamp": timestamp,
+                    "singer_name": singer,
+                    "song_name": song_name,
+                    "song_filename": song_filename,
+                    "model_name": model_name,
+                    "song_embedding": embedding.tolist(),
                     "shape": list(embedding.shape)
                 }
                 local_embedding_path = local_wav.replace('.wav', '_embedding.json')
