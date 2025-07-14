@@ -44,3 +44,6 @@ ENV/
 data/music_file/
 data/music_png/
 data/info/
+
+# AWS/민감정보
+config.py
