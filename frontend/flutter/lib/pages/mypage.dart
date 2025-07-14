@@ -10,6 +10,7 @@ class MyPage extends StatelessWidget {
         leading: BackButton(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 0,
+        // actions: 알림 버튼 제거
       ),
       body: SafeArea(
         child: SingleChildScrollView(
