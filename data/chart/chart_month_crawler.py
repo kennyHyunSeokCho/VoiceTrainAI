@@ -21,7 +21,11 @@ def load_existing_keys(csv_path):
             collected_keys.add(key)
 
 # 한글 주석: 현재 열린 멜론 월간 차트 페이지에서 곡 정보(최대 10곡, 중복 제외)를 통합 CSV에 누적 저장
+<<<<<<< HEAD
 def crawl_current_month(driver, csv_path, max_per_month=100):
+=======
+def crawl_current_month(driver, csv_path, max_per_month=10):
+>>>>>>> origin/Feature_YJ
     print("현재 페이지에서 곡 정보를 크롤링합니다...")
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     titles = driver.find_elements(By.CSS_SELECTOR, '.ellipsis.rank01')
@@ -80,5 +84,9 @@ if __name__ == "__main__":
     driver.get(url)
     while True:
         input("\n원하는 월을 직접 선택한 후 엔터를 누르세요 (종료하려면 Ctrl+C): ")
+<<<<<<< HEAD
         crawl_current_month(driver, csv_path, max_per_month=100)
+=======
+        crawl_current_month(driver, csv_path, max_per_month=10)
+>>>>>>> origin/Feature_YJ
     driver.quit() 
