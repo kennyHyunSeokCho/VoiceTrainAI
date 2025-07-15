@@ -6,7 +6,6 @@ import 'pages/ai_vocal_loading_page.dart';
 import 'pages/ai_vocal_ready_page.dart';
 import 'pages/ai_vocal_play_page.dart';
 import 'pages/login_page.dart';
-import 'pages/admin/admin_main.dart';
 
 void main() {
   runApp(MyApp());
@@ -98,24 +97,6 @@ class MyApp extends StatelessWidget {
         }
         return null;
       },
-    );
-  }
-}
-
-class SongCard extends StatelessWidget {
-  // ...생략...
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      height: 210, // 높이 명시적으로 지정
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // 추가
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ...생략...
-        ],
-      ),
     );
   }
 }
