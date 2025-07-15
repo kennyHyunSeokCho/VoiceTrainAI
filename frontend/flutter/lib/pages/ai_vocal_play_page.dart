@@ -74,30 +74,6 @@ class AiVocalPlayPage extends StatelessWidget {
                           width: 200,
                           height: 200,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 200,
-                              height: 200,
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: Icon(Icons.music_note, color: Colors.grey),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      // 재생 중 표시
-                      Positioned(
-                        bottom: 20,
-                        right: 20,
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurple,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
                                 color: Colors.deepPurple.withOpacity(0.3),
                                 blurRadius: 10,
                                 offset: Offset(0, 4),
@@ -139,10 +115,7 @@ class AiVocalPlayPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.deepPurple[50],
                         borderRadius: BorderRadius.circular(20),
@@ -158,17 +131,8 @@ class AiVocalPlayPage extends StatelessWidget {
                     ),
                     SizedBox(width: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.purple[50],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         song.range,
-                        style: TextStyle(
                           fontSize: 12,
                           color: Colors.purple[700],
                           fontWeight: FontWeight.w500,
@@ -295,7 +259,10 @@ class AiVocalPlayPage extends StatelessWidget {
                     SizedBox(width: 8),
                     Text(
                       'AI 보컬 합성 완료',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   ],
                 ),

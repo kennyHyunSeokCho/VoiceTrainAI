@@ -51,17 +51,22 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                     ),
                     Spacer(),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.black87,
-                        size: 20,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/notification');
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.black87,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
@@ -78,10 +83,7 @@ class _MainLayoutState extends State<MainLayout> {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border(
-              top: BorderSide(
-                color: Colors.grey[200]!,
-                width: 0.5,
-              ),
+              top: BorderSide(color: Colors.grey[200]!, width: 0.5),
             ),
           ),
           child: SafeArea(
@@ -102,7 +104,12 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     bool isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => _onItemTapped(index),

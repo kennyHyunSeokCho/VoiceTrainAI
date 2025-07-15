@@ -12,8 +12,11 @@
 #include <record_windows/record_windows_plugin_c_api.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
+<<<<<<< HEAD
   AmplifyDbCommonPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AmplifyDbCommonPlugin"));
+=======
+>>>>>>> origin/Feature_CM
   AudioplayersWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(
