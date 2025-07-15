@@ -26,6 +26,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
+    
     // 로딩 진행률 시뮬레이션
     _startLoading();
   }
@@ -46,31 +47,22 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           }
 
           if (_progress > 1.0) _progress = 1.0;
-        });
-
+        
         // 애니메이션 업데이트
-        _progressAnimation =
-            Tween<double>(
-              begin: _progressAnimation.value,
-              end: _progress,
-            ).animate(
-              CurvedAnimation(
-                parent: _animationController,
-                curve: Curves.easeInOut,
-              ),
-            );
+        _progressAnimation = Tween<double>(
+          begin: _progressAnimation.value,
+          end: _progress,
+        ).animate(CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeInOut,
+        ));
         _animationController.forward(from: 0.0);
       } else {
-        timer.cancel();
         // 로딩 완료 시 자동으로 다음 페이지로 이동
         Future.delayed(Duration(seconds: 1), () {
           if (mounted) {
             final song = ModalRoute.of(context)!.settings.arguments as Song;
-            Navigator.pushReplacementNamed(
-              context,
-              '/ai-vocal-ready',
-              arguments: song,
-            );
+            Navigator.pushReplacementNamed(context, '/ai-vocal-ready', arguments: song);
           }
         });
       }
@@ -83,15 +75,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
     _animationController.dispose();
     super.dispose();
   }
-
-  String _getLoadingText() {
-    if (_progress < 0.2) {
-      return 'AI 모델 초기화 중...';
-    } else if (_progress < 0.4) {
-      return '음성 데이터 분석 중...';
-    } else if (_progress < 0.6) {
       return '보컬 특성 추출 중...';
-    } else if (_progress < 0.8) {
       return 'AI 보컬 생성 중...';
     } else if (_progress < 0.95) {
       return '음질 최적화 중...';
@@ -105,6 +89,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // 배경 SVG 요소들
@@ -159,17 +144,6 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              width: 160,
-                              height: 160,
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: Icon(Icons.music_note, color: Colors.grey),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      // 로딩 애니메이션 효과
                       Container(
                         width: 180,
                         height: 180,
@@ -299,14 +273,9 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                         context,
                         '/ai-vocal-ready',
                         arguments: song,
-                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(200, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 4,
                     ),
