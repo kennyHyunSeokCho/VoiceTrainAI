@@ -6,6 +6,8 @@ import 'pages/ai_vocal_loading_page.dart';
 import 'pages/ai_vocal_ready_page.dart';
 import 'pages/ai_vocal_play_page.dart';
 import 'pages/login_page.dart';
+import 'pages/search.dart';
+import 'pages/notification_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -31,9 +33,7 @@ class MyApp extends StatelessWidget {
         // Google Fonts를 사용한 한글 폰트 설정
         textTheme: GoogleFonts.notoSansKrTextTheme(Theme.of(context).textTheme),
         scaffoldBackgroundColor: Colors.white, // 스캐폴드 배경색(흰색)
-        // 색상 테마
         primarySwatch: Colors.purple,
-        primaryColor: Colors.purple[600],
 
         // 앱바 테마
         appBarTheme: AppBarTheme(
@@ -90,13 +90,31 @@ class MyApp extends StatelessWidget {
         }
         if (settings.name == '/ai-vocal-play') {
           final song = settings.arguments as Song;
-          return MaterialPageRoute(
-            builder: (context) => AiVocalPlayPage(),
-            settings: RouteSettings(arguments: song),
           );
+        }
+        if (settings.name == '/notification') {
+          return MaterialPageRoute(builder: (context) => NotificationPage());
+        }
+        if (settings.name == '/search') {
+          return MaterialPageRoute(builder: (context) => SearchPage());
         }
         return null;
       },
+    );
+  }
+}
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      height: 210, // 높이 명시적으로 지정
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // 추가
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ...생략...
+        ],
+      ),
     );
   }
 }

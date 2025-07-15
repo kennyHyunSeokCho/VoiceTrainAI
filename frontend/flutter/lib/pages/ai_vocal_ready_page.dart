@@ -8,6 +8,7 @@ class AiVocalReadyPage extends StatelessWidget {
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // 배경 SVG 요소들
@@ -152,9 +153,9 @@ class AiVocalReadyPage extends StatelessWidget {
                     Text(
                       'AI 보컬이 성공적으로 생성되었습니다',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
                     ),
                     SizedBox(width: 8),
-                    SvgPicture.asset(
                       'assets/images/path2.svg',
                       width: 20,
                       height: 20,

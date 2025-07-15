@@ -51,9 +51,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.1
 
   flutter_lints: ^5.0.0
+
   flutter_native_splash: ^2.2.8
 
-  
   flutter_test:
     sdk: flutter
 
@@ -95,6 +95,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/audio/
+    - assets/midi/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

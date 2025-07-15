@@ -125,7 +125,10 @@ def main():
         
         # 보컬 분리 실행
         start_time = __import__('time').time()
-        result = separator.separate_audio(args.input, args.output, args.format)
+        # 분리 결과 폴더 지정
+        vocal_dir = "data/music_file/seperated_voice"
+        inst_dir = "data/music_file/seperated_inst"
+        result = separator.separate_audio(args.input, None, args.format, vocal_dir=vocal_dir, inst_dir=inst_dir)
         end_time = __import__('time').time()
         
         processing_time = end_time - start_time
@@ -151,7 +154,7 @@ def main():
         
         print(f"\n💡 사용 팁:")
         print(f"   • 보컬 연습: '{korean_name}' 파일 사용")
-        print(f"   • 반주 연습: '반주' 파일 사용") 
+        print(f"   • 반주 연습: '반주' 파일은 data/music_file/seperated_inst 폴더에서 확인")
         print(f"   • 개별 악기: 각각의 악기 파일들 활용")
         
     except KeyboardInterrupt:

@@ -55,38 +55,44 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 검색바
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _isSearching = value.isNotEmpty;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: '노래, 아티스트 검색',
-                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey[600],
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // 검색바
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _isSearching = value.isNotEmpty;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: '노래, 아티스트 검색',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                 ),
               ),
-            ),
           ),
         ),
 
@@ -126,22 +132,21 @@ class _SearchPageState extends State<SearchPage> {
                           ? FontWeight.w600
                           : FontWeight.w400,
                     ),
-                  ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
 
-        SizedBox(height: 20),
+          SizedBox(height: 20),
 
-        // 검색 결과 또는 추천 곡
-        Expanded(
-          child: _isSearching || _selectedCategory != '전체'
-              ? _buildSearchResults()
-              : _buildRecommendations(),
-        ),
-      ],
+          // 검색 결과 또는 추천 곡
+          Expanded(
+            child: _isSearching || _selectedCategory != '전체'
+                ? _buildSearchResults()
+                : _buildRecommendations(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -178,79 +183,59 @@ class _SearchPageState extends State<SearchPage> {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final song = results[index];
-        return InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            final selectedSong = Song(
-              title: song['title']!,
-              artist: song['artist']!,
-              albumCover: song['image']!,
-              difficulty: '초급', // 임시 값
-              range: 'C4 ~ C5', // 임시 값
-              lyrics: '가사 없음', // 임시 값
-              duration: '0:00', // 임시 값
-            );
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SongDetailPage(song: selectedSong),
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: Offset(0, 2),
               ),
-            );
-          },
-          child: Container(
-            margin: EdgeInsets.only(bottom: 16),
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+            ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  song['image']!,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    song['image']!,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        song['title']!,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song['title']!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        song['artist']!,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      song['artist']!,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.play_circle_outline,
-                  color: Colors.grey[600],
-                  size: 24,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.play_circle_outline,
+                color: Colors.grey[600],
+                size: 24,
+              ),
+            ],
           ),
         );
       },
@@ -318,7 +303,7 @@ class _SearchPageState extends State<SearchPage> {
             padding: EdgeInsets.symmetric(horizontal: 20),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.8,
+              childAspectRatio: 0.75, // SongCard(정사각형+텍스트+padding) 비율에 맞게 조정
               crossAxisSpacing: 12,
               mainAxisSpacing: 16,
             ),

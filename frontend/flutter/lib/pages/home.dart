@@ -36,56 +36,61 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 메인 배너
-          Container(
-            height: 160,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.purple[400]!, Colors.pink[400]!],
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/search');
+            },
+            child: Container(
+              height: 160,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.purple[400]!, Colors.pink[400]!],
+                ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -20,
-                  bottom: -20,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(60),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -20,
+                    bottom: -20,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(60),
+                      ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'AI 보컬 합성',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                  Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'AI 보컬 합성',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '당신만의 특별한 목소리로',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                        SizedBox(height: 4),
+                        Text(
+                          '당신만의 특별한 목소리로',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -183,7 +188,6 @@ class HomePage extends StatelessWidget {
                   song: Song(
                     title: 'Never Ending Story',
                     artist: 'IU',
-                    albumCover: 'assets/images/iu.webp',
                     difficulty: '중급',
                     range: 'F3 ~ D5',
                     lyrics: '그리워하면 언젠가 만나게 되는 ...',
@@ -213,13 +217,7 @@ class HomePage extends StatelessWidget {
                     lyrics: '가사 없음',
                     duration: '4:10',
                   ),
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 32),
-
           // 보컬 트래킹 진행률
           Text(
             '보컬 트래킹 진행률',
@@ -253,23 +251,6 @@ class HomePage extends StatelessWidget {
                         color: Colors.purple[600],
                         size: 24,
                       ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '이번 주 진행률',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            '5일 연속 연습 중!',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -334,7 +315,6 @@ class HomePage extends StatelessWidget {
                   song: Song(
                     title: 'NO PAIN',
                     artist: '실리카겔',
-                    albumCover: 'assets/images/no_pain.webp',
                     difficulty: '중급',
                     range: 'D4 ~ F5',
                     lyrics: '가사 없음',
@@ -364,11 +344,6 @@ class HomePage extends StatelessWidget {
                     lyrics: '가사 없음',
                     duration: '3:30',
                   ),
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 32),
         ],
       ),

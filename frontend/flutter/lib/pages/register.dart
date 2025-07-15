@@ -78,8 +78,6 @@ class RegisterPage extends StatelessWidget {
                     ),
                     const Text('Enter the same password as above'),
                     const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: () {
                         // TODO: 회원가입 기능 구현 예정
                       },
                       style: ElevatedButton.styleFrom(
