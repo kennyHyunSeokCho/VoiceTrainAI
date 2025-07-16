@@ -164,7 +164,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 200,
+            height: 230, // 높이를 200에서 230으로 늘림
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -305,7 +305,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 200,
+            height: 230, // 높이를 200에서 230으로 늘림
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
