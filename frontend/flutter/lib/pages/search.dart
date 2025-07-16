@@ -185,60 +185,82 @@ class _SearchPageState extends State<SearchPage> {
       padding: EdgeInsets.symmetric(horizontal: 20),
       itemCount: results.length,
       itemBuilder: (context, index) {
-        final song = results[index];
-        return Container(
-          margin: EdgeInsets.only(bottom: 16),
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
+        final songData = results[index];
+        // 상세 페이지로 전달할 Song 객체 생성
+        final song = Song(
+          title: songData['title']!,
+          artist: songData['artist']!,
+          albumCover: songData['image']!,
+          difficulty: '중급', // 임시 데이터
+          range: 'C4-G5', // 임시 데이터
+          lyrics: '가사 정보가 없습니다.', // 임시 데이터
+          duration: '3:30', // 임시 데이터
+        );
+
+        return InkWell(
+          onTap: () {
+            // 클릭 시 SongDetailPage로 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SongDetailPage(song: song),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  song['image']!,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
+            );
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: 16),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      song['title']!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+              ],
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    song.albumCover, // Song 객체의 albumCover 사용
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song.title, // Song 객체의 title 사용
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      song['artist']!,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
+                      SizedBox(height: 4),
+                      Text(
+                        song.artist, // Song 객체의 artist 사용
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.play_circle_outline,
-                color: Colors.grey[600],
-                size: 24,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded, // 오른쪽 화살표 아이콘으로 변경
+                  color: Colors.grey[400],
+                  size: 24,
+                ),
+              ],
+            ),
           ),
         );
       },
