@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import '../widgets/song_card.dart';
+import 'song_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -320,20 +321,29 @@ class _SearchPageState extends State<SearchPage> {
         SizedBox(height: 12),
         Expanded(
           child: GridView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.75, // SongCard(정사각형+텍스트+padding) 비율에 맞게 조정
-              crossAxisSpacing: 12,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: songs.length,
+            itemCount: filteredSongs.length,
             itemBuilder: (context, index) {
-              final song = songs[index];
-              return SongCard(
-                imagePath: song['image'] ?? '',
-                title: song['title'] ?? '',
-                artist: song['artist'] ?? '',
+              final song = filteredSongs[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SongDetailPage(songData: song),
+                    ),
+                  );
+                },
+                child: SongCard(
+                  title: song['title'] ?? '',
+                  artist: song['artist'] ?? '',
+                  imagePath: song['image'] ?? '',
+                ),
               );
             },
           ),
