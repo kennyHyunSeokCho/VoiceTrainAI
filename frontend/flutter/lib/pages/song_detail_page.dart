@@ -367,7 +367,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
-                            songData['lyrics'] ?? '가사 정보가 없습니다.',
+                            _formatLyrics(songData['lyrics'] ?? '가사 정보가 없습니다.'),
                             style: TextStyle(
                               height: 2.0,
                               fontSize: 16,
@@ -588,5 +588,34 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  /// 가사에 줄바꿈을 추가하는 함수
+  /// 문장 끝에 마침표, 느낌표, 물음표가 있으면 줄바꿈을 추가합니다.
+  String _formatLyrics(String lyrics) {
+    if (lyrics.isEmpty || lyrics == '가사 정보가 없습니다.') {
+      return lyrics;
+    }
+
+    // 문장 끝 부호들 (마침표, 느낌표, 물음표) 뒤에 줄바꿈 추가
+    String formattedLyrics = lyrics
+        .replaceAll('. ', '.\n')
+        .replaceAll('! ', '!\n')
+        .replaceAll('? ', '?\n')
+        .replaceAll('。 ', '。\n') // 일본어/한국어 마침표
+        .replaceAll('！ ', '！\n') // 일본어/한국어 느낌표
+        .replaceAll('？ ', '？\n'); // 일본어/한국어 물음표
+
+    // 마지막 문장도 줄바꿈 처리
+    if (formattedLyrics.endsWith('.') ||
+        formattedLyrics.endsWith('!') ||
+        formattedLyrics.endsWith('?') ||
+        formattedLyrics.endsWith('。') ||
+        formattedLyrics.endsWith('！') ||
+        formattedLyrics.endsWith('？')) {
+      formattedLyrics += '\n';
+    }
+
+    return formattedLyrics;
   }
 }

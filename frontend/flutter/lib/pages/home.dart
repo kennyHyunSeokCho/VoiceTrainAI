@@ -1,8 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:csv/csv.dart';
 import '../widgets/song_card.dart';
+import 'song_detail_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, String>> songs = [];
+  List<Map<String, String>> recommendedSongs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSongs();
+  }
+
+  Future<void> _loadSongs() async {
+    try {
+      final String csvData = await rootBundle.loadString(
+        'assets/all_chart_songs.csv',
+      );
+      final List<List<dynamic>> csvTable = const CsvToListConverter().convert(
+        csvData,
+      );
+
+      if (csvTable.isNotEmpty) {
+        final headers = csvTable[0];
+        final List<Map<String, String>> loadedSongs = [];
+
+        for (int i = 1; i < csvTable.length; i++) {
+          final row = csvTable[i];
+          if (row.length >= headers.length) {
+            final Map<String, String> song = {};
+            for (int j = 0; j < headers.length; j++) {
+              song[headers[j]] = row[j]?.toString() ?? '';
+            }
+            loadedSongs.add(song);
+          }
+        }
+
+        setState(() {
+          songs = loadedSongs;
+          // 임시로 처음 6곡을 추천곡으로 설정 (나중에 음역대/음색 기반으로 변경)
+          recommendedSongs = loadedSongs.take(6).toList();
+        });
+      }
+    } catch (e) {
+      print('CSV 로딩 오류: $e');
+      // 오류 시 기본 데이터 사용
+      setState(() {
+        recommendedSongs = [
+          {
+            'title': 'Never Ending Story',
+            'artist': 'IU',
+            'image': 'assets/images/iu.webp',
+            'lyrics': '기본 가사...',
+          },
+          {
+            'title': 'Drowning',
+            'artist': 'WOODZ',
+            'image': 'assets/images/no_pain.webp',
+            'lyrics': '기본 가사...',
+          },
+          {
+            'title': 'FAMOUS',
+            'artist': 'Allday Project',
+            'image': 'assets/images/famous.webp',
+            'lyrics': '기본 가사...',
+          },
+        ];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,29 +254,35 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 220, // 넉넉하게! (새로운 곡과 동일)
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  imagePath: 'assets/images/iu.webp',
-                  title: 'Never Ending Story',
-                  artist: 'IU',
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  imagePath: 'assets/images/no_pain.webp',
-                  title: 'Drowning',
-                  artist: 'WOODZ',
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  imagePath: 'assets/images/famous.webp',
-                  title: 'FAMOUS',
-                  artist: 'Allday Project',
-                ),
-              ],
-            ),
+            height: 220,
+            child: recommendedSongs.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: recommendedSongs.length,
+                    itemBuilder: (context, index) {
+                      final song = recommendedSongs[index];
+                      return Container(
+                        margin: EdgeInsets.only(right: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SongDetailPage(songData: song),
+                              ),
+                            );
+                          },
+                          child: SongCard(
+                            title: song['title'] ?? '',
+                            artist: song['artist'] ?? '',
+                            imagePath: song['image'] ?? '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
 
           const SizedBox(height: 32),
@@ -312,29 +393,35 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 220, // 넉넉하게!
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  imagePath: 'assets/images/no_pain.webp',
-                  title: 'NO PAIN',
-                  artist: '실리카겔',
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  imagePath: 'assets/images/famous.webp',
-                  title: 'FAMOUS',
-                  artist: 'Allday Project',
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  imagePath: 'assets/images/iu.webp',
-                  title: 'Celebrity',
-                  artist: 'IU',
-                ),
-              ],
-            ),
+            height: 220,
+            child: songs.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: songs.take(6).length,
+                    itemBuilder: (context, index) {
+                      final song = songs[index];
+                      return Container(
+                        margin: EdgeInsets.only(right: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SongDetailPage(songData: song),
+                              ),
+                            );
+                          },
+                          child: SongCard(
+                            title: song['title'] ?? '',
+                            artist: song['artist'] ?? '',
+                            imagePath: song['image'] ?? '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
 
           const SizedBox(height: 32),
