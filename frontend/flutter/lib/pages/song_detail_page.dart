@@ -3,7 +3,9 @@ import 'dart:ui';
 import '../models/song.dart';
 
 class SongDetailPage extends StatefulWidget {
-  const SongDetailPage({super.key});
+  final Map<String, String> songData;
+
+  const SongDetailPage({super.key, required this.songData});
 
   @override
   State<SongDetailPage> createState() => _SongDetailPageState();
@@ -12,6 +14,8 @@ class SongDetailPage extends StatefulWidget {
 class _SongDetailPageState extends State<SongDetailPage> {
   @override
   Widget build(BuildContext context) {
+    final songData = widget.songData;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FF),
       body: Stack(
@@ -78,10 +82,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-                            child: Image.asset(
-                              'assets/images/iu.webp',
-                              fit: BoxFit.cover,
-                            ),
+                            child: _buildAlbumCover(songData['image'] ?? ''),
                           ),
                         ),
                       ),
@@ -93,7 +94,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Column(
                           children: [
                             Text(
-                              'IU',
+                              songData['artist'] ?? '',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: const Color(0xFF8B5CF6),
@@ -103,7 +104,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Never Ending Story',
+                              songData['title'] ?? '',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w800,
@@ -124,8 +125,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildTag('F3 - D5', const Color(0xFFE0E7FF)),
-                            _buildDifficultyTag('중급'),
+                            _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF)),
+                            _buildDifficultyTag('분석 예정'),
                           ],
                         ),
                       ),
@@ -157,14 +158,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             GestureDetector(
                               onTap: () {
                                 final song = Song(
-                                  title: 'Never Ending Story',
-                                  artist: 'IU',
-                                  albumCover: 'assets/images/iu.webp',
-                                  difficulty: '중급',
-                                  range: 'F3 ~ D5',
-                                  lyrics:
-                                      '''손 닿을 수 없는 저기 어딘가\n오늘도 난 숨 쉬고 있지만\n너와 머물던 작은 의자 위에\n같은 모습의 바람이 지나네\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대여\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에''',
-                                  duration: '3:40',
+                                  title: songData['title'] ?? '',
+                                  artist: songData['artist'] ?? '',
+                                  albumCover: songData['image'] ?? '',
+                                  difficulty: '분석 예정',
+                                  range: '분석 예정',
+                                  lyrics: songData['lyrics'] ?? '',
+                                  duration: '분석 예정',
                                 );
                                 Navigator.pushNamed(
                                   context,
@@ -312,9 +312,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
-                                image: const DecorationImage(
-                                  image: AssetImage('assets/images/iu.webp'),
-                                  fit: BoxFit.cover,
+                                color: Colors.grey[200],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: _buildAlbumCover(
+                                  songData['image'] ?? '',
                                 ),
                               ),
                             ),
@@ -324,7 +327,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Never Ending Story',
+                                    songData['title'] ?? '',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
@@ -333,7 +336,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'IU • Cover Version',
+                                    '${songData['artist']} • Cover Version',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: const Color(0xFF8B5CF6),
@@ -364,33 +367,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
-                            '''손 닿을 수 없는 저기 어딘가
-오늘도 난 숨 쉬고 있지만
-너와 머물던 작은 의자 위에
-같은 모습의 바람이 지나네
-
-너는 떠나며 마치 날 떠나가듯이
-멀리 손을 흔들며
-언젠가 추억에 남겨져 갈 거라고
-
-그리워하면 언젠가 만나게 되는
-어느 영화와 같은 일들이 이뤄져 가기를
-힘겨워 한 날에 너를 지킬 수 없었던
-아름다운 시절 속에 머문 그대이기에
-
-너는 떠나며 마치 날 떠나가듯이
-멀리 손을 흔들며
-언젠가 추억에 남겨져 갈 거라고
-
-그리워하면 언젠가 만나게 되는
-어느 영화와 같은 일들이 이뤄져 가기를
-힘겨워 한 날에 너를 지킬 수 없었던
-아름다운 시절 속에 머문 그대여
-
-그리워하면 언젠가 만나게 되는
-어느 영화와 같은 일들이 이뤄져 가기를
-힘겨워 한 날에 너를 지킬 수 없었던
-아름다운 시절 속에 머문 그대이기에''',
+                            songData['lyrics'] ?? '가사 정보가 없습니다.',
                             style: TextStyle(
                               height: 2.0,
                               fontSize: 16,
@@ -434,14 +411,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   borderRadius: BorderRadius.circular(24),
                   onTap: () {
                     final song = Song(
-                      title: 'Never Ending Story',
-                      artist: 'IU',
-                      albumCover: 'assets/images/iu.webp',
-                      difficulty: '중급',
-                      range: 'F3 ~ D5',
-                      lyrics:
-                          '''손 닿을 수 없는 저기 어딘가\n오늘도 난 숨 쉬고 있지만\n너와 머물던 작은 의자 위에\n같은 모습의 바람이 지나네\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에\n\n너는 떠나며 마치 날 떠나가듯이\n멀리 손을 흔들며\n언젠가 추억에 남겨져 갈 거라고\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대여\n\n그리워하면 언젠가 만나게 되는\n어느 영화와 같은 일들이 이뤄져 가기를\n힘겨워 한 날에 너를 지킬 수 없었던\n아름다운 시절 속에 머문 그대이기에''',
-                      duration: '3:40',
+                      title: songData['title'] ?? '',
+                      artist: songData['artist'] ?? '',
+                      albumCover: songData['image'] ?? '',
+                      difficulty: '분석 예정',
+                      range: '분석 예정',
+                      lyrics: songData['lyrics'] ?? '',
+                      duration: '분석 예정',
                     );
                     Navigator.pushNamed(context, '/record', arguments: song);
                   },
@@ -468,6 +444,38 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildAlbumCover(String imagePath) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 80),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 80),
+          );
+        },
+      );
+    }
   }
 
   Widget _buildTag(String text, Color color) {
