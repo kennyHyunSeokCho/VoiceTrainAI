@@ -108,14 +108,6 @@ class HomePage extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
-              Text(
-                '더보기',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -166,14 +158,6 @@ class HomePage extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
-                ),
-              ),
-              Text(
-                '더보기',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -315,14 +299,6 @@ class HomePage extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
-                ),
-              ),
-              Text(
-                '더보기',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
