@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'models/song.dart';
-import 'pages/record_page.dart';
-import 'pages/ai_vocal_loading_page.dart';
-import 'pages/ai_vocal_ready_page.dart';
-import 'pages/ai_vocal_play_page.dart';
-import 'pages/login_page.dart';
+import 'package:SingSang/models/song.dart';
+import 'package:SingSang/pages/record_page.dart';
+import 'package:SingSang/pages/ai_vocal_loading_page.dart';
+import 'package:SingSang/pages/ai_vocal_ready_page.dart';
+import 'package:SingSang/pages/ai_vocal_play_page.dart';
+import 'package:SingSang/pages/login_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   final Song sampleSong = Song(
     title: 'Never Ending Story',
     artist: 'IU',
-    albumCover: '',
+    albumCover: 'assets/images/iu.webp',
     difficulty: '중급',
     range: 'F3 ~ D5',
     lyrics: '그리워하면 언젠가 만나게 되는 ... (가사 생략)',

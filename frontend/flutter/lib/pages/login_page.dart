@@ -146,7 +146,11 @@ class LoginPage extends StatelessWidget {
                       child: const Text(
                         'Login with Google',
                         style: TextStyle(color: Colors.black),
+                      ),
                     ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Center(

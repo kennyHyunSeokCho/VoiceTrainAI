@@ -3,7 +3,9 @@ import 'dart:ui';
 import '../models/song.dart';
 
 class SongDetailPage extends StatefulWidget {
-  const SongDetailPage({super.key});
+  final Song song;
+
+  const SongDetailPage({super.key, required this.song});
 
   @override
   State<SongDetailPage> createState() => _SongDetailPageState();
