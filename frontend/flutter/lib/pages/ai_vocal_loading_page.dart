@@ -47,6 +47,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           }
 
           if (_progress > 1.0) _progress = 1.0;
+        }); // setState 닫기
         
         // 애니메이션 업데이트
         _progressAnimation = Tween<double>(
@@ -75,7 +76,11 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
     _animationController.dispose();
     super.dispose();
   }
+
+  String _getLoadingText() {
+    if (_progress < 0.3) {
       return '보컬 특성 추출 중...';
+    } else if (_progress < 0.7) {
       return 'AI 보컬 생성 중...';
     } else if (_progress < 0.95) {
       return '음질 최적화 중...';
@@ -144,6 +149,18 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
+                              width: 160,
+                              height: 160,
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.music_note,
+                                color: Colors.grey[400],
+                                size: 80,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                       Container(
                         width: 180,
                         height: 180,
@@ -273,10 +290,10 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                         context,
                         '/ai-vocal-ready',
                         arguments: song,
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
-                      ),
                       elevation: 4,
                     ),
                     child: Text(

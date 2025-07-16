@@ -57,7 +57,7 @@ class VoiceTrainingApp extends StatelessWidget {
         centerTitle: true,
       ),
       body: Consumer<RecordingProvider>(
-        builder: (context, recordingProvider, child) {
+        builder: (context, recordingProvider, _) {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -67,41 +67,36 @@ class VoiceTrainingApp extends StatelessWidget {
                     minHeight: MediaQuery.of(context).size.height - 
                                kToolbarHeight - 
                                MediaQuery.of(context).padding.top - 
-                               MediaQuery.of(context).padding.bottom - 48,
-                  ),
+                               MediaQuery.of(context).padding.bottom - 48)),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
                     // 🎤 녹음 상태 및 시간 표시
-                    _buildRecordingStatus(recordingProvider),
+                    VoiceTrainingApp._buildRecordingStatus(recordingProvider),
                     
                     const SizedBox(height: 40),
 
                     // 🎚️ 데시벨 임계값 컨트롤
-                      // 🎚️ 데시벨 임계값 컨트롤
-                      Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: AudioThresholdControlWidget(),
-                        ),
+                    Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: AudioThresholdControlWidget(),
+                      ),
+                    ),
 
-                      const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                      // 🎵 메인 녹음 버튼
-                      _buildMainRecordButton(context, recordingProvider),
+                    // 🎵 메인 녹음 버튼
+                    VoiceTrainingApp._buildMainRecordButton(context, recordingProvider),
 
-                      const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                      // 💡 간단한 안내 메시지
-                      _buildHelpText(recordingProvider),
-                    ],
-                  ),
+                    // 💡 간단한 안내 메시지
+                    VoiceTrainingApp._buildHelpText(recordingProvider),
+                  ],
                 ),
               ),
             ),
@@ -112,10 +107,11 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 녹음 상태 및 시간 표시
-  Widget _buildRecordingStatus(RecordingProvider provider) {
+  static Widget _buildRecordingStatus(RecordingProvider provider) {
     return Column(
       children: [
         // 녹음 상태 아이콘
+        Container(
           width: 120,
           height: 120,
           decoration: BoxDecoration(
@@ -158,8 +154,9 @@ class VoiceTrainingApp extends StatelessWidget {
           Text(
             provider.waitingForVoice
                 ? '🎤 음성을 기다리는 중...'
-                ? '🔴 실제 녹음 중!'
-                : '녹음 중...',
+                : (provider.isActuallyRecording
+                      ? '🔴 실제 녹음 중!'
+                      : '녹음 중...'),
             style: TextStyle(
               fontSize: 16,
               color: provider.isActuallyRecording ? Colors.red : Colors.orange,
@@ -167,10 +164,16 @@ class VoiceTrainingApp extends StatelessWidget {
             ),
           ),
         ] else ...[
+          const Text(
+            '00:00',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.w300,
+              fontFamily: 'monospace',
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             '녹음 준비됨',
             style: TextStyle(
               fontSize: 16,
@@ -183,16 +186,11 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 메인 녹음 버튼
-<<<<<<< HEAD
-  Widget _buildMainRecordButton(BuildContext context, RecordingProvider provider) {
+  static Widget _buildMainRecordButton(BuildContext context, RecordingProvider provider) {
     return GestureDetector(
-    BuildContext context,
-    RecordingProvider provider,
-  ) {
       onTap: () async {
         print('👆 버튼 클릭됨! 현재 녹음 상태: ${provider.isRecording}');
 
->>>>>>> origin/Feature_CM
         try {
           if (provider.isRecording) {
             print('🔄 UI: 녹음 중지 버튼 클릭');
@@ -203,8 +201,16 @@ class VoiceTrainingApp extends StatelessWidget {
                 content: Row(
                   children: [
                     const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    const Text('✅ 녹음이 완료되었습니다!'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
+                ),
               ),
             );
           } else {
@@ -333,7 +339,7 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 도움말 텍스트
-  Widget _buildHelpText(RecordingProvider provider) {
+  static Widget _buildHelpText(RecordingProvider provider) {
     if (provider.isRecording) {
       if (provider.waitingForVoice) {
         return Text(
@@ -362,7 +368,7 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 시간 포맷팅 함수
-  String _formatDuration(Duration duration) {
+  static String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final minutes = twoDigits(duration.inMinutes);
     final seconds = twoDigits(duration.inSeconds % 60);

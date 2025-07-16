@@ -188,6 +188,7 @@ class HomePage extends StatelessWidget {
                   song: Song(
                     title: 'Never Ending Story',
                     artist: 'IU',
+                    albumCover: 'assets/images/iu.webp',
                     difficulty: '중급',
                     range: 'F3 ~ D5',
                     lyrics: '그리워하면 언젠가 만나게 되는 ...',
@@ -217,6 +218,11 @@ class HomePage extends StatelessWidget {
                     lyrics: '가사 없음',
                     duration: '4:10',
                   ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 32),
           // 보컬 트래킹 진행률
           Text(
@@ -251,6 +257,22 @@ class HomePage extends StatelessWidget {
                         color: Colors.purple[600],
                         size: 24,
                       ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '이번 달 보컬 트래킹',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '총 12회 중 10회 완료',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -315,6 +337,7 @@ class HomePage extends StatelessWidget {
                   song: Song(
                     title: 'NO PAIN',
                     artist: '실리카겔',
+                    albumCover: 'assets/images/no_pain.webp',
                     difficulty: '중급',
                     range: 'D4 ~ F5',
                     lyrics: '가사 없음',
@@ -344,6 +367,10 @@ class HomePage extends StatelessWidget {
                     lyrics: '가사 없음',
                     duration: '3:30',
                   ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 32),
         ],
       ),

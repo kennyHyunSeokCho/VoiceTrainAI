@@ -74,16 +74,36 @@ class AiVocalPlayPage extends StatelessWidget {
                           width: 200,
                           height: 200,
                           fit: BoxFit.cover,
-                                color: Colors.deepPurple.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+                        ),
+                      ),
+                      // 재생 버튼
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(100),
                           ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 28,
+                          child: Center(
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.deepPurple.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -132,7 +152,13 @@ class AiVocalPlayPage extends StatelessWidget {
                     SizedBox(width: 12),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.purple[50],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
                         song.range,
+                        style: TextStyle(
                           fontSize: 12,
                           color: Colors.purple[700],
                           fontWeight: FontWeight.w500,
