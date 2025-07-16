@@ -200,66 +200,35 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    return ListView.builder(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20),
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final song = results[index];
-        return Container(
-          margin: EdgeInsets.only(bottom: 16),
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SongCard(
-                  imagePath: song['image'] ?? '',
-                  title: song['title'] ?? '',
-                  artist: song['artist'] ?? '',
+      child: GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: results.length,
+        itemBuilder: (context, index) {
+          final song = results[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SongDetailPage(songData: song),
                 ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      song['title'] ?? '',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      song['artist'] ?? '',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.play_circle_outline,
-                color: Colors.grey[600],
-                size: 24,
-              ),
-            ],
-          ),
-        );
-      },
+              );
+            },
+            child: SongCard(
+              title: song['title'] ?? '',
+              artist: song['artist'] ?? '',
+              imagePath: song['image'] ?? '',
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -320,32 +289,35 @@ class _SearchPageState extends State<SearchPage> {
         ),
         SizedBox(height: 12),
         Expanded(
-          child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.8,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: filteredSongs.length,
+              itemBuilder: (context, index) {
+                final song = filteredSongs[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SongDetailPage(songData: song),
+                      ),
+                    );
+                  },
+                  child: SongCard(
+                    title: song['title'] ?? '',
+                    artist: song['artist'] ?? '',
+                    imagePath: song['image'] ?? '',
+                  ),
+                );
+              },
             ),
-            itemCount: filteredSongs.length,
-            itemBuilder: (context, index) {
-              final song = filteredSongs[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SongDetailPage(songData: song),
-                    ),
-                  );
-                },
-                child: SongCard(
-                  title: song['title'] ?? '',
-                  artist: song['artist'] ?? '',
-                  imagePath: song['image'] ?? '',
-                ),
-              );
-            },
           ),
         ),
       ],

@@ -15,15 +15,15 @@ class SongCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 160,
       child: Column(
-        mainAxisSize: MainAxisSize.min, // 추가!
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 앨범커버
+          // 앨범커버 - 정사각형으로 고정
           AspectRatio(
             aspectRatio: 1,
             child: Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
@@ -41,7 +41,7 @@ class SongCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 8), // 12 → 8로 줄여도 충분
+          const SizedBox(height: 8),
           // 곡 제목
           Text(
             title,
@@ -55,7 +55,7 @@ class SongCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 2), // 4 → 2로 줄임
+          const SizedBox(height: 2),
           // 아티스트
           Text(
             artist,
@@ -73,12 +73,49 @@ class SongCard extends StatelessWidget {
   }
 
   Widget _buildImage(String path) {
+    // S3 URL이 기본 경로만 있는 경우 기본 이미지 표시
+    if (path.contains(
+          'ai-vocal-test-chaemin.s3.ap-northeast-2.amazonaws.com/album_covers/optimize',
+        ) &&
+        !path.contains('.jpg') &&
+        !path.contains('.png') &&
+        !path.contains('.jpeg') &&
+        !path.contains('.webp')) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.music_note, color: Colors.grey[400], size: 40),
+            const SizedBox(height: 8),
+            Text(
+              '앨범 커버',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return Image.network(
         path,
         fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
         errorBuilder: (context, error, stack) {
           return Container(
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(12),
@@ -91,8 +128,12 @@ class SongCard extends StatelessWidget {
       return Image.asset(
         path,
         fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
         errorBuilder: (context, error, stack) {
           return Container(
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(12),
