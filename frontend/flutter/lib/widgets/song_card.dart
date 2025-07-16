@@ -46,23 +46,7 @@ class SongCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stack) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.music_note,
-                          color: Colors.grey[400],
-                          size: 40,
-                        ),
-                      );
-                    },
-                  ),
+                  child: _buildImage(imagePath),
                 ),
               ),
             ),
@@ -97,5 +81,37 @@ class SongCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildImage(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 40),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 40),
+          );
+        },
+      );
+    }
   }
 }
