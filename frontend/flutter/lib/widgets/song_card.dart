@@ -29,7 +29,10 @@ class SongCard extends StatelessWidget {
             child: AspectRatio(
               aspectRatio: 1,
               child: Container(
+<<<<<<< HEAD
                 width: double.infinity,
+=======
+>>>>>>> 82cc4505750af6e4ee2d4559341fcc9ab375dd61
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
