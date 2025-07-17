@@ -10,10 +10,6 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = '전체';
-  bool _isSearching = false;
-
-  final List<String> categories = ['전체', '가요', '팝', '랩', '재즈', '클래식'];
 
   // 예시 곡 데이터
   final List<Map<String, String>> songs = [
@@ -54,12 +50,6 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        title: Text('검색'),
-      ),
       body: Column(
         children: [
           // 검색바
@@ -75,9 +65,7 @@ class _SearchPageState extends State<SearchPage> {
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) {
-                  setState(() {
-                    _isSearching = value.isNotEmpty;
-                  });
+                  setState(() {});
                 },
                 decoration: InputDecoration(
                   hintText: '노래, 아티스트 검색',
@@ -97,54 +85,9 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
 
-          // 카테고리 필터
-          Container(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = _selectedCategory == category;
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory = category;
-                    });
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: 12),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.black87 : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? Colors.black87 : Colors.grey[300]!,
-                      ),
-                    ),
-                    child: Text(
-                      category,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey[600],
-                        fontSize: 14,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          SizedBox(height: 20),
-
           // 검색 결과 또는 추천 곡
           Expanded(
-            child: _isSearching || _selectedCategory != '전체'
+            child: _searchController.text.isNotEmpty
                 ? _buildSearchResults()
                 : _buildRecommendations(),
           ),
@@ -344,9 +287,7 @@ class _SearchPageState extends State<SearchPage> {
                 lyrics: '가사 없음', // 임시 값
                 duration: '0:00', // 임시 값
               );
-              return SongCard(
-                song: song,
-              );
+              return SongCard(song: song);
             },
           ),
         ),
