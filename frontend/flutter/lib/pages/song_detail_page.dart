@@ -3,9 +3,9 @@ import 'dart:ui';
 import '../models/song.dart';
 
 class SongDetailPage extends StatefulWidget {
-  final Song song;
+  final Map<String, String> songData;
 
-  const SongDetailPage({super.key, required this.song});
+  const SongDetailPage({super.key, required this.songData});
 
   @override
   State<SongDetailPage> createState() => _SongDetailPageState();
@@ -14,6 +14,8 @@ class SongDetailPage extends StatefulWidget {
 class _SongDetailPageState extends State<SongDetailPage> {
   @override
   Widget build(BuildContext context) {
+    final songData = widget.songData;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FF),
       body: Stack(
@@ -80,25 +82,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-                            child: Image.asset(
-                              widget.song.albumCover.isNotEmpty
-                                  ? widget.song.albumCover
-                                  : 'assets/images/default_album_cover.webp',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stack) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: Icon(
-                                    Icons.music_note,
-                                    color: Colors.grey[400],
-                                    size: 80,
-                                  ),
-                                );
-                              },
-                            ),
+                            child: _buildAlbumCover(songData['image'] ?? ''),
                           ),
                         ),
                       ),
@@ -110,7 +94,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Column(
                           children: [
                             Text(
-                              widget.song.artist,
+                              songData['artist'] ?? '',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: const Color(0xFF8B5CF6),
@@ -120,7 +104,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              widget.song.title,
+                              songData['title'] ?? '',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w800,
@@ -141,8 +125,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildTag(widget.song.range, const Color(0xFFE0E7FF)),
-                            _buildDifficultyTag(widget.song.difficulty),
+                            _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF)),
+                            _buildDifficultyTag('분석 예정'),
                           ],
                         ),
                       ),
@@ -173,10 +157,19 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                             GestureDetector(
                               onTap: () {
+                                final song = Song(
+                                  title: songData['title'] ?? '',
+                                  artist: songData['artist'] ?? '',
+                                  albumCover: songData['image'] ?? '',
+                                  difficulty: '분석 예정',
+                                  range: '분석 예정',
+                                  lyrics: songData['lyrics'] ?? '',
+                                  duration: '분석 예정',
+                                );
                                 Navigator.pushNamed(
                                   context,
                                   '/ai-vocal-loading',
-                                  arguments: widget.song,
+                                  arguments: song,
                                 );
                               },
                               child: _buildQuickAction(
@@ -319,17 +312,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                    widget.song.albumCover.isNotEmpty
-                                        ? widget.song.albumCover
-                                        : 'assets/images/default_album_cover.webp',
-                                  ),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.1),
-                                    BlendMode.darken,
-                                  ),
+                                color: Colors.grey[200],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: _buildAlbumCover(
+                                  songData['image'] ?? '',
                                 ),
                               ),
                             ),
@@ -339,7 +327,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.song.title,
+                                    songData['title'] ?? '',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
@@ -348,7 +336,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${widget.song.artist} • Cover Version',
+                                    '${songData['artist']} • Cover Version',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: const Color(0xFF8B5CF6),
@@ -379,7 +367,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
-                            widget.song.lyrics,
+                            _formatLyrics(songData['lyrics'] ?? '가사 정보가 없습니다.'),
                             style: TextStyle(
                               height: 2.0,
                               fontSize: 16,
@@ -422,7 +410,16 @@ class _SongDetailPageState extends State<SongDetailPage> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () {
-                    Navigator.pushNamed(context, '/record', arguments: widget.song);
+                    final song = Song(
+                      title: songData['title'] ?? '',
+                      artist: songData['artist'] ?? '',
+                      albumCover: songData['image'] ?? '',
+                      difficulty: '분석 예정',
+                      range: '분석 예정',
+                      lyrics: songData['lyrics'] ?? '',
+                      duration: '분석 예정',
+                    );
+                    Navigator.pushNamed(context, '/record', arguments: song);
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -447,6 +444,38 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildAlbumCover(String imagePath) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 80),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stack) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Icon(Icons.music_note, color: Colors.grey[400], size: 80),
+          );
+        },
+      );
+    }
   }
 
   Widget _buildTag(String text, Color color) {
@@ -559,5 +588,34 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  /// 가사에 줄바꿈을 추가하는 함수
+  /// 문장 끝에 마침표, 느낌표, 물음표가 있으면 줄바꿈을 추가합니다.
+  String _formatLyrics(String lyrics) {
+    if (lyrics.isEmpty || lyrics == '가사 정보가 없습니다.') {
+      return lyrics;
+    }
+
+    // 문장 끝 부호들 (마침표, 느낌표, 물음표) 뒤에 줄바꿈 추가
+    String formattedLyrics = lyrics
+        .replaceAll('. ', '.\n')
+        .replaceAll('! ', '!\n')
+        .replaceAll('? ', '?\n')
+        .replaceAll('。 ', '。\n') // 일본어/한국어 마침표
+        .replaceAll('！ ', '！\n') // 일본어/한국어 느낌표
+        .replaceAll('？ ', '？\n'); // 일본어/한국어 물음표
+
+    // 마지막 문장도 줄바꿈 처리
+    if (formattedLyrics.endsWith('.') ||
+        formattedLyrics.endsWith('!') ||
+        formattedLyrics.endsWith('?') ||
+        formattedLyrics.endsWith('。') ||
+        formattedLyrics.endsWith('！') ||
+        formattedLyrics.endsWith('？')) {
+      formattedLyrics += '\n';
+    }
+
+    return formattedLyrics;
   }
 }
