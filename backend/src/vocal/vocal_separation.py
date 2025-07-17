@@ -63,14 +63,18 @@ class VocalSeparator:
     
     def separate_audio(self, 
                       input_path: str,
-                      output_dir: str,
-                      audio_format: str = "wav") -> Dict[str, str]:
+                      output_dir: str = None,
+                      audio_format: str = "wav",
+                      vocal_dir: str = None,
+                      inst_dir: str = None) -> Dict[str, str]:
         """
         음악 파일에서 보컬과 반주를 분리합니다.
         
         Args:
             input_path (str): 입력 음악 파일 경로
-            output_dir (str): 출력 디렉토리 경로
+            output_dir (str): (사용 안함, 호환성)
+            vocal_dir (str): 보컬 저장 폴더 경로
+            inst_dir (str): inst 저장 폴더 경로
             audio_format (str): 출력 오디오 포맷 (wav, mp3, flac 등)
         
         Returns:
@@ -86,9 +90,12 @@ class VocalSeparator:
         if not os.path.exists(input_path):
             raise FileNotFoundError(f"입력 파일을 찾을 수 없습니다: {input_path}")
         
-        # 출력 디렉토리 생성
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
+        # 분리 결과 폴더 지정
+        base_filename = Path(input_path).stem
+        vocal_dir = vocal_dir or "data/music_file/seperated_voice"
+        inst_dir = inst_dir or "data/music_file/seperated_inst"
+        Path(vocal_dir).mkdir(parents=True, exist_ok=True)
+        Path(inst_dir).mkdir(parents=True, exist_ok=True)
         
         try:
             logger.info(f"🎧 음성 분리 시작: {input_path}")
@@ -112,7 +119,6 @@ class VocalSeparator:
             
             # 결과 파일 저장 (보컬과 반주만)
             result_paths = {}
-            base_filename = Path(input_path).stem
             
             # Demucs 모델의 source 이름들
             source_names = self.model.sources
@@ -123,7 +129,7 @@ class VocalSeparator:
                 
                 # 1. 보컬 파일 저장
                 vocal_filename = f"{base_filename}_vocal.{audio_format}"
-                vocal_path = output_path / vocal_filename
+                vocal_path = Path(vocal_dir) / vocal_filename
                 
                 torchaudio.save(
                     str(vocal_path),
@@ -142,7 +148,7 @@ class VocalSeparator:
                 )
                 
                 inst_filename = f"{base_filename}_inst.{audio_format}"
-                inst_path = output_path / inst_filename
+                inst_path = Path(inst_dir) / inst_filename
                 
                 torchaudio.save(
                     str(inst_path),
