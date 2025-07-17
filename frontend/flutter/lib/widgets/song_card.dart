@@ -20,23 +20,29 @@ class SongCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 앨범커버 - 정사각형으로 고정
-          AspectRatio(
-            aspectRatio: 1,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: _buildImage(imagePath),
+          Container(
+            width: double.infinity,
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.4,
+              maxHeight: MediaQuery.of(context).size.width * 0.4,
+            ),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildImage(imagePath),
+                ),
               ),
             ),
           ),
