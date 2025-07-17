@@ -1,9 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:csv/csv.dart';
 import '../widgets/song_card.dart';
+import 'song_detail_page.dart';
 import '../models/song.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, String>> songs = [];
+  List<Map<String, String>> recommendedSongs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSongs();
+  }
+
+  Future<void> _loadSongs() async {
+    try {
+      final String csvData = await rootBundle.loadString(
+        'assets/all_chart_songs.csv',
+      );
+      final List<List<dynamic>> csvTable = const CsvToListConverter().convert(
+        csvData,
+      );
+
+      if (csvTable.isNotEmpty) {
+        final headers = csvTable[0];
+        final List<Map<String, String>> loadedSongs = [];
+
+        for (int i = 1; i < csvTable.length; i++) {
+          final row = csvTable[i];
+          if (row.length >= headers.length) {
+            final Map<String, String> song = {};
+            for (int j = 0; j < headers.length; j++) {
+              song[headers[j]] = row[j]?.toString() ?? '';
+            }
+            loadedSongs.add(song);
+          }
+        }
+
+        setState(() {
+          songs = loadedSongs;
+          // 임시로 처음 6곡을 추천곡으로 설정 (나중에 음역대/음색 기반으로 변경)
+          recommendedSongs = loadedSongs.take(6).toList();
+        });
+      }
+    } catch (e) {
+      print('CSV 로딩 오류: $e');
+      // 오류 시 기본 데이터 사용
+      setState(() {
+        recommendedSongs = [
+          {
+            'title': 'Never Ending Story',
+            'artist': 'IU',
+            'image': 'assets/images/iu.webp',
+            'lyrics': '기본 가사...',
+          },
+          {
+            'title': 'Drowning',
+            'artist': 'WOODZ',
+            'image': 'assets/images/no_pain.webp',
+            'lyrics': '기본 가사...',
+          },
+          {
+            'title': 'FAMOUS',
+            'artist': 'Allday Project',
+            'image': 'assets/images/famous.webp',
+            'lyrics': '기본 가사...',
+          },
+        ];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,47 +239,35 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 230, // 높이를 200에서 230으로 늘림
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  song: Song(
-                    title: 'Never Ending Story',
-                    artist: 'IU',
-                    albumCover: 'assets/images/iu.webp',
-                    difficulty: '중급',
-                    range: 'F3 ~ D5',
-                    lyrics: '그리워하면 언젠가 만나게 되는 ...',
-                    duration: '3:40',
+            height: 220,
+            child: recommendedSongs.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: recommendedSongs.length,
+                    itemBuilder: (context, index) {
+                      final song = recommendedSongs[index];
+                      return Container(
+                        margin: EdgeInsets.only(right: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SongDetailPage(songData: song),
+                              ),
+                            );
+                          },
+                          child: SongCard(
+                            title: song['title'] ?? '',
+                            artist: song['artist'] ?? '',
+                            imagePath: song['image'] ?? '',
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'Drowning',
-                    artist: 'WOODZ',
-                    albumCover: 'assets/images/no_pain.webp',
-                    difficulty: '초급',
-                    range: 'C4 ~ C5',
-                    lyrics: '가사 없음',
-                    duration: '3:00',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'FAMOUS',
-                    artist: 'Allday Project',
-                    albumCover: 'assets/images/famous.webp',
-                    difficulty: '고급',
-                    range: 'E4 ~ G5',
-                    lyrics: '가사 없음',
-                    duration: '4:10',
-                  ),
-                ),
-              ],
-            ),
           ),
 
           const SizedBox(height: 32),
@@ -305,47 +368,35 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 230, // 높이를 200에서 230으로 늘림
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  song: Song(
-                    title: 'NO PAIN',
-                    artist: '실리카겔',
-                    albumCover: 'assets/images/no_pain.webp',
-                    difficulty: '중급',
-                    range: 'D4 ~ F5',
-                    lyrics: '가사 없음',
-                    duration: '3:50',
+            height: 220,
+            child: songs.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: songs.take(6).length,
+                    itemBuilder: (context, index) {
+                      final song = songs[index];
+                      return Container(
+                        margin: EdgeInsets.only(right: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SongDetailPage(songData: song),
+                              ),
+                            );
+                          },
+                          child: SongCard(
+                            title: song['title'] ?? '',
+                            artist: song['artist'] ?? '',
+                            imagePath: song['image'] ?? '',
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'FAMOUS',
-                    artist: 'Allday Project',
-                    albumCover: 'assets/images/famous.webp',
-                    difficulty: '고급',
-                    range: 'E4 ~ G5',
-                    lyrics: '가사 없음',
-                    duration: '4:10',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'Celebrity',
-                    artist: 'IU',
-                    albumCover: 'assets/images/iu.webp',
-                    difficulty: '초급',
-                    range: 'C4 ~ C5',
-                    lyrics: '가사 없음',
-                    duration: '3:30',
-                  ),
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: 32),
         ],
