@@ -4,9 +4,8 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity as sk_cosine
 from sklearn.metrics.pairwise import euclidean_distances
-from s3_config import AWS_ACCESS_KEY, AWS_SECRET_KEY, BUCKET_NAME, REGION_NAME
+from vocal.s3_config import AWS_ACCESS_KEY, AWS_SECRET_KEY, BUCKET_NAME, REGION_NAME
 
-# S3 정보 입력 (직접 입력 필요
 
 # 사용자 임베딩 로드 함수 (로컬 파일)
 def load_user_embedding(path='backend/src/vocal/test_audio/hubert_embedding_result.json'):
@@ -108,7 +107,7 @@ def main():
     # 1. 곡 추천
     song_files = list_song_embedding_files(s3)
     all_embeddings = []
-    for key in tqdm(song_files, desc='곡 임베딩 로드 중'):
+    for key in song_files:
         try:
             emb = load_song_embedding_from_s3(s3, key)
             all_embeddings.append(emb)
@@ -123,16 +122,13 @@ def main():
         song_scores.append((key, sim))
 
     top5_songs = sorted(song_scores, key=lambda x: x[1], reverse=True)[:5]
-
-    print("\n[추천 곡 Top 5]")
-    for key, score in top5_songs:
-        print(f"{key} (유사도: {score:.4f})")
+    song_names = [key.split('/')[-1].replace('_embedding.json', '').replace('_', ' ') for key, _ in top5_songs]
 
     # 2. 가수 추천
     summary_files = list_summary_files(s3)
     summary_embeddings = []
     summary_keys = []
-    for key in tqdm(summary_files, desc='가수 summary 로드 중'):
+    for key in summary_files:
         try:
             emb = load_summary_embedding_from_s3(s3, key)
             summary_embeddings.append(emb)
@@ -149,10 +145,9 @@ def main():
         singer_scores.append((singer, sim))
 
     top3_singers = sorted(singer_scores, key=lambda x: x[1], reverse=True)[:3]
+    singer_names = [singer for singer, _ in top3_singers]
 
-    print("\n[추천 가수 Top 3]")
-    for singer, score in top3_singers:
-        print(f"{singer} (유사도: {score:.4f})")
+    return {"songs": song_names, "singers": singer_names}
 
 if __name__ == "__main__":
     main()
