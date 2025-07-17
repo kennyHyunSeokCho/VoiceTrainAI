@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
 import '../models/song.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
+
+final List<_LyricLine> exampleLyrics = [
+  _LyricLine(text: '손 닿을 수 없는 저기 어딘가', time: 0),
+  _LyricLine(text: '오늘도 난 숨 쉬고 있지만', time: 3),
+  _LyricLine(text: '너와 머물던 작은 의자 위에', time: 6),
+  _LyricLine(text: '같은 모습의 바람이 지나네', time: 9),
+  _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이', time: 12),
+  _LyricLine(text: '손 닿을 수 없는 저기 어딘가2', time: 15),
+  _LyricLine(text: '오늘도 난 숨 쉬고 있지만2', time: 20),
+  _LyricLine(text: '너와 머물던 작은 의자 위에2', time: 25),
+  _LyricLine(text: '같은 모습의 바람이 지나네2', time: 28),
+  _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이2', time: 31),
+  _LyricLine(text: '손 닿을 수 없는 저기 어딘가3', time: 33),
+  _LyricLine(text: '오늘도 난 숨 쉬고 있지만3', time: 36),
+  _LyricLine(text: '너와 머물던 작은 의자 위에3', time: 39),
+  _LyricLine(text: '같은 모습의 바람이 지나네3', time: 42),
+  _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이3', time: 45),
+];
 
 class RecordPage extends StatefulWidget {
   @override
@@ -20,6 +41,8 @@ class _RecordPageState extends State<RecordPage> {
   Timer? mainTimer;
   final Random _random = Random();
   bool isFavorite = false; // 즐겨찾기 상태
+  String? albumCoverUrl;
+  bool loading = true;
 
   late AudioPlayer _audioPlayer;
 
@@ -37,23 +60,23 @@ class _RecordPageState extends State<RecordPage> {
   double totalDuration = 50.0; // 예시 전체 길이(초)
 
   // 예시: 가사-시간 매핑
-  final List<_LyricLine> exampleLyrics = [
-    _LyricLine(text: '손 닿을 수 없는 저기 어딘가', time: 0),
-    _LyricLine(text: '오늘도 난 숨 쉬고 있지만', time: 3),
-    _LyricLine(text: '너와 머물던 작은 의자 위에', time: 6),
-    _LyricLine(text: '같은 모습의 바람이 지나네', time: 9),
-    _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이', time: 12),
-    _LyricLine(text: '손 닿을 수 없는 저기 어딘가2', time: 15),
-    _LyricLine(text: '오늘도 난 숨 쉬고 있지만2', time: 20),
-    _LyricLine(text: '너와 머물던 작은 의자 위에2', time: 25),
-    _LyricLine(text: '같은 모습의 바람이 지나네2', time: 28),
-    _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이2', time: 31),
-    _LyricLine(text: '손 닿을 수 없는 저기 어딘가3', time: 33),
-    _LyricLine(text: '오늘도 난 숨 쉬고 있지만3', time: 36),
-    _LyricLine(text: '너와 머물던 작은 의자 위에3', time: 39),
-    _LyricLine(text: '같은 모습의 바람이 지나네3', time: 42),
-    _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이3', time: 45),
-  ];
+  // final List<_LyricLine> exampleLyrics = [
+  //   _LyricLine(text: '손 닿을 수 없는 저기 어딘가', time: 0),
+  //   _LyricLine(text: '오늘도 난 숨 쉬고 있지만', time: 3),
+  //   _LyricLine(text: '너와 머물던 작은 의자 위에', time: 6),
+  //   _LyricLine(text: '같은 모습의 바람이 지나네', time: 9),
+  //   _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이', time: 12),
+  //   _LyricLine(text: '손 닿을 수 없는 저기 어딘가2', time: 15),
+  //   _LyricLine(text: '오늘도 난 숨 쉬고 있지만2', time: 20),
+  //   _LyricLine(text: '너와 머물던 작은 의자 위에2', time: 25),
+  //   _LyricLine(text: '같은 모습의 바람이 지나네2', time: 28),
+  //   _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이2', time: 31),
+  //   _LyricLine(text: '손 닿을 수 없는 저기 어딘가3', time: 33),
+  //   _LyricLine(text: '오늘도 난 숨 쉬고 있지만3', time: 36),
+  //   _LyricLine(text: '너와 머물던 작은 의자 위에3', time: 39),
+  //   _LyricLine(text: '같은 모습의 바람이 지나네3', time: 42),
+  //   _LyricLine(text: '너는 떠나며 마치 날 떠나가듯이3', time: 45),
+  // ];
 
   @override
   void initState() {
@@ -63,6 +86,45 @@ class _RecordPageState extends State<RecordPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startMainTimer();
     });
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      // initState에서는 context를 직접 사용할 수 없으므로 WidgetsBinding 사용
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+
+        final song = ModalRoute.of(context)!.settings.arguments as Song;
+
+        // S3에서 실제 데이터 불러오기
+        String coverUrl = await fetchAlbumCoverUrl(song.artist, song.title);
+        List<_LyricLine> lyrics = await fetchLyrics(
+          song.artist,
+          songTitle: song.title,
+        );
+
+        print('S3에서 불러온 앨범커버: $coverUrl');
+        print('S3에서 불러온 가사 개수: ${lyrics.length}');
+
+        if (mounted) {
+          setState(() {
+            albumCoverUrl = coverUrl;
+            lyricLines = lyrics;
+            loading = false;
+          });
+        }
+      });
+    } catch (e) {
+      print('데이터 로딩 중 오류 발생: $e');
+      if (mounted) {
+        setState(() {
+          albumCoverUrl = 'https://via.placeholder.com/150';
+          lyricLines = exampleLyrics;
+          loading = false;
+        });
+      }
+    }
   }
 
   void _startMainTimer() {
@@ -125,6 +187,7 @@ class _RecordPageState extends State<RecordPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return Center(child: CircularProgressIndicator());
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
     double currentTime = progress * totalDuration;
 
@@ -225,34 +288,15 @@ class _RecordPageState extends State<RecordPage> {
               padding: const EdgeInsets.only(top: 8, bottom: 0),
               child: Column(
                 children: [
-                  Container(
+                  // 앨범 커버
+                  CachedNetworkImage(
+                    imageUrl: albumCoverUrl ?? '',
+                    placeholder: (context, url) => CircularProgressIndicator(),
+                    errorWidget: (context, url, error) =>
+                        Icon(Icons.music_note),
                     width: 70,
                     height: 70,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        song.albumCover.isNotEmpty
-                            ? song.albumCover
-                            : 'assets/images/Img.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/Img.png',
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      ),
-                    ),
+                    fit: BoxFit.cover,
                   ),
                   SizedBox(height: 6),
                   Text(
@@ -736,5 +780,242 @@ class _LyricSliderN extends StatelessWidget {
       );
     }
     return Column(mainAxisAlignment: MainAxisAlignment.center, children: lines);
+  }
+}
+
+Future<String> fetchAlbumCoverUrl(String artist, String title) async {
+  try {
+    // 백엔드 API를 통해 presigned URL 생성
+    final apiUrl =
+        'http://localhost:8000/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
+    print('앨범커버 API 요청: $apiUrl');
+
+    final response = await http.get(Uri.parse(apiUrl));
+    print('앨범커버 API 응답 코드: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final presignedUrl = data['url'];
+      print('앨범커버 presigned URL 생성 성공: $presignedUrl');
+      return presignedUrl;
+    } else {
+      print('앨범커버 API 실패 (${response.statusCode}): ${response.body}');
+      // API 실패 시 직접 S3 접근 시도
+      return await _tryDirectS3Access(artist, title);
+    }
+  } catch (e) {
+    print('앨범커버 API 요청 실패: $e');
+    // API 실패 시 직접 S3 접근 시도
+    return await _tryDirectS3Access(artist, title);
+  }
+}
+
+Future<String> _tryDirectS3Access(String artist, String title) async {
+  try {
+    // 파일명에서 특수문자 제거 및 공백을 언더스코어로 변경
+    String safeArtist = artist
+        .replaceAll(RegExp(r'[^\w\s가-힣]'), '')
+        .replaceAll(' ', '_');
+    String safeTitle = title
+        .replaceAll(RegExp(r'[^\w\s가-힣]'), '')
+        .replaceAll(' ', '_');
+
+    // 여러 가능한 파일명 패턴 시도
+    List<String> possibleUrls = [
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$safeArtist\_$safeTitle.jpg',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$artist\_$title.jpg',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$safeArtist/$safeTitle.jpg',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$artist/$title.jpg',
+    ];
+
+    for (String s3Url in possibleUrls) {
+      print('앨범커버 직접 S3 요청 시도: $s3Url');
+      try {
+        final response = await http.head(Uri.parse(s3Url));
+        print('앨범커버 직접 S3 응답 코드: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          print('앨범커버 직접 S3 성공: $s3Url');
+          return s3Url;
+        }
+      } catch (e) {
+        print('앨범커버 직접 S3 요청 실패: $e');
+        continue;
+      }
+    }
+
+    print('모든 앨범커버 URL 시도 실패');
+    return 'https://via.placeholder.com/150x150?text=앨범커버';
+  } catch (e) {
+    print('앨범커버 직접 S3 접근 실패: $e');
+    return 'https://via.placeholder.com/150x150?text=앨범커버';
+  }
+}
+
+// SRT 시간 형식을 초 단위로 변환하는 함수
+double _parseSrtTime(String timeStr) {
+  // 00:00:01,000 형식을 초 단위로 변환
+  final parts = timeStr.split(':');
+  if (parts.length == 3) {
+    final hours = int.tryParse(parts[0]) ?? 0;
+    final minutes = int.tryParse(parts[1]) ?? 0;
+    final secondsParts = parts[2].split(',');
+    final seconds = int.tryParse(secondsParts[0]) ?? 0;
+    final milliseconds =
+        int.tryParse(secondsParts.length > 1 ? secondsParts[1] : '0') ?? 0;
+
+    return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+  }
+  return 0.0;
+}
+
+Future<List<_LyricLine>> fetchLyrics(String artist, {String? songTitle}) async {
+  try {
+    // 백엔드 API를 통해 가사 데이터 가져오기
+    final songName = songTitle ?? 'Never Ending Story';
+    final apiUrl =
+        'http://localhost:8000/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
+    print('가사 API 요청: $apiUrl');
+
+    final response = await http.get(Uri.parse(apiUrl));
+    print('가사 API 응답 코드: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final lyricsData = data['lyrics'] as List;
+
+      List<_LyricLine> lyrics = [];
+      for (var lyric in lyricsData) {
+        lyrics.add(
+          _LyricLine(text: lyric['text'], time: lyric['time'].toDouble()),
+        );
+      }
+
+      print('API에서 파싱된 가사 개수: ${lyrics.length}');
+      return lyrics;
+    } else {
+      print('가사 API 실패 (${response.statusCode}): ${response.body}');
+      // API 실패 시 직접 S3 접근 시도
+      return await _tryDirectS3LyricsAccess(artist, songTitle);
+    }
+  } catch (e) {
+    print('가사 API 요청 실패: $e');
+    // API 실패 시 직접 S3 접근 시도
+    return await _tryDirectS3LyricsAccess(artist, songTitle);
+  }
+}
+
+Future<List<_LyricLine>> _tryDirectS3LyricsAccess(
+  String artist,
+  String? songTitle,
+) async {
+  try {
+    // 파일명에서 특수문자 제거 및 공백을 언더스코어로 변경
+    String safeArtist = artist
+        .replaceAll(RegExp(r'[^\w\s가-힣]'), '')
+        .replaceAll(' ', '_');
+    String safeTitle =
+        songTitle?.replaceAll(RegExp(r'[^\w\s가-힣]'), '').replaceAll(' ', '_') ??
+        'Never_Ending_Story';
+
+    // 여러 가능한 파일명 패턴 시도
+    List<String> possibleUrls = [
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/lyrics/$safeArtist/${safeArtist}_$safeTitle.srt',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/lyrics/$artist/${artist}_$safeTitle.srt',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/lyrics/$safeArtist/$safeTitle.srt',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/lyrics/$artist/$safeTitle.srt',
+    ];
+
+    for (String s3Url in possibleUrls) {
+      print('가사 직접 S3 요청 시도: $s3Url');
+      try {
+        final response = await http.get(Uri.parse(s3Url));
+        print('가사 직접 S3 응답 코드: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          print('가사 직접 S3 로딩 성공: $s3Url');
+          print('S3 응답 body 길이: ${response.body.length}');
+          if (response.body.length > 100) {
+            print('S3 응답 body 앞 100자: ${response.body.substring(0, 100)}');
+          }
+
+          // 인코딩 문제 해결을 위해 여러 인코딩 시도
+          String decodedContent = '';
+          List<int> bytes = response.bodyBytes;
+
+          // BOM 확인 및 제거
+          if (bytes.length >= 3 &&
+              bytes[0] == 0xEF &&
+              bytes[1] == 0xBB &&
+              bytes[2] == 0xBF) {
+            bytes = bytes.sublist(3); // UTF-8 BOM 제거
+            print('UTF-8 BOM 제거됨');
+          }
+
+          // UTF-8 시도
+          try {
+            decodedContent = utf8.decode(bytes);
+            print('UTF-8 디코딩 성공');
+          } catch (e) {
+            print('UTF-8 디코딩 실패, 다른 인코딩 시도');
+            // EUC-KR 시도 (한국어에서 자주 사용)
+            try {
+              decodedContent = latin1.decode(bytes);
+              print('Latin1 디코딩 성공');
+            } catch (e) {
+              print('Latin1 디코딩도 실패, 원본 사용');
+              decodedContent = response.body;
+            }
+          }
+
+          // 디코딩된 내용 로그 출력
+          if (decodedContent.length > 200) {
+            print('디코딩된 내용 앞 200자: ${decodedContent.substring(0, 200)}');
+          }
+
+          final lines = LineSplitter.split(decodedContent).toList();
+          List<_LyricLine> lyrics = [];
+
+          // SRT 파일 파싱
+          for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            // 시간 라인 찾기 (00:00:01,000 --> 00:00:04,000 형식)
+            if (line.contains('-->')) {
+              final timeParts = line.split(' --> ');
+              if (timeParts.length == 2) {
+                final startTime = _parseSrtTime(timeParts[0]);
+
+                // 다음 라인이 가사인지 확인
+                if (i + 1 < lines.length) {
+                  String lyricText = lines[i + 1].trim();
+                  if (lyricText.isNotEmpty && !lyricText.contains('-->')) {
+                    lyrics.add(_LyricLine(text: lyricText, time: startTime));
+                  }
+                }
+              }
+            }
+          }
+
+          if (lyrics.isNotEmpty) {
+            print('SRT에서 파싱된 가사 개수: ${lyrics.length}');
+            return lyrics;
+          } else {
+            print('SRT 파싱 결과 가사가 없음');
+          }
+        } else {
+          print('가사 직접 S3 요청 실패 (${response.statusCode}): $s3Url');
+        }
+      } catch (e) {
+        print('가사 직접 S3 요청 중 오류: $e');
+        continue;
+      }
+    }
+
+    print('모든 가사 URL 시도 실패, 기본 가사 사용');
+    return exampleLyrics;
+  } catch (e) {
+    print('가사 직접 S3 접근 실패: $e');
+    return exampleLyrics;
   }
 }
