@@ -234,19 +234,25 @@ class _SearchPageState extends State<SearchPage> {
             itemCount: ['IU', 'BTS', 'NewJeans', 'LE SSERAFIM'].length,
             itemBuilder: (context, index) {
               final keyword = ['IU', 'BTS', 'NewJeans', 'LE SSERAFIM'][index];
-              return Container(
-                margin: EdgeInsets.only(right: 12),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  keyword,
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+              return GestureDetector(
+                onTap: () {
+                  _searchController.text = keyword;
+                  setState(() {});
+                },
+                child: Container(
+                  margin: EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    keyword,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               );
