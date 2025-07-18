@@ -34,6 +34,7 @@ class RegisterPage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const Text('Email must have \'@\''),
                     const SizedBox(height: 20),
                     const Text(
                       'Password',
@@ -75,6 +76,7 @@ class RegisterPage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const Text('Enter the same password as above'),
                     const SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: () {

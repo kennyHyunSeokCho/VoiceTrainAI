@@ -8,9 +8,11 @@ class AiVocalPlayPage extends StatelessWidget {
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('AI Vocal 합성', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          'AI Vocal 합성',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -74,28 +76,34 @@ class AiVocalPlayPage extends StatelessWidget {
                           fit: BoxFit.cover,
                         ),
                       ),
-                      // 재생 중 표시
-                      Positioned(
-                        bottom: 20,
-                        right: 20,
+                      // 재생 버튼
+                      Positioned.fill(
                         child: Container(
-                          width: 50,
-                          height: 50,
                           decoration: BoxDecoration(
-                            color: Colors.deepPurple,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.deepPurple.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(100),
                           ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 28,
+                          child: Center(
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.deepPurple.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
                           ),
                         ),
                       ),

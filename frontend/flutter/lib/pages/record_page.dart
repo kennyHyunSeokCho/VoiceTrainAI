@@ -50,6 +50,8 @@ class _RecordPageState extends State<RecordPage> {
   Duration currentPosition = Duration.zero;
   bool isAudioLoaded = false;
 
+  late AudioPlayer _audioPlayer;
+
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩)
   final List<_MelodyBar> melodyBars = [
     _MelodyBar(start: 0, duration: 2, pitch: 2),
@@ -85,6 +87,7 @@ class _RecordPageState extends State<RecordPage> {
   @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer();
     lyricLines = exampleLyrics;
     _initAudioPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -189,6 +192,7 @@ class _RecordPageState extends State<RecordPage> {
           });
         }
       });
+<<<<<<< HEAD
     } catch (e) {
       print('데이터 로딩 중 오류 발생: $e');
       if (mounted) {
@@ -197,10 +201,30 @@ class _RecordPageState extends State<RecordPage> {
           lyricLines = exampleLyrics;
           loading = false;
         });
+=======
+    });
+  }
+
+  void _stopMainTimer() {
+    mainTimer?.cancel();
+  }
+
+  void _togglePlay() {
+    if (!mounted) return;
+    setState(() {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        _startMainTimer();
+        _audioPlayer.resume();
+      } else {
+        _stopMainTimer();
+        _audioPlayer.pause();
+>>>>>>> origin/Feature_DU
       }
     }
   }
 
+<<<<<<< HEAD
   Future<void> _loadInstFile(String artist, String title) async {
     try {
       // 파일명에서 특수문자 제거 및 공백을 언더스코어로 변경
@@ -255,6 +279,17 @@ class _RecordPageState extends State<RecordPage> {
         } catch (e) {
           print('Inst 파일 요청 실패: $e');
           continue;
+=======
+  void _onSeek(double value) {
+    if (!mounted) return;
+    setState(() {
+      progress = value;
+      _audioPlayer.seek(Duration(seconds: (value * totalDuration).toInt()));
+      // 가사 인덱스 갱신
+      for (int i = 0; i < lyricLines.length; i++) {
+        if (progress * totalDuration >= lyricLines[i].time) {
+          currentLyricIndex = i;
+>>>>>>> origin/Feature_DU
         }
       }
 
@@ -306,7 +341,13 @@ class _RecordPageState extends State<RecordPage> {
 
   @override
   void dispose() {
+<<<<<<< HEAD
     audioPlayer.dispose();
+=======
+    _stopMainTimer();
+    _audioPlayer.dispose();
+    mainTimer = null;
+>>>>>>> origin/Feature_DU
     super.dispose();
   }
 
@@ -314,11 +355,16 @@ class _RecordPageState extends State<RecordPage> {
   Widget build(BuildContext context) {
     if (loading) return Center(child: CircularProgressIndicator());
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
+<<<<<<< HEAD
     final double barAreaWidth = MediaQuery.of(context).size.width * 0.92;
     final double barAreaHeight = 54;
     final double leftPadding = 24;
     final double centerLineX = barAreaWidth * 0.35; // 기준선을 좀 더 오른쪽으로
     double currentTime = currentPosition.inSeconds.toDouble();
+=======
+    double currentTime = progress * totalDuration;
+
+>>>>>>> origin/Feature_DU
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FF),
       body: SafeArea(
@@ -466,24 +512,70 @@ class _RecordPageState extends State<RecordPage> {
             ),
             SizedBox(height: 18),
             // 퍼펙트스코어 바 + 세로 기준선 (왼쪽→중앙)
-            SizedBox(
-              width: barAreaWidth,
-              height: barAreaHeight + 16,
-              child: Stack(
-                children: [
-                  // 세로 기준선 (중앙보다 왼쪽)
-                  Positioned(
-                    left: centerLineX - 2,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6),
-                        borderRadius: BorderRadius.circular(2),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final barAreaWidth = constraints.maxWidth - 48; // Padding 24*2
+                final barAreaHeight = 100.0; // 고정 높이
+                final centerLineX = barAreaWidth / 2;
+
+                return SizedBox(
+                  width: barAreaWidth,
+                  height: barAreaHeight + 16,
+                  child: Stack(
+                    children: [
+                      // 세로 기준선 (중앙보다 왼쪽)
+                      Positioned(
+                        left: centerLineX - 2,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
                       ),
-                    ),
+                      // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
+                      for (int i = 0; i < melodyBars.length; i++)
+                        _MelodyBarWidget(
+                          bar: melodyBars[i],
+                          progress: progress,
+                          totalDuration: totalDuration,
+                          barAreaWidth: barAreaWidth,
+                          barAreaHeight: barAreaHeight,
+                          centerLineX: centerLineX,
+                          onPassed: (accuracy) {
+                            if (!mounted) return;
+                            setState(() {
+                              int delta = 0;
+                              switch (accuracy) {
+                                case _Accuracy.Perfect:
+                                  delta = 5;
+                                  break;
+                                case _Accuracy.Great:
+                                  delta = 3;
+                                  break;
+                                case _Accuracy.Good:
+                                  delta = 0;
+                                  break;
+                                case _Accuracy.Normal:
+                                  delta = -3;
+                                  break;
+                                case _Accuracy.Bad:
+                                  delta = -5;
+                                  break;
+                              }
+                              score = max(0, score + delta);
+                              pointDelta = delta;
+                            });
+                          },
+                          currentTime: currentTime,
+                          enableGradient: false,
+                        ),
+                    ],
                   ),
+<<<<<<< HEAD
                   // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
                   for (int i = 0; i < melodyBars.length; i++)
                     _MelodyBarWidget(
@@ -523,6 +615,10 @@ class _RecordPageState extends State<RecordPage> {
                     ),
                 ],
               ),
+=======
+                );
+              },
+>>>>>>> origin/Feature_DU
             ),
             SizedBox(height: 18),
             // 중앙 가사(11줄) - 클릭 이동만 지원
@@ -536,6 +632,11 @@ class _RecordPageState extends State<RecordPage> {
                     if (!mounted || !isAudioLoaded) return;
                     setState(() {
                       currentLyricIndex = idx;
+<<<<<<< HEAD
+=======
+                      progress = lyricLines[idx].time / totalDuration;
+                      _audioPlayer.seek(Duration(seconds: lyricLines[idx].time.toInt()));
+>>>>>>> origin/Feature_DU
                     });
                     // 가사 시간에 맞춰 오디오 시크
                     final seekTime = Duration(
@@ -560,7 +661,11 @@ class _RecordPageState extends State<RecordPage> {
                   Row(
                     children: [
                       Text(
+<<<<<<< HEAD
                         _formatDuration(currentPosition),
+=======
+                        _formatTime(currentTime),
+>>>>>>> origin/Feature_DU
                         style: TextStyle(
                           fontSize: 13,
                           color: const Color(0xFF6B7280),
@@ -661,9 +766,9 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   String _formatTime(double seconds) {
-    int min = seconds ~/ 60;
-    int sec = seconds.toInt() % 60;
-    return '${min}:${sec.toString().padLeft(2, '0')}';
+    final minutes = (seconds ~/ 60).toInt();
+    final remainingSeconds = (seconds % 60).toInt();
+    return '${minutes}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   String _formatDuration(Duration duration) {
@@ -674,8 +779,7 @@ class _RecordPageState extends State<RecordPage> {
 
   // 오디오 재생 함수 예시
   Future<void> playInst() async {
-    final player = AudioPlayer();
-    await player.play(AssetSource('audio/song1_inst.wav'));
+    await _audioPlayer.play(AssetSource('audio/song1_inst.wav'));
   }
 }
 
@@ -775,7 +879,7 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
     double barProgress =
         (widget.currentTime - widget.bar.start) / widget.bar.duration;
     double width = barWidth();
-    double totalMove = widget.barAreaWidth - width - 24; // 24: left padding 보정
+    double totalMove = widget.barAreaWidth - width - 48; // 24: left padding 보정
     return barProgress < 0
         ? widget.barAreaWidth - width
         : barProgress > 1
