@@ -25,6 +25,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
     _progressAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+
     
     // 로딩 진행률 시뮬레이션
     _startLoading();
@@ -44,9 +45,9 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           } else {
             _progress += 0.001; // 마무리 단계: 매우 느리게
           }
-          
+
           if (_progress > 1.0) _progress = 1.0;
-        });
+        }); // setState 닫기
         
         // 애니메이션 업데이트
         _progressAnimation = Tween<double>(
@@ -58,7 +59,6 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
         ));
         _animationController.forward(from: 0.0);
       } else {
-        timer.cancel();
         // 로딩 완료 시 자동으로 다음 페이지로 이동
         Future.delayed(Duration(seconds: 1), () {
           if (mounted) {
@@ -78,13 +78,9 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
   }
 
   String _getLoadingText() {
-    if (_progress < 0.2) {
-      return 'AI 모델 초기화 중...';
-    } else if (_progress < 0.4) {
-      return '음성 데이터 분석 중...';
-    } else if (_progress < 0.6) {
+    if (_progress < 0.3) {
       return '보컬 특성 추출 중...';
-    } else if (_progress < 0.8) {
+    } else if (_progress < 0.7) {
       return 'AI 보컬 생성 중...';
     } else if (_progress < 0.95) {
       return '음질 최적화 중...';
@@ -151,9 +147,20 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                           width: 160,
                           height: 160,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 160,
+                              height: 160,
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.music_note,
+                                color: Colors.grey[400],
+                                size: 80,
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      // 로딩 애니메이션 효과
                       Container(
                         width: 180,
                         height: 180,
@@ -260,10 +267,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                     SizedBox(width: 8),
                     Text(
                       'AI가 당신의 목소리를 분석하고 있습니다',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                     SizedBox(width: 8),
                     SvgPicture.asset(
@@ -280,19 +284,25 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                   ElevatedButton(
                     onPressed: () {
                       _timer?.cancel();
-                      final song = ModalRoute.of(context)!.settings.arguments as Song;
-                      Navigator.pushReplacementNamed(context, '/ai-vocal-ready', arguments: song);
+                      final song =
+                          ModalRoute.of(context)!.settings.arguments as Song;
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/ai-vocal-ready',
+                        arguments: song,
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(200, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
                       elevation: 4,
                     ),
-                    child: Text('테스트: 바로 완료', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      '테스트: 바로 완료',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),

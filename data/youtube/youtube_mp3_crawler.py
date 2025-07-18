@@ -1,22 +1,15 @@
 import os
 import yt_dlp
 import pandas as pd
-<<<<<<< HEAD
 import time
 
 # 곡명/가수명/가사 CSV 파일 경로 (data/info/all_chart_songs.csv)
 CSV_PATH = os.path.join(os.path.dirname(__file__), '..', 'info', 'all_chart_songs.csv')
-=======
-
-# 곡명/가수명/가사 CSV 파일 경로 (data/info/chart_song_singer_lyrics.csv)
-CSV_PATH = os.path.join(os.path.dirname(__file__), '..', 'info', 'chart_song_singer_lyrics.csv')
->>>>>>> origin/Feature_YJ
 
 # wav 파일이 저장될 폴더 경로 (data/music_file)
 download_dir = os.path.join(os.path.dirname(__file__), '..', 'music_file')
 os.makedirs(download_dir, exist_ok=True)
 
-<<<<<<< HEAD
 # 성공/실패 로그 파일 경로
 download_success_log = os.path.join(download_dir, 'success_list.txt')
 download_fail_log = os.path.join(download_dir, 'fail_list.txt')
@@ -84,7 +77,6 @@ def download_youtube_as_wav(search_queries, output_dir, max_retries=2):
                 print(f"최종 실패: {query}")
                 fail_f.write(f"{song},{artist},실패\n")
 
-=======
 def download_youtube_as_wav(search_queries, output_dir):
     """
     yt-dlp를 이용해 유튜브에서 검색 후 상위 1개 영상을 wav로 다운로드합니다.
@@ -118,7 +110,6 @@ def download_youtube_as_wav(search_queries, output_dir):
                 print(f"다운로드 완료: {base_filename}.wav")
             except Exception as e:
                 print(f"다운로드 실패: {query}\n에러: {e}")
->>>>>>> origin/Feature_YJ
 
 def read_csv_queries(csv_path):
     """
@@ -128,34 +119,28 @@ def read_csv_queries(csv_path):
     """
     df = pd.read_csv(csv_path)
     queries = []
-<<<<<<< HEAD
     # 'songtitle', 'singer' 컬럼에서 정보 추출 (한글 주석)
     for _, row in df.iterrows():
         song = str(row['songtitle']).strip()
         artist = str(row['singer']).strip()
-=======
     # 한글 주석: '노래제목', '가수' 컬럼에서 정보 추출
     for _, row in df.iterrows():
         song = str(row['노래제목']).strip()
         artist = str(row['가수']).strip()
->>>>>>> origin/Feature_YJ
         if song and artist:
             queries.append((song, artist))
     return queries
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     # 새로운 csv 파일 경로로 변경 (한글 주석)
     csv_path = os.path.join(os.path.dirname(__file__), '..', 'info', 'all_chart_songs_to.csv')
     if not os.path.exists(csv_path):
         print(f"곡/가수/가사 csv 파일을 찾을 수 없습니다: {csv_path}")
     else:
         search_queries = read_csv_queries(csv_path)
-=======
     # csv에서 검색어 리스트 읽기
     if not os.path.exists(CSV_PATH):
         print(f"곡/가수/가사 csv 파일을 찾을 수 없습니다: {CSV_PATH}")
     else:
         search_queries = read_csv_queries(CSV_PATH)
->>>>>>> origin/Feature_YJ
         download_youtube_as_wav(search_queries, download_dir) 
