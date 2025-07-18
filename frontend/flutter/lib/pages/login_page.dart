@@ -126,7 +126,10 @@ class LoginPage extends StatelessWidget {
                         ),
                         side: BorderSide.none,
                       ),
-                      child: const Text('Login with Kakao'),
+                      child: const Text(
+                        'Login with Kakao',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                     const SizedBox(height: 13),
                     ElevatedButton(
@@ -140,7 +143,10 @@ class LoginPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      child: const Text('Login with Google'),
+                      child: const Text(
+                        'Login with Google',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                   ],
                 ),
