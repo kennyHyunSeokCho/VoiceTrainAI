@@ -8,6 +8,7 @@ import 'pages/ai_vocal_play_page.dart';
 import 'pages/login_page.dart';
 import 'pages/search.dart';
 import 'pages/notification_page.dart';
+import 'main_layout.dart';
 
 void main() {
   runApp(MyApp());
@@ -102,6 +103,9 @@ class MyApp extends StatelessWidget {
         }
         if (settings.name == '/search') {
           return MaterialPageRoute(builder: (context) => SearchPage());
+        }
+        if (settings.name == '/main') {
+          return MaterialPageRoute(builder: (context) => MainLayout());
         }
         return null;
       },

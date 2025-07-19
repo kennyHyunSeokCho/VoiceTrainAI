@@ -8,6 +8,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/s3_service.dart';
+import 'score_page.dart';
 
 // MIDI 노트 데이터 클래스
 class _MidiNote {
@@ -460,6 +461,13 @@ class _RecordPageState extends State<RecordPage> {
   List<_MidiNote> midiNotes = [];
   bool _isMidiLoading = false;
   
+  // 점수 계산 관련 변수들
+  bool _hasRecording = false; // 실제 녹음 여부
+  int _pitchScore = 0;
+  int _rhythmScore = 0;
+  int _totalScore = 0;
+  List<String> _recommendedSongs = [];
+  
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩) - MIDI 로드 실패 시 사용
   final List<_MelodyBar> melodyBars = [
     _MelodyBar(start: 0, duration: 2, pitch: 2),
@@ -534,6 +542,14 @@ class _RecordPageState extends State<RecordPage> {
         });
       }
     });
+    
+    // 노래 종료 시 점수 페이지로 이동
+    _instPlayer!.onPlayerComplete.listen((_) {
+      if (mounted) {
+        _calculateScores();
+        _navigateToScorePage();
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -542,7 +558,11 @@ class _RecordPageState extends State<RecordPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
 
-        final song = ModalRoute.of(context)!.settings.arguments as Song;
+        final song = ModalRoute.of(context)?.settings.arguments as Song?;
+        if (song == null) {
+          print('Song 객체가 null입니다. 데이터 로딩을 건너뜁니다.');
+          return;
+        }
 
         // S3에서 실제 데이터 불러오기
         String coverUrl = await fetchAlbumCoverUrl(song.artist, song.title);
@@ -710,6 +730,56 @@ class _RecordPageState extends State<RecordPage> {
     });
   }
 
+  // 점수 계산 메서드
+  void _calculateScores() {
+    // 실제 녹음 여부 확인 (현재는 임시로 true로 설정)
+    _hasRecording = true; // TODO: 실제 녹음 데이터 확인 로직 추가
+    
+    if (_hasRecording) {
+      // 임시 점수 계산 (실제로는 녹음 데이터 분석 결과 사용)
+      _pitchScore = Random().nextInt(40) + 60; // 60-100점
+      _rhythmScore = Random().nextInt(40) + 60; // 60-100점
+      _totalScore = ((_pitchScore + _rhythmScore) / 2).round();
+      
+      // 추천곡 생성 (실제로는 사용자 음역대 분석 결과 사용)
+      _recommendedSongs = [
+        '아이유 - Blueming',
+        'NewJeans - Hype Boy',
+        'LE SSERAFIM - UNFORGIVEN',
+        'IVE - I AM',
+        'aespa - Spicy',
+      ];
+    } else {
+      _pitchScore = 0;
+      _rhythmScore = 0;
+      _totalScore = 0;
+      _recommendedSongs = [];
+    }
+  }
+  
+  // 점수 페이지로 이동
+  void _navigateToScorePage() {
+    // Song 객체 안전하게 가져오기
+    final song = ModalRoute.of(context)?.settings.arguments as Song?;
+    if (song == null) {
+      print('Song 객체가 null입니다. 점수 페이지 이동을 건너뜁니다.');
+      return;
+    }
+    
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => ScorePage(
+          song: song,
+          pitchScore: _pitchScore,
+          rhythmScore: _rhythmScore,
+          totalScore: _totalScore,
+          recommendedSongs: _recommendedSongs,
+          hasRecording: _hasRecording,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _stopMainTimer();
@@ -721,7 +791,55 @@ class _RecordPageState extends State<RecordPage> {
   @override
   Widget build(BuildContext context) {
     if (loading) return Center(child: CircularProgressIndicator());
-    final Song song = ModalRoute.of(context)!.settings.arguments as Song;
+    final Song? song = ModalRoute.of(context)?.settings.arguments as Song?;
+    if (song == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F7FF),
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: const Color(0xFF8B5CF6),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  '노래 정보를 찾을 수 없습니다',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '홈으로 돌아가서 다시 시도해주세요',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text('홈으로 돌아가기'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final double barAreaWidth = MediaQuery.of(context).size.width * 0.92;
     final double barAreaHeight = 54;
     final double leftPadding = 24;
