@@ -57,54 +57,48 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('검색'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
+        title: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _isSearching = value.isNotEmpty;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: '노래, 아티스트 검색',
+              hintStyle: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 16,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.grey[600],
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 14,
+              ),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 검색바
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _isSearching = value.isNotEmpty;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: '노래, 아티스트 검색',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 20),
+                SizedBox(height: 16),
 
                 // 검색 결과 또는 추천 곡
                 Expanded(
