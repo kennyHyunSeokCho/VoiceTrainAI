@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:io';
 import '../models/song.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/s3_service.dart';
 
 class SongDetailPage extends StatefulWidget {
@@ -17,6 +19,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
   AudioPlayer? _audioPlayer;
   bool _isPlaying = false;
   bool _isLoading = false;
+  final ImagePicker _picker = ImagePicker();
+  File? _uploadedFile;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -33,6 +38,90 @@ class _SongDetailPageState extends State<SongDetailPage> {
   void dispose() {
     _audioPlayer?.dispose();
     super.dispose();
+  }
+
+  Future<void> _uploadSongFile() async {
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      // 파일 선택 (오디오 파일만)
+      final XFile? file = await _picker.pickMedia(
+        imageQuality: 100,
+        requestFullMetadata: false,
+      );
+
+      if (file == null) {
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      // 파일 확장자 확인 (오디오 파일만 허용)
+      final String extension = file.path.split('.').last.toLowerCase();
+      final List<String> allowedExtensions = ['mp3', 'wav', 'm4a', 'aac', 'ogg'];
+      
+      if (!allowedExtensions.contains(extension)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('오디오 파일만 업로드 가능합니다. (mp3, wav, m4a, aac, ogg)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      // 파일 크기 확인 (50MB 이하)
+      final File audioFile = File(file.path);
+      final int fileSizeInBytes = await audioFile.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      
+      if (fileSizeInMB > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('파일 크기는 50MB 이하여야 합니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _uploadedFile = audioFile;
+        _isUploading = false;
+      });
+
+      // 업로드 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일이 성공적으로 업로드되었습니다: ${file.name}'),
+          backgroundColor: const Color(0xFF8B5CF6),
+        ),
+      );
+
+      // TODO: 실제 서버 업로드 로직 구현
+      // await _uploadToServer(audioFile);
+
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일 업로드 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _playOriginalSong() async {
@@ -198,6 +287,92 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
                       const SizedBox(height: 40),
 
+                      // 업로드된 파일 정보 표시
+                      if (_uploadedFile != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E7FF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.music_note_rounded,
+                                    color: const Color(0xFF8B5CF6),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '업로드된 파일',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _uploadedFile!.path.split('/').last,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1F2937),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: const Color(0xFF10B981),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '업로드 완료',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: const Color(0xFF10B981),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _uploadedFile = null;
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('업로드된 파일이 제거되었습니다.'),
+                                          backgroundColor: Color(0xFF8B5CF6),
+                                        ),
+                                      );
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      color: const Color(0xFF6B7280),
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // 퀵 액션 버튼들 (더 세련된 디자인)
                       Container(
                         padding: const EdgeInsets.all(24),
@@ -215,7 +390,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildQuickAction(Icons.schedule_rounded, '연습현황'),
+                            GestureDetector(
+                              onTap: _uploadSongFile,
+                              child: _buildQuickAction(
+                                _isUploading ? Icons.upload_file_rounded : Icons.upload_rounded,
+                                _isUploading ? '업로드 중...' : '노래 파일 올리기',
+                              ),
+                            ),
                             _buildQuickAction(
                               Icons.history_rounded,
                               '피드백 히스토리',
