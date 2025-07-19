@@ -32,7 +32,7 @@ class RecordPage extends StatefulWidget {
 }
 
 class _RecordPageState extends State<RecordPage> {
-  bool isPlaying = false; // AudioPlayer 상태와 동기화
+  bool isPlaying = true;
   int score = 0;
   int pointDelta = 0;
   int currentLyricIndex = 0;
@@ -43,14 +43,6 @@ class _RecordPageState extends State<RecordPage> {
   bool isFavorite = false; // 즐겨찾기 상태
   String? albumCoverUrl;
   bool loading = true;
-
-  // AudioPlayer 관련 변수들
-  late AudioPlayer audioPlayer;
-  Duration totalDuration = Duration.zero;
-  Duration currentPosition = Duration.zero;
-  bool isAudioLoaded = false;
-
-  late AudioPlayer _audioPlayer;
 
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩)
   final List<_MelodyBar> melodyBars = [
@@ -63,7 +55,7 @@ class _RecordPageState extends State<RecordPage> {
     _MelodyBar(start: 9, duration: 1.2, pitch: 3),
     _MelodyBar(start: 10.5, duration: 1.5, pitch: 1),
   ];
-  double defaultDuration = 50.0; // 기본 전체 길이(초) - AudioPlayer 로드 전까지 사용
+  double totalDuration = 50.0; // 예시 전체 길이(초)
 
   // 예시: 가사-시간 매핑
   // final List<_LyricLine> exampleLyrics = [
@@ -87,80 +79,11 @@ class _RecordPageState extends State<RecordPage> {
   @override
   void initState() {
     super.initState();
-    _audioPlayer = AudioPlayer();
     lyricLines = exampleLyrics;
-    _initAudioPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      _startMainTimer();
     });
-  }
-
-  void _initAudioPlayer() {
-    audioPlayer = AudioPlayer();
-    print('AudioPlayer 초기화 완료');
-
-    // 볼륨 설정 (0.0 ~ 1.0)
-    audioPlayer.setVolume(1.0);
-    print('AudioPlayer 볼륨 설정: 1.0');
-
-    // AudioPlayer 이벤트 리스너 설정
-    audioPlayer.onPositionChanged.listen((Duration position) {
-      if (mounted) {
-        setState(() {
-          currentPosition = position;
-          if (totalDuration.inMilliseconds > 0) {
-            progress = position.inMilliseconds / totalDuration.inMilliseconds;
-          }
-          // 가사 인덱스 갱신
-          for (int i = 0; i < lyricLines.length; i++) {
-            if (position.inSeconds >= lyricLines[i].time) {
-              currentLyricIndex = i;
-            }
-          }
-        });
-      }
-    });
-
-    audioPlayer.onDurationChanged.listen((Duration duration) {
-      if (mounted) {
-        setState(() {
-          totalDuration = duration;
-          print('오디오 길이: ${duration.inSeconds}초');
-        });
-      }
-    });
-
-    audioPlayer.onPlayerStateChanged.listen((PlayerState state) {
-      if (mounted) {
-        setState(() {
-          isPlaying = state == PlayerState.playing;
-        });
-        print('오디오 상태 변경: $state');
-
-        // 상태별 상세 로그
-        switch (state) {
-          case PlayerState.playing:
-            print('🎵 오디오 재생 중 - 소리가 들려야 함');
-            break;
-          case PlayerState.paused:
-            print('⏸️ 오디오 일시정지됨');
-            break;
-          case PlayerState.stopped:
-            print('⏹️ 오디오 정지됨');
-            break;
-          case PlayerState.completed:
-            print('✅ 오디오 재생 완료');
-            break;
-          default:
-            print('❓ 알 수 없는 오디오 상태: $state');
-        }
-      }
-    });
-
-    // 상태/오류 로그 추가
-    audioPlayer.onPlayerComplete.listen((_) {
-      print('오디오 재생 완료');
-    });
+    _loadData();
   }
 
   Future<void> _loadData() async {
@@ -178,9 +101,6 @@ class _RecordPageState extends State<RecordPage> {
           songTitle: song.title,
         );
 
-        // S3에서 inst 파일 로드
-        await _loadInstFile(song.artist, song.title);
-
         print('S3에서 불러온 앨범커버: $coverUrl');
         print('S3에서 불러온 가사 개수: ${lyrics.length}');
 
@@ -192,7 +112,6 @@ class _RecordPageState extends State<RecordPage> {
           });
         }
       });
-<<<<<<< HEAD
     } catch (e) {
       print('데이터 로딩 중 오류 발생: $e');
       if (mounted) {
@@ -201,7 +120,25 @@ class _RecordPageState extends State<RecordPage> {
           lyricLines = exampleLyrics;
           loading = false;
         });
-=======
+      }
+    }
+  }
+
+  void _startMainTimer() {
+    mainTimer?.cancel();
+    mainTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+      if (!mounted) return;
+      if (!isPlaying) return;
+      setState(() {
+        progress += 0.1 / totalDuration; // 0.1초씩 진행
+        if (progress > 1.0) progress = 1.0;
+        // 가사 인덱스 갱신
+        for (int i = 0; i < lyricLines.length; i++) {
+          if (progress * totalDuration >= lyricLines[i].time) {
+            currentLyricIndex = i;
+          }
+        }
+      });
     });
   }
 
@@ -215,139 +152,29 @@ class _RecordPageState extends State<RecordPage> {
       isPlaying = !isPlaying;
       if (isPlaying) {
         _startMainTimer();
-        _audioPlayer.resume();
       } else {
         _stopMainTimer();
-        _audioPlayer.pause();
->>>>>>> origin/Feature_DU
       }
-    }
+    });
   }
 
-<<<<<<< HEAD
-  Future<void> _loadInstFile(String artist, String title) async {
-    try {
-      // 파일명에서 특수문자 제거 및 공백을 언더스코어로 변경
-      String safeArtist = artist
-          .replaceAll(RegExp(r'[^\w\s가-힣]'), '')
-          .replaceAll(' ', '_');
-      String safeTitle = title
-          .replaceAll(RegExp(r'[^\w\s가-힣]'), '')
-          .replaceAll(' ', '_');
-
-      // 여러 가능한 파일명 패턴 시도
-      List<String> possibleUrls = [
-        'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$safeArtist/inst/${safeArtist}_${safeTitle}_inst.wav',
-        'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$artist/inst/${artist}_${safeTitle}_inst.wav',
-        'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$safeArtist/inst/${safeTitle}_inst.wav',
-        'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$artist/inst/${safeTitle}_inst.wav',
-      ];
-
-      for (String instUrl in possibleUrls) {
-        print('Inst 파일 요청 시도: $instUrl');
-        try {
-          final response = await http.head(Uri.parse(instUrl));
-          print('Inst 파일 응답 코드: ${response.statusCode}');
-
-          if (response.statusCode == 200) {
-            print('Inst 파일 로딩 성공: $instUrl');
-            try {
-              await audioPlayer.setSourceUrl(instUrl);
-              print('AudioPlayer에 소스 설정 완료');
-
-              // 볼륨을 명시적으로 설정
-              await audioPlayer.setVolume(1.0);
-              print('AudioPlayer 볼륨 설정 완료: 1.0');
-
-              setState(() {
-                isAudioLoaded = true;
-              });
-              print('isAudioLoaded: true로 설정됨');
-
-              // 자동 재생 시도
-              try {
-                await audioPlayer.resume();
-                print('AudioPlayer resume() 호출 성공');
-              } catch (e) {
-                print('AudioPlayer resume() 호출 실패: $e');
-              }
-              return;
-            } catch (e) {
-              print('AudioPlayer 소스 설정 실패: $e');
-            }
-          }
-        } catch (e) {
-          print('Inst 파일 요청 실패: $e');
-          continue;
-=======
   void _onSeek(double value) {
     if (!mounted) return;
     setState(() {
       progress = value;
-      _audioPlayer.seek(Duration(seconds: (value * totalDuration).toInt()));
       // 가사 인덱스 갱신
       for (int i = 0; i < lyricLines.length; i++) {
         if (progress * totalDuration >= lyricLines[i].time) {
           currentLyricIndex = i;
->>>>>>> origin/Feature_DU
         }
       }
-
-      print('모든 inst 파일 URL 시도 실패');
-    } catch (e) {
-      print('Inst 파일 로딩 실패: $e');
-    }
-  }
-
-  void _togglePlay() async {
-    if (!mounted) {
-      print('컴포넌트가 마운트되지 않음');
-      return;
-    }
-    if (!isAudioLoaded) {
-      print('오디오가 로드되지 않음');
-      return;
-    }
-
-    print('재생/일시정지 토글: 현재 상태 = $isPlaying');
-
-    if (isPlaying) {
-      print('일시정지 시도');
-      await audioPlayer.pause();
-      print('일시정지 완료');
-    } else {
-      print('재생 시도');
-      try {
-        // 재생 전에 볼륨을 다시 설정
-        await audioPlayer.setVolume(1.0);
-        print('재생 전 볼륨 설정: 1.0');
-
-        await audioPlayer.resume();
-        print('재생 성공');
-      } catch (e) {
-        print('재생 실패: $e');
-      }
-    }
-  }
-
-  void _onSeek(double value) async {
-    if (!mounted || !isAudioLoaded) return;
-
-    final newPosition = Duration(
-      milliseconds: (value * totalDuration.inMilliseconds).round(),
-    );
-    await audioPlayer.seek(newPosition);
+    });
   }
 
   @override
   void dispose() {
-<<<<<<< HEAD
-    audioPlayer.dispose();
-=======
     _stopMainTimer();
-    _audioPlayer.dispose();
     mainTimer = null;
->>>>>>> origin/Feature_DU
     super.dispose();
   }
 
@@ -355,16 +182,11 @@ class _RecordPageState extends State<RecordPage> {
   Widget build(BuildContext context) {
     if (loading) return Center(child: CircularProgressIndicator());
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
-<<<<<<< HEAD
     final double barAreaWidth = MediaQuery.of(context).size.width * 0.92;
     final double barAreaHeight = 54;
     final double leftPadding = 24;
     final double centerLineX = barAreaWidth * 0.35; // 기준선을 좀 더 오른쪽으로
-    double currentTime = currentPosition.inSeconds.toDouble();
-=======
     double currentTime = progress * totalDuration;
-
->>>>>>> origin/Feature_DU
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FF),
       body: SafeArea(
@@ -512,76 +334,30 @@ class _RecordPageState extends State<RecordPage> {
             ),
             SizedBox(height: 18),
             // 퍼펙트스코어 바 + 세로 기준선 (왼쪽→중앙)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final barAreaWidth = constraints.maxWidth - 48; // Padding 24*2
-                final barAreaHeight = 100.0; // 고정 높이
-                final centerLineX = barAreaWidth / 2;
-
-                return SizedBox(
-                  width: barAreaWidth,
-                  height: barAreaHeight + 16,
-                  child: Stack(
-                    children: [
-                      // 세로 기준선 (중앙보다 왼쪽)
-                      Positioned(
-                        left: centerLineX - 2,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 4,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+            SizedBox(
+              width: barAreaWidth,
+              height: barAreaHeight + 16,
+              child: Stack(
+                children: [
+                  // 세로 기준선 (중앙보다 왼쪽)
+                  Positioned(
+                    left: centerLineX - 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
-                      for (int i = 0; i < melodyBars.length; i++)
-                        _MelodyBarWidget(
-                          bar: melodyBars[i],
-                          progress: progress,
-                          totalDuration: totalDuration,
-                          barAreaWidth: barAreaWidth,
-                          barAreaHeight: barAreaHeight,
-                          centerLineX: centerLineX,
-                          onPassed: (accuracy) {
-                            if (!mounted) return;
-                            setState(() {
-                              int delta = 0;
-                              switch (accuracy) {
-                                case _Accuracy.Perfect:
-                                  delta = 5;
-                                  break;
-                                case _Accuracy.Great:
-                                  delta = 3;
-                                  break;
-                                case _Accuracy.Good:
-                                  delta = 0;
-                                  break;
-                                case _Accuracy.Normal:
-                                  delta = -3;
-                                  break;
-                                case _Accuracy.Bad:
-                                  delta = -5;
-                                  break;
-                              }
-                              score = max(0, score + delta);
-                              pointDelta = delta;
-                            });
-                          },
-                          currentTime: currentTime,
-                          enableGradient: false,
-                        ),
-                    ],
+                    ),
                   ),
-<<<<<<< HEAD
                   // 멜로디 막대(오른쪽→왼쪽 이동, 기준선 통과 시 색상 점진적 변화)
                   for (int i = 0; i < melodyBars.length; i++)
                     _MelodyBarWidget(
                       bar: melodyBars[i],
                       progress: progress,
-                      totalDuration: totalDuration.inSeconds.toDouble(),
+                      totalDuration: totalDuration,
                       barAreaWidth: barAreaWidth,
                       barAreaHeight: barAreaHeight,
                       centerLineX: centerLineX,
@@ -615,10 +391,6 @@ class _RecordPageState extends State<RecordPage> {
                     ),
                 ],
               ),
-=======
-                );
-              },
->>>>>>> origin/Feature_DU
             ),
             SizedBox(height: 18),
             // 중앙 가사(11줄) - 클릭 이동만 지원
@@ -628,21 +400,12 @@ class _RecordPageState extends State<RecordPage> {
                   lyricLines: lyricLines,
                   currentIndex: currentLyricIndex,
                   visibleCount: 11, // 강조 가사 위/아래 5줄씩 보이게
-                  onTap: (idx) async {
-                    if (!mounted || !isAudioLoaded) return;
+                  onTap: (idx) {
+                    if (!mounted) return;
                     setState(() {
                       currentLyricIndex = idx;
-<<<<<<< HEAD
-=======
                       progress = lyricLines[idx].time / totalDuration;
-                      _audioPlayer.seek(Duration(seconds: lyricLines[idx].time.toInt()));
->>>>>>> origin/Feature_DU
                     });
-                    // 가사 시간에 맞춰 오디오 시크
-                    final seekTime = Duration(
-                      seconds: lyricLines[idx].time.toInt(),
-                    );
-                    await audioPlayer.seek(seekTime);
                   },
                 ),
               ),
@@ -661,11 +424,7 @@ class _RecordPageState extends State<RecordPage> {
                   Row(
                     children: [
                       Text(
-<<<<<<< HEAD
-                        _formatDuration(currentPosition),
-=======
-                        _formatTime(currentTime),
->>>>>>> origin/Feature_DU
+                        _formatTime(progress * totalDuration),
                         style: TextStyle(
                           fontSize: 13,
                           color: const Color(0xFF6B7280),
@@ -674,10 +433,7 @@ class _RecordPageState extends State<RecordPage> {
                       ),
                       Expanded(
                         child: Slider(
-                          value: totalDuration.inMilliseconds > 0
-                              ? currentPosition.inMilliseconds /
-                                    totalDuration.inMilliseconds
-                              : 0.0,
+                          value: progress,
                           min: 0,
                           max: 1,
                           onChanged: (v) {
@@ -688,7 +444,7 @@ class _RecordPageState extends State<RecordPage> {
                         ),
                       ),
                       Text(
-                        _formatDuration(totalDuration),
+                        _formatTime(totalDuration),
                         style: TextStyle(
                           fontSize: 13,
                           color: const Color(0xFF6B7280),
@@ -766,20 +522,15 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   String _formatTime(double seconds) {
-    final minutes = (seconds ~/ 60).toInt();
-    final remainingSeconds = (seconds % 60).toInt();
-    return '${minutes}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDuration(Duration duration) {
-    int min = duration.inMinutes;
-    int sec = duration.inSeconds % 60;
+    int min = seconds ~/ 60;
+    int sec = seconds.toInt() % 60;
     return '${min}:${sec.toString().padLeft(2, '0')}';
   }
 
   // 오디오 재생 함수 예시
   Future<void> playInst() async {
-    await _audioPlayer.play(AssetSource('audio/song1_inst.wav'));
+    final player = AudioPlayer();
+    await player.play(AssetSource('audio/song1_inst.wav'));
   }
 }
 
@@ -879,7 +630,7 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
     double barProgress =
         (widget.currentTime - widget.bar.start) / widget.bar.duration;
     double width = barWidth();
-    double totalMove = widget.barAreaWidth - width - 48; // 24: left padding 보정
+    double totalMove = widget.barAreaWidth - width - 24; // 24: left padding 보정
     return barProgress < 0
         ? widget.barAreaWidth - width
         : barProgress > 1

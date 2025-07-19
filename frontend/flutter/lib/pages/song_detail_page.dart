@@ -3,15 +3,9 @@ import 'dart:ui';
 import '../models/song.dart';
 
 class SongDetailPage extends StatefulWidget {
-<<<<<<< HEAD
   final Map<String, String> songData;
 
   const SongDetailPage({super.key, required this.songData});
-=======
-  final Song song;
-
-  const SongDetailPage({super.key, required this.song});
->>>>>>> origin/Feature_DU
 
   @override
   State<SongDetailPage> createState() => _SongDetailPageState();
@@ -88,29 +82,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-<<<<<<< HEAD
                             child: _buildAlbumCover(songData['image'] ?? ''),
-=======
-                            child: Image.asset(
-                              widget.song.albumCover.isNotEmpty
-                                  ? widget.song.albumCover
-                                  : 'assets/images/default_album_cover.webp',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stack) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: Icon(
-                                    Icons.music_note,
-                                    color: Colors.grey[400],
-                                    size: 80,
-                                  ),
-                                );
-                              },
-                            ),
->>>>>>> origin/Feature_DU
                           ),
                         ),
                       ),
@@ -122,11 +94,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Column(
                           children: [
                             Text(
-<<<<<<< HEAD
                               songData['artist'] ?? '',
-=======
-                              widget.song.artist,
->>>>>>> origin/Feature_DU
                               style: TextStyle(
                                 fontSize: 18,
                                 color: const Color(0xFF8B5CF6),
@@ -136,11 +104,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-<<<<<<< HEAD
                               songData['title'] ?? '',
-=======
-                              widget.song.title,
->>>>>>> origin/Feature_DU
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w800,
@@ -161,13 +125,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-<<<<<<< HEAD
                             _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF)),
                             _buildDifficultyTag('분석 예정'),
-=======
-                            _buildTag(widget.song.range, const Color(0xFFE0E7FF)),
-                            _buildDifficultyTag(widget.song.difficulty),
->>>>>>> origin/Feature_DU
                           ],
                         ),
                       ),
@@ -198,7 +157,6 @@ class _SongDetailPageState extends State<SongDetailPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-<<<<<<< HEAD
                                 final song = Song(
                                   title: songData['title'] ?? '',
                                   artist: songData['artist'] ?? '',
@@ -208,12 +166,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   lyrics: songData['lyrics'] ?? '',
                                   duration: '분석 예정',
                                 );
-=======
->>>>>>> origin/Feature_DU
                                 Navigator.pushNamed(
                                   context,
                                   '/ai-vocal-loading',
-                                  arguments: widget.song,
+                                  arguments: song,
                                 );
                               },
                               child: _buildQuickAction(
@@ -356,26 +312,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
-<<<<<<< HEAD
                                 color: Colors.grey[200],
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: _buildAlbumCover(
                                   songData['image'] ?? '',
-=======
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                    widget.song.albumCover.isNotEmpty
-                                        ? widget.song.albumCover
-                                        : 'assets/images/default_album_cover.webp',
-                                  ),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.1),
-                                    BlendMode.darken,
-                                  ),
->>>>>>> origin/Feature_DU
                                 ),
                               ),
                             ),
@@ -385,11 +327,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-<<<<<<< HEAD
                                     songData['title'] ?? '',
-=======
-                                    widget.song.title,
->>>>>>> origin/Feature_DU
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
@@ -398,11 +336,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-<<<<<<< HEAD
                                     '${songData['artist']} • Cover Version',
-=======
-                                    '${widget.song.artist} • Cover Version',
->>>>>>> origin/Feature_DU
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: const Color(0xFF8B5CF6),
@@ -433,11 +367,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Text(
-<<<<<<< HEAD
                             _formatLyrics(songData['lyrics'] ?? '가사 정보가 없습니다.'),
-=======
-                            widget.song.lyrics,
->>>>>>> origin/Feature_DU
                             style: TextStyle(
                               height: 2.0,
                               fontSize: 16,
@@ -480,7 +410,6 @@ class _SongDetailPageState extends State<SongDetailPage> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () {
-<<<<<<< HEAD
                     final song = Song(
                       title: songData['title'] ?? '',
                       artist: songData['artist'] ?? '',
@@ -491,9 +420,6 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       duration: '분석 예정',
                     );
                     Navigator.pushNamed(context, '/record', arguments: song);
-=======
-                    Navigator.pushNamed(context, '/record', arguments: widget.song);
->>>>>>> origin/Feature_DU
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
