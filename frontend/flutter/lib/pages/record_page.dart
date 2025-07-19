@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
+import '../services/s3_service.dart';
 
 final List<_LyricLine> exampleLyrics = [
   _LyricLine(text: '손 닿을 수 없는 저기 어딘가', time: 0),
@@ -43,6 +44,12 @@ class _RecordPageState extends State<RecordPage> {
   bool isFavorite = false; // 즐겨찾기 상태
   String? albumCoverUrl;
   bool loading = true;
+  
+  // Inst 파일 재생 관련 변수들
+  AudioPlayer? _instPlayer;
+  bool _isInstPlaying = false;
+  bool _isInstLoading = false;
+  double _instDuration = 0.0; // inst 파일의 실제 재생시간
 
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩)
   final List<_MelodyBar> melodyBars = [
@@ -55,7 +62,7 @@ class _RecordPageState extends State<RecordPage> {
     _MelodyBar(start: 9, duration: 1.2, pitch: 3),
     _MelodyBar(start: 10.5, duration: 1.5, pitch: 1),
   ];
-  double totalDuration = 50.0; // 예시 전체 길이(초)
+  double totalDuration = 50.0; // 예시 전체 길이(초) - inst 파일 로드 후 업데이트됨
 
   // 예시: 가사-시간 매핑
   // final List<_LyricLine> exampleLyrics = [
@@ -80,10 +87,44 @@ class _RecordPageState extends State<RecordPage> {
   void initState() {
     super.initState();
     lyricLines = exampleLyrics;
+    _initInstPlayer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startMainTimer();
     });
     _loadData();
+  }
+
+  void _initInstPlayer() {
+    _instPlayer = AudioPlayer();
+    _instPlayer!.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isInstPlaying = state == PlayerState.playing;
+        });
+      }
+    });
+    _instPlayer!.onDurationChanged.listen((duration) {
+      if (mounted) {
+        setState(() {
+          _instDuration = duration.inMilliseconds / 1000.0;
+          totalDuration = _instDuration; // 실제 inst 파일 길이로 업데이트
+        });
+      }
+    });
+    _instPlayer!.onPositionChanged.listen((position) {
+      if (mounted && _isInstPlaying) {
+        setState(() {
+          progress = position.inMilliseconds / 1000.0 / totalDuration;
+          if (progress > 1.0) progress = 1.0;
+          // 가사 인덱스 갱신
+          for (int i = 0; i < lyricLines.length; i++) {
+            if (progress * totalDuration >= lyricLines[i].time) {
+              currentLyricIndex = i;
+            }
+          }
+        });
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -104,6 +145,9 @@ class _RecordPageState extends State<RecordPage> {
         print('S3에서 불러온 앨범커버: $coverUrl');
         print('S3에서 불러온 가사 개수: ${lyrics.length}');
 
+        // Inst 파일 로드
+        await _loadInstFile(song.artist, song.title);
+
         if (mounted) {
           setState(() {
             albumCoverUrl = coverUrl;
@@ -121,6 +165,30 @@ class _RecordPageState extends State<RecordPage> {
           loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadInstFile(String artist, String title) async {
+    try {
+      final instUrl = S3Service.getInstSongUrl(artist, title);
+      print('Inst 파일 URL: $instUrl');
+      
+      setState(() {
+        _isInstLoading = true;
+      });
+
+      await _instPlayer!.setSourceUrl(instUrl);
+      
+      setState(() {
+        _isInstLoading = false;
+      });
+      
+      print('Inst 파일 로드 완료');
+    } catch (e) {
+      print('Inst 파일 로드 실패: $e');
+      setState(() {
+        _isInstLoading = false;
+      });
     }
   }
 
@@ -148,18 +216,26 @@ class _RecordPageState extends State<RecordPage> {
 
   void _togglePlay() {
     if (!mounted) return;
+    
+    if (_isInstPlaying) {
+      _instPlayer!.pause();
+      _stopMainTimer();
+    } else {
+      _instPlayer!.resume();
+      _startMainTimer();
+    }
+    
     setState(() {
       isPlaying = !isPlaying;
-      if (isPlaying) {
-        _startMainTimer();
-      } else {
-        _stopMainTimer();
-      }
     });
   }
 
   void _onSeek(double value) {
     if (!mounted) return;
+    
+    final newPosition = Duration(milliseconds: (value * totalDuration * 1000).toInt());
+    _instPlayer!.seek(newPosition);
+    
     setState(() {
       progress = value;
       // 가사 인덱스 갱신
@@ -175,6 +251,7 @@ class _RecordPageState extends State<RecordPage> {
   void dispose() {
     _stopMainTimer();
     mainTimer = null;
+    _instPlayer?.dispose();
     super.dispose();
   }
 
@@ -475,16 +552,28 @@ class _RecordPageState extends State<RecordPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              isPlaying
-                                  ? Icons.pause_circle_filled_rounded
-                                  : Icons.play_circle_fill_rounded,
-                              color: Colors.white,
-                              size: 28,
-                            ),
+                            if (_isInstLoading)
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            else
+                              Icon(
+                                _isInstPlaying
+                                    ? Icons.pause_circle_filled_rounded
+                                    : Icons.play_circle_fill_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             SizedBox(width: 10),
                             Text(
-                              isPlaying ? '일시정지' : '재생',
+                              _isInstLoading 
+                                  ? '로딩 중...' 
+                                  : (_isInstPlaying ? '일시정지' : '재생'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -527,10 +616,11 @@ class _RecordPageState extends State<RecordPage> {
     return '${min}:${sec.toString().padLeft(2, '0')}';
   }
 
-  // 오디오 재생 함수 예시
-  Future<void> playInst() async {
-    final player = AudioPlayer();
-    await player.play(AssetSource('audio/song1_inst.wav'));
+  // Inst 파일 재생 함수 (S3에서 로드)
+  Future<void> _playInst() async {
+    if (_instPlayer != null) {
+      await _instPlayer!.resume();
+    }
   }
 }
 
