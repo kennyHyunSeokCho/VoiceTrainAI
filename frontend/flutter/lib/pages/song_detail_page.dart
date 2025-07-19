@@ -5,6 +5,7 @@ import '../models/song.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/s3_service.dart';
+import '../services/vocal_range_service.dart';
 
 class SongDetailPage extends StatefulWidget {
   final Map<String, String> songData;
@@ -22,6 +23,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
   final ImagePicker _picker = ImagePicker();
   File? _uploadedFile;
   bool _isUploading = false;
+  VocalRangeAnalysis? _vocalRangeAnalysis;
+  bool _isAnalyzingVocalRange = false;
 
   @override
   void initState() {
@@ -32,12 +35,43 @@ class _SongDetailPageState extends State<SongDetailPage> {
         _isPlaying = state == PlayerState.playing;
       });
     });
+    
+    // 페이지 로드 시 음역대 분석 시작
+    _analyzeVocalRange();
   }
 
   @override
   void dispose() {
     _audioPlayer?.dispose();
     super.dispose();
+  }
+
+  /// 음역대 분석을 수행합니다.
+  Future<void> _analyzeVocalRange() async {
+    final songData = widget.songData;
+    final title = songData['title'] ?? '';
+    final artist = songData['artist'] ?? '';
+
+    if (title.isEmpty || artist.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isAnalyzingVocalRange = true;
+    });
+
+    try {
+      final analysis = await VocalRangeService.analyzeVocalRangeSafe(title, artist);
+      setState(() {
+        _vocalRangeAnalysis = analysis;
+        _isAnalyzingVocalRange = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isAnalyzingVocalRange = false;
+      });
+      print('음역대 분석 오류: $e');
+    }
   }
 
   Future<void> _uploadSongFile() async {
@@ -279,8 +313,18 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF)),
-                            _buildDifficultyTag('분석 예정'),
+                            if (_isAnalyzingVocalRange)
+                              _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF))
+                            else if (_vocalRangeAnalysis != null)
+                              _buildTag(_vocalRangeAnalysis!.totalRange, const Color(0xFFE0E7FF))
+                            else
+                              _buildTag('음역대 분석 실패', const Color(0xFFFEE2E2)),
+                            if (_isAnalyzingVocalRange)
+                              _buildDifficultyTag('분석 중')
+                            else if (_vocalRangeAnalysis != null)
+                              _buildDifficultyTag(_vocalRangeAnalysis!.difficulty)
+                            else
+                              _buildDifficultyTag('분석 실패'),
                           ],
                         ),
                       ),
@@ -546,6 +590,85 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       ),
 
                       const SizedBox(height: 40),
+
+                      // 음역대 분석 결과 섹션
+                      if (_vocalRangeAnalysis != null && _vocalRangeAnalysis!.analysisStatus == 'completed') ...[
+                        _buildSectionTitle('음역대 분석'),
+                        const SizedBox(height: 20),
+                        
+                        // 음역대 분석 결과 카드
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.graphic_eq_rounded,
+                                    color: const Color(0xFF8B5CF6),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '음역대 분석 결과',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              
+                              // 전체 음역대
+                              _buildRangeInfo('전체 음역대', _vocalRangeAnalysis!.totalRange, Icons.music_note_rounded),
+                              const SizedBox(height: 12),
+                              
+                              // 편안한 음역대
+                              _buildRangeInfo('편안한 음역대', _vocalRangeAnalysis!.comfortableRange, Icons.favorite_rounded),
+                              const SizedBox(height: 12),
+                              
+                              // 핵심 음역대
+                              _buildRangeInfo('핵심 음역대', _vocalRangeAnalysis!.coreRange, Icons.star_rounded),
+                              const SizedBox(height: 16),
+                              
+                              // 난이도
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: _getDifficultyColor(_vocalRangeAnalysis!.difficulty).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _getDifficultyColor(_vocalRangeAnalysis!.difficulty).withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  '난이도: ${_vocalRangeAnalysis!.difficulty}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getDifficultyColor(_vocalRangeAnalysis!.difficulty),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
 
                       // Cover Song 섹션
                       _buildSectionTitle('Cover Song'),
@@ -848,6 +971,46 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  /// 음역대 정보를 표시하는 위젯
+  Widget _buildRangeInfo(String label, String range, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+        Text(
+          range,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 난이도에 따른 색상을 반환합니다.
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case '초급':
+        return const Color(0xFF10B981);
+      case '중급':
+        return const Color(0xFFF59E0B);
+      case '고급':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF6B7280);
+    }
   }
 
   /// 가사에 줄바꿈을 추가하는 함수
