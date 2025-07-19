@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/song.dart';
-import '../widgets/song_card.dart';
 
 class MyPage extends StatelessWidget {
   const MyPage({super.key});
@@ -52,11 +50,11 @@ class MyPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        MyPage._smallCover(),
+                        _smallCover(),
                         const SizedBox(width: 8),
-                        MyPage._smallCover(),
+                        _smallCover(),
                         const SizedBox(width: 8),
-                        MyPage._smallCover(),
+                        _smallCover(),
                       ],
                     ),
                   ],
@@ -124,11 +122,11 @@ class MyPage extends StatelessWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    MyPage._songTile('Drowning'),
+                    _songTile('Drowning'),
                     const SizedBox(width: 12),
-                    MyPage._songTile('Never Ending'),
+                    _songTile('Never Ending'),
                     const SizedBox(width: 12),
-                    MyPage._songTile('Another Song'),
+                    _songTile('Another Song'),
                   ],
                 ),
               ),
@@ -154,9 +152,9 @@ class MyPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  MyPage._scoreBox('호흡', '62'),
-                  MyPage._scoreBox('리듬', '65'),
-                  MyPage._scoreBox('발음', '58'),
+                  _scoreBox('호흡', '62'),
+                  _scoreBox('리듬', '65'),
+                  _scoreBox('발음', '58'),
                 ],
               ),
 
@@ -209,14 +207,14 @@ class MyPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    MyPage._analysisItem(
+                    _analysisItem(
                       icon: Icons.check_circle_outline,
                       iconColor: Colors.green,
                       text: '12월에 확실한 톤을 유지했음',
                       isPositive: true,
                     ),
                     const SizedBox(height: 12),
-                    MyPage._analysisItem(
+                    _analysisItem(
                       icon: Icons.warning_amber_outlined,
                       iconColor: Colors.orange,
                       text: '일정 구간에서 목소리가 불안정하게 떨림',
@@ -275,13 +273,13 @@ class MyPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    MyPage._suggestionItem(
+                    _suggestionItem(
                       icon: Icons.volume_up_outlined,
                       text: '중음 위주의 목소리 강화',
                       difficulty: '보통',
                     ),
                     const SizedBox(height: 12),
-                    MyPage._suggestionItem(
+                    _suggestionItem(
                       icon: Icons.trending_up_outlined,
                       text: '높은 음역대 도전',
                       difficulty: '어려움',
@@ -325,7 +323,7 @@ class MyPage extends StatelessWidget {
     );
   }
 
-  static Widget _smallCover() => ClipRRect(
+  Widget _smallCover() => ClipRRect(
     borderRadius: BorderRadius.circular(4),
     child: Image.asset(
       'assets/images/cat.webp',
@@ -335,7 +333,7 @@ class MyPage extends StatelessWidget {
     ),
   );
 
-  static Widget _iconLabel(IconData icon, String label) => Column(
+  Widget _iconLabel(IconData icon, String label) => Column(
     children: [
       Icon(icon, size: 28, color: Colors.grey.shade700),
       const SizedBox(height: 4),
@@ -343,7 +341,7 @@ class MyPage extends StatelessWidget {
     ],
   );
 
-  static Widget _songTile(String title) => Column(
+  Widget _songTile(String title) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       ClipRRect(
@@ -360,7 +358,7 @@ class MyPage extends StatelessWidget {
     ],
   );
 
-  static Widget _scoreBox(String label, String score) => Container(
+  Widget _scoreBox(String label, String score) => Container(
     width: 80,
     height: 80,
     decoration: BoxDecoration(
@@ -384,7 +382,7 @@ class MyPage extends StatelessWidget {
     ),
   );
 
-  static Widget _analysisItem({
+  Widget _analysisItem({
     required IconData icon,
     required Color iconColor,
     required String text,
@@ -405,7 +403,7 @@ class MyPage extends StatelessWidget {
     ],
   );
 
-  static Widget _suggestionItem({
+  Widget _suggestionItem({
     required IconData icon,
     required String text,
     required String difficulty,
