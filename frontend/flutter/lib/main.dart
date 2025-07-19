@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   final Song sampleSong = Song(
     title: 'Never Ending Story',
     artist: 'IU',
-    albumCover: '',
+    albumCover: 'assets/images/iu.webp',
     difficulty: '중급',
     range: 'F3 ~ D5',
     lyrics: '그리워하면 언젠가 만나게 되는 ... (가사 생략)',
@@ -84,15 +84,17 @@ class MyApp extends StatelessWidget {
           );
         }
         if (settings.name == '/ai-vocal-ready') {
+          final song = settings.arguments as Song;
           return MaterialPageRoute(
             builder: (context) => AiVocalReadyPage(),
-            settings: RouteSettings(arguments: sampleSong),
+            settings: RouteSettings(arguments: song),
           );
         }
         if (settings.name == '/ai-vocal-play') {
+          final song = settings.arguments as Song;
           return MaterialPageRoute(
             builder: (context) => AiVocalPlayPage(),
-            settings: RouteSettings(arguments: sampleSong),
+            settings: RouteSettings(arguments: song),
           );
         }
         if (settings.name == '/notification') {
@@ -103,24 +105,6 @@ class MyApp extends StatelessWidget {
         }
         return null;
       },
-    );
-  }
-}
-
-class SongCard extends StatelessWidget {
-  // ...생략...
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      height: 210, // 높이 명시적으로 지정
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // 추가
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ...생략...
-        ],
-      ),
     );
   }
 }
