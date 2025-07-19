@@ -573,7 +573,7 @@ class _RecordPageState extends State<RecordPage> {
                             Text(
                               _isInstLoading 
                                   ? '로딩 중...' 
-                                  : (_isInstPlaying ? '일시정지' : '재생'),
+                                  : (_isInstPlaying ? '녹음 정지' : '녹음 시작'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
