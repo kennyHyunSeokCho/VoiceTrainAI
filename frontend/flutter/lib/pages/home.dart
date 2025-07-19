@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import '../widgets/song_card.dart';
-<<<<<<< HEAD
 import 'song_detail_page.dart';
-=======
-import '../models/song.dart';
->>>>>>> origin/Feature_DU
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -186,6 +182,14 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -238,11 +242,18 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
-<<<<<<< HEAD
             height: 220,
             child: recommendedSongs.isEmpty
                 ? Center(child: CircularProgressIndicator())
@@ -272,52 +283,10 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-=======
-            height: 230, // 높이를 200에서 230으로 늘림
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  song: Song(
-                    title: 'Never Ending Story',
-                    artist: 'IU',
-                    albumCover: 'assets/images/iu.webp',
-                    difficulty: '중급',
-                    range: 'F3 ~ D5',
-                    lyrics: '그리워하면 언젠가 만나게 되는 ...',
-                    duration: '3:40',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'Drowning',
-                    artist: 'WOODZ',
-                    albumCover: 'assets/images/no_pain.webp',
-                    difficulty: '초급',
-                    range: 'C4 ~ C5',
-                    lyrics: '가사 없음',
-                    duration: '3:00',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'FAMOUS',
-                    artist: 'Allday Project',
-                    albumCover: 'assets/images/famous.webp',
-                    difficulty: '고급',
-                    range: 'E4 ~ G5',
-                    lyrics: '가사 없음',
-                    duration: '4:10',
-                  ),
-                ),
-              ],
-            ),
->>>>>>> origin/Feature_DU
           ),
 
           const SizedBox(height: 32),
+
           // 보컬 트래킹 진행률
           Text(
             '보컬 트래킹 진행률',
@@ -358,15 +327,16 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '이번 달 보컬 트래킹',
+                            '이번 주 진행률',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
                           ),
+                          SizedBox(height: 4),
                           Text(
-                            '총 12회 중 10회 완료',
+                            '5일 연속 연습 중!',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -411,11 +381,18 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
-<<<<<<< HEAD
             height: 220,
             child: songs.isEmpty
                 ? Center(child: CircularProgressIndicator())
@@ -445,50 +422,8 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-=======
-            height: 230, // 높이를 200에서 230으로 늘림
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                SongCard(
-                  song: Song(
-                    title: 'NO PAIN',
-                    artist: '실리카겔',
-                    albumCover: 'assets/images/no_pain.webp',
-                    difficulty: '중급',
-                    range: 'D4 ~ F5',
-                    lyrics: '가사 없음',
-                    duration: '3:50',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'FAMOUS',
-                    artist: 'Allday Project',
-                    albumCover: 'assets/images/famous.webp',
-                    difficulty: '고급',
-                    range: 'E4 ~ G5',
-                    lyrics: '가사 없음',
-                    duration: '4:10',
-                  ),
-                ),
-                SizedBox(width: 12),
-                SongCard(
-                  song: Song(
-                    title: 'Celebrity',
-                    artist: 'IU',
-                    albumCover: 'assets/images/iu.webp',
-                    difficulty: '초급',
-                    range: 'C4 ~ C5',
-                    lyrics: '가사 없음',
-                    duration: '3:30',
-                  ),
-                ),
-              ],
-            ),
->>>>>>> origin/Feature_DU
           ),
+
           const SizedBox(height: 32),
         ],
       ),

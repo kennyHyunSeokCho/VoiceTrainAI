@@ -152,7 +152,10 @@ class AiVocalReadyPage extends StatelessWidget {
                     SizedBox(width: 8),
                     Text(
                       'AI 보컬이 성공적으로 생성되었습니다',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
                     ),
                     SizedBox(width: 8),
                     SvgPicture.asset(
@@ -167,17 +170,10 @@ class AiVocalReadyPage extends StatelessWidget {
                 // "들어보기" 버튼
                 ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/ai-vocal-play',
-                      arguments: song,
-                    );
+                    Navigator.pushNamed(context, '/ai-vocal-play', arguments: song);
                   },
                   icon: Icon(Icons.play_arrow, size: 24),
-                  label: Text(
-                    '들어보기',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
+                  label: Text('들어보기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
