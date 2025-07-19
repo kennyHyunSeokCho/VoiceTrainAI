@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/song.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../services/s3_service.dart';
 
 class SongDetailPage extends StatefulWidget {
   final Map<String, String> songData;
@@ -12,6 +14,69 @@ class SongDetailPage extends StatefulWidget {
 }
 
 class _SongDetailPageState extends State<SongDetailPage> {
+  AudioPlayer? _audioPlayer;
+  bool _isPlaying = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer();
+    _audioPlayer!.onPlayerStateChanged.listen((state) {
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playOriginalSong() async {
+    final songData = widget.songData;
+    final artist = songData['artist'] ?? '';
+    final title = songData['title'] ?? '';
+
+    if (artist.isEmpty || title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('곡 정보가 없습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final songUrl = S3Service.getOriginalSongUrl(artist, title);
+      print('Generated S3 URL: $songUrl'); // 디버깅용 로그
+      
+      if (_isPlaying) {
+        await _audioPlayer!.stop();
+      } else {
+        await _audioPlayer!.play(UrlSource(songUrl));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('오디오 재생 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final songData = widget.songData;
@@ -207,18 +272,32 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: () {},
+                                  onTap: _isLoading ? null : _playOriginalSong,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        Icons.play_arrow_rounded,
-                                        color: Colors.white,
-                                        size: 32,
-                                      ),
+                                      if (_isLoading)
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      else
+                                        Icon(
+                                          _isPlaying 
+                                            ? Icons.pause_rounded 
+                                            : Icons.play_arrow_rounded,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        '전체 듣기',
+                                        _isLoading 
+                                          ? '로딩 중...' 
+                                          : (_isPlaying ? '일시정지' : '전체 듣기'),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
