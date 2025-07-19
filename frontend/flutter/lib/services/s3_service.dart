@@ -33,6 +33,16 @@ class S3Service {
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/inst/${cleanArtist}_$cleanTitle\_inst.wav';
   }
 
+  /// 앨범 커버 이미지의 S3 URL을 생성합니다.
+  /// 경로: https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/가수명_노래제목.jpg
+  static String getAlbumCoverUrl(String artist, String title) {
+    // 파일명에서 특수문자 제거 및 공백 처리
+    String cleanArtist = _cleanFileName(artist);
+    String cleanTitle = _cleanFileName(title);
+    
+    return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${cleanArtist}_$cleanTitle.jpg';
+  }
+
   /// 파일명에서 사용할 수 없는 특수문자를 제거하고 공백을 언더스코어로 변경합니다.
   static String _cleanFileName(String fileName) {
     return fileName
