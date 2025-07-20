@@ -64,39 +64,41 @@ class VoiceTrainingApp extends StatelessWidget {
               child: SingleChildScrollView(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height - 
-                               kToolbarHeight - 
-                               MediaQuery.of(context).padding.top - 
-                               MediaQuery.of(context).padding.bottom - 48)),
+                    minHeight:
+                        MediaQuery.of(context).size.height -
+                        kToolbarHeight -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom -
+                        48,
+                  ),
                   child: Column(
-                    // 🎤 녹음 상태 및 시간 표시
-                    VoiceTrainingApp._buildRecordingStatus(recordingProvider),
-                    
-                    const SizedBox(height: 40),
-
-                    // 🎚️ 데시벨 임계값 컨트롤
-                    Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    children: [
+                      // 🎤 녹음 상태 및 시간 표시
+                      VoiceTrainingApp._buildRecordingStatus(recordingProvider),
+                      const SizedBox(height: 40),
+                      // 🎚️ 데시벨 임계값 컨트롤
+                      Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: AudioThresholdControlWidget(),
+                        ),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: AudioThresholdControlWidget(),
+                      const SizedBox(height: 40),
+                      // 🎵 메인 녹음 버튼
+                      VoiceTrainingApp._buildMainRecordButton(
+                        context,
+                        recordingProvider,
                       ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // 🎵 메인 녹음 버튼
-                    VoiceTrainingApp._buildMainRecordButton(context, recordingProvider),
-
-                    const SizedBox(height: 40),
-
-                    // 💡 간단한 안내 메시지
-                    VoiceTrainingApp._buildHelpText(recordingProvider),
-                  ],
+                      const SizedBox(height: 40),
+                      // 💡 간단한 안내 메시지
+                      VoiceTrainingApp._buildHelpText(recordingProvider),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -154,9 +156,7 @@ class VoiceTrainingApp extends StatelessWidget {
           Text(
             provider.waitingForVoice
                 ? '🎤 음성을 기다리는 중...'
-                : (provider.isActuallyRecording
-                      ? '🔴 실제 녹음 중!'
-                      : '녹음 중...'),
+                : (provider.isActuallyRecording ? '🔴 실제 녹음 중!' : '녹음 중...'),
             style: TextStyle(
               fontSize: 16,
               color: provider.isActuallyRecording ? Colors.red : Colors.orange,
@@ -175,10 +175,7 @@ class VoiceTrainingApp extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             '녹음 준비됨',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ],
       ],
@@ -186,7 +183,10 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 메인 녹음 버튼
-  static Widget _buildMainRecordButton(BuildContext context, RecordingProvider provider) {
+  static Widget _buildMainRecordButton(
+    BuildContext context,
+    RecordingProvider provider,
+  ) {
     return GestureDetector(
       onTap: () async {
         print('👆 버튼 클릭됨! 현재 녹음 상태: ${provider.isRecording}');
