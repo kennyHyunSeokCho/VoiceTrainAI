@@ -8,6 +8,7 @@ import 'pages/ai_vocal_play_page.dart';
 import 'pages/login_page.dart';
 import 'pages/search.dart';
 import 'pages/notification_page.dart';
+import 'main_layout.dart';
 
 void main() {
   runApp(MyApp());
@@ -32,8 +33,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         // Google Fonts를 사용한 한글 폰트 설정
         textTheme: GoogleFonts.notoSansKrTextTheme(Theme.of(context).textTheme),
-        scaffoldBackgroundColor: Colors.white, // 스캐폴드 배경색(흰색)
+
+        // 색상 테마
         primarySwatch: Colors.purple,
+        primaryColor: Colors.purple[600],
 
         // 앱바 테마
         appBarTheme: AppBarTheme(
@@ -100,6 +103,9 @@ class MyApp extends StatelessWidget {
         }
         if (settings.name == '/search') {
           return MaterialPageRoute(builder: (context) => SearchPage());
+        }
+        if (settings.name == '/main') {
+          return MaterialPageRoute(builder: (context) => MainLayout());
         }
         return null;
       },
