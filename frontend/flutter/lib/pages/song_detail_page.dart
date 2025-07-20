@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:io';
 import '../models/song.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/s3_service.dart';
+import '../services/vocal_range_service.dart';
 
 class SongDetailPage extends StatefulWidget {
   final Map<String, String> songData;
@@ -12,6 +17,197 @@ class SongDetailPage extends StatefulWidget {
 }
 
 class _SongDetailPageState extends State<SongDetailPage> {
+  AudioPlayer? _audioPlayer;
+  bool _isPlaying = false;
+  bool _isLoading = false;
+  final ImagePicker _picker = ImagePicker();
+  File? _uploadedFile;
+  bool _isUploading = false;
+  VocalRangeAnalysis? _vocalRangeAnalysis;
+  bool _isAnalyzingVocalRange = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer();
+    _audioPlayer!.onPlayerStateChanged.listen((state) {
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+
+    // 페이지 로드 시 음역대 분석 시작
+    _analyzeVocalRange();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer?.dispose();
+    super.dispose();
+  }
+
+  /// 음역대 분석을 수행합니다.
+  Future<void> _analyzeVocalRange() async {
+    final songData = widget.songData;
+    final title = songData['title'] ?? '';
+    final artist = songData['artist'] ?? '';
+
+    if (title.isEmpty || artist.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isAnalyzingVocalRange = true;
+    });
+
+    try {
+      final analysis = await VocalRangeService.analyzeVocalRangeSafe(
+        title,
+        artist,
+      );
+      setState(() {
+        _vocalRangeAnalysis = analysis;
+        _isAnalyzingVocalRange = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isAnalyzingVocalRange = false;
+      });
+      print('음역대 분석 오류: $e');
+    }
+  }
+
+  Future<void> _uploadSongFile() async {
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      // 파일 선택 (오디오 파일만)
+      final XFile? file = await _picker.pickMedia(
+        imageQuality: 100,
+        requestFullMetadata: false,
+      );
+
+      if (file == null) {
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      // 파일 확장자 확인 (오디오 파일만 허용)
+      final String extension = file.path.split('.').last.toLowerCase();
+      final List<String> allowedExtensions = [
+        'mp3',
+        'wav',
+        'm4a',
+        'aac',
+        'ogg',
+      ];
+
+      if (!allowedExtensions.contains(extension)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('오디오 파일만 업로드 가능합니다. (mp3, wav, m4a, aac, ogg)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      // 파일 크기 확인 (50MB 이하)
+      final File audioFile = File(file.path);
+      final int fileSizeInBytes = await audioFile.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+
+      if (fileSizeInMB > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('파일 크기는 50MB 이하여야 합니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isUploading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _uploadedFile = audioFile;
+        _isUploading = false;
+      });
+
+      // 업로드 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일이 성공적으로 업로드되었습니다: ${file.name}'),
+          backgroundColor: const Color(0xFF8B5CF6),
+        ),
+      );
+
+      // TODO: 실제 서버 업로드 로직 구현
+      // await _uploadToServer(audioFile);
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일 업로드 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _playOriginalSong() async {
+    final songData = widget.songData;
+    final artist = songData['artist'] ?? '';
+    final title = songData['title'] ?? '';
+
+    if (artist.isEmpty || title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('곡 정보가 없습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final songUrl = S3Service.getOriginalSongUrl(artist, title);
+      print('Generated S3 URL: $songUrl'); // 디버깅용 로그
+
+      if (_isPlaying) {
+        await _audioPlayer!.stop();
+      } else {
+        await _audioPlayer!.play(UrlSource(songUrl));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('오디오 재생 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final songData = widget.songData;
@@ -125,13 +321,116 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF)),
-                            _buildDifficultyTag('분석 예정'),
+                            if (_isAnalyzingVocalRange)
+                              _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF))
+                            else if (_vocalRangeAnalysis != null)
+                              _buildTag(
+                                _vocalRangeAnalysis!.totalRange,
+                                const Color(0xFFE0E7FF),
+                              )
+                            else
+                              _buildTag('음역대 분석 실패', const Color(0xFFFEE2E2)),
+                            if (_isAnalyzingVocalRange)
+                              _buildDifficultyTag('분석 중')
+                            else if (_vocalRangeAnalysis != null)
+                              _buildDifficultyTag(
+                                _vocalRangeAnalysis!.difficulty,
+                              )
+                            else
+                              _buildDifficultyTag('분석 실패'),
                           ],
                         ),
                       ),
 
                       const SizedBox(height: 40),
+
+                      // 업로드된 파일 정보 표시
+                      if (_uploadedFile != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E7FF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.music_note_rounded,
+                                    color: const Color(0xFF8B5CF6),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '업로드된 파일',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _uploadedFile!.path.split('/').last,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1F2937),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: const Color(0xFF10B981),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '업로드 완료',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: const Color(0xFF10B981),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _uploadedFile = null;
+                                      });
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('업로드된 파일이 제거되었습니다.'),
+                                          backgroundColor: Color(0xFF8B5CF6),
+                                        ),
+                                      );
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      color: const Color(0xFF6B7280),
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
 
                       // 퀵 액션 버튼들 (더 세련된 디자인)
                       Container(
@@ -150,7 +449,15 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildQuickAction(Icons.schedule_rounded, '연습현황'),
+                            GestureDetector(
+                              onTap: _uploadSongFile,
+                              child: _buildQuickAction(
+                                _isUploading
+                                    ? Icons.upload_file_rounded
+                                    : Icons.upload_rounded,
+                                _isUploading ? '업로드 중...' : '노래 파일 올리기',
+                              ),
+                            ),
                             _buildQuickAction(
                               Icons.history_rounded,
                               '피드백 히스토리',
@@ -207,18 +514,32 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: () {},
+                                  onTap: _isLoading ? null : _playOriginalSong,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        Icons.play_arrow_rounded,
-                                        color: Colors.white,
-                                        size: 32,
-                                      ),
+                                      if (_isLoading)
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      else
+                                        Icon(
+                                          _isPlaying
+                                              ? Icons.pause_rounded
+                                              : Icons.play_arrow_rounded,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        '전체 듣기',
+                                        _isLoading
+                                            ? '로딩 중...'
+                                            : (_isPlaying ? '일시정지' : '전체 듣기'),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
@@ -286,6 +607,110 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       ),
 
                       const SizedBox(height: 40),
+
+                      // 음역대 분석 결과 섹션
+                      if (_vocalRangeAnalysis != null &&
+                          _vocalRangeAnalysis!.analysisStatus ==
+                              'completed') ...[
+                        _buildSectionTitle('음역대 분석'),
+                        const SizedBox(height: 20),
+
+                        // 음역대 분석 결과 카드
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF8B5CF6,
+                                ).withOpacity(0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.graphic_eq_rounded,
+                                    color: const Color(0xFF8B5CF6),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '음역대 분석 결과',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 전체 음역대
+                              _buildRangeInfo(
+                                '전체 음역대',
+                                _vocalRangeAnalysis!.totalRange,
+                                Icons.music_note_rounded,
+                              ),
+                              const SizedBox(height: 12),
+
+                              // 편안한 음역대
+                              _buildRangeInfo(
+                                '편안한 음역대',
+                                _vocalRangeAnalysis!.comfortableRange,
+                                Icons.favorite_rounded,
+                              ),
+                              const SizedBox(height: 12),
+
+                              // 핵심 음역대
+                              _buildRangeInfo(
+                                '핵심 음역대',
+                                _vocalRangeAnalysis!.coreRange,
+                                Icons.star_rounded,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 난이도
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getDifficultyColor(
+                                    _vocalRangeAnalysis!.difficulty,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _getDifficultyColor(
+                                      _vocalRangeAnalysis!.difficulty,
+                                    ).withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  '난이도: ${_vocalRangeAnalysis!.difficulty}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getDifficultyColor(
+                                      _vocalRangeAnalysis!.difficulty,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
 
                       // Cover Song 섹션
                       _buildSectionTitle('Cover Song'),
@@ -588,6 +1013,46 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
     );
+  }
+
+  /// 음역대 정보를 표시하는 위젯
+  Widget _buildRangeInfo(String label, String range, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF8B5CF6)),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+        Text(
+          range,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 난이도에 따른 색상을 반환합니다.
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case '초급':
+        return const Color(0xFF10B981);
+      case '중급':
+        return const Color(0xFFF59E0B);
+      case '고급':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF6B7280);
+    }
   }
 
   /// 가사에 줄바꿈을 추가하는 함수

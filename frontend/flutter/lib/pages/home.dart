@@ -182,6 +182,14 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -234,6 +242,14 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -270,6 +286,7 @@ class _HomePageState extends State<HomePage> {
           ),
 
           const SizedBox(height: 32),
+
           // 보컬 트래킹 진행률
           Text(
             '보컬 트래킹 진행률',
@@ -310,15 +327,16 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '이번 달 보컬 트래킹',
+                            '이번 주 진행률',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
                           ),
+                          SizedBox(height: 4),
                           Text(
-                            '총 12회 중 10회 완료',
+                            '5일 연속 연습 중!',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -363,6 +381,14 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                 ),
               ),
+              Text(
+                '더보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -397,6 +423,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
           ),
+
           const SizedBox(height: 32),
         ],
       ),
