@@ -1,0 +1,56 @@
+파일명: 팝송1_vocal.wav
+파일 크기: 50.2MB
+언어: ko
+길이: 149.16초
+분할 처리: 예 (3개 세그먼트)
+생성 시간: 2025-07-02 15:57:36
+처리 방식: OpenAI API (whisper-1)
+--------------------------------------------------
+
+I don't know what you've been told But time is running out, no need to take it slow I'm stepping to your toe to toe I should be scared, honey, maybe so But I ain't worried about it right now Keeping dreams alive, 1999 heroes I ain't worried about it right now Swimming in the flats, dancing on the clouds below I ain't worried about it I ain't worried about it I don't know what you've been told I'm living like I'm 90 years old Got no regrets even when I'm broke I'm at my best when I got something I'm wanting to steal Way too busy for them problems and problems to feel No stress ain't just obsessing with sealing the deal I'll take it in and let it go But I ain't worried about it right now Keeping dreams alive 1990s, I ain't worried about it Keeping dreams alive 1999 heroes I ain't worried about it right now Swimming in the floods Dancing on the clouds below I ain't worried about it I am worried about you Ooh I am worried Ooh About you I am worried about you right now Keeping dreams alive 1999 heroes I am worried about you right now Swimming in the floods Racing on the clouds below I am worried about you Ooh I am worried about you Ooh I am worried about you
+
+==================================================
+세그먼트별 상세 정보:
+==================================================
+
+[1] 0.00s - 10.00s: I don't know what you've been told
+[2] 10.00s - 14.00s: But time is running out, no need to take it slow
+[3] 14.00s - 17.00s: I'm stepping to your toe to toe
+[4] 17.00s - 19.00s: I should be scared, honey, maybe so
+[5] 19.00s - 22.00s: But I ain't worried about it right now
+[6] 22.00s - 26.00s: Keeping dreams alive, 1999 heroes
+[7] 26.00s - 29.00s: I ain't worried about it right now
+[8] 29.00s - 33.00s: Swimming in the flats, dancing on the clouds below
+[9] 33.00s - 35.00s: I ain't worried about it
+[10] 40.00s - 42.00s: I ain't worried about it
+[11] 48.00s - 50.00s: I don't know what you've been told
+[12] 49.72s - 52.72s: I'm living like I'm 90 years old
+[13] 52.72s - 55.72s: Got no regrets even when I'm broke
+[14] 55.72s - 59.72s: I'm at my best when I got something I'm wanting to steal
+[15] 59.72s - 63.72s: Way too busy for them problems and problems to feel
+[16] 63.72s - 66.72s: No stress ain't just obsessing with sealing the deal
+[17] 66.72s - 69.72s: I'll take it in and let it go
+[18] 69.72s - 72.72s: But I ain't worried about it right now
+[19] 72.72s - 74.72s: Keeping dreams alive
+[20] 74.72s - 77.72s: 1990s, I ain't worried about it
+[21] 77.72s - 79.72s: Keeping dreams alive
+[22] 79.72s - 81.72s: 1999 heroes
+[23] 81.72s - 84.72s: I ain't worried about it right now
+[24] 84.72s - 86.72s: Swimming in the floods
+[25] 86.72s - 88.72s: Dancing on the clouds below
+[26] 88.72s - 90.72s: I ain't worried about it
+[27] 99.44s - 102.94s: I am worried about you
+[28] 102.94s - 107.94s: Ooh
+[29] 107.94s - 109.94s: I am worried
+[30] 109.94s - 113.94s: Ooh
+[31] 113.94s - 116.94s: About you
+[32] 116.94s - 119.94s: I am worried about you right now
+[33] 119.94s - 123.94s: Keeping dreams alive 1999 heroes
+[34] 123.94s - 126.94s: I am worried about you right now
+[35] 126.94s - 128.94s: Swimming in the floods
+[36] 128.94s - 130.94s: Racing on the clouds below
+[37] 130.94s - 132.94s: I am worried about you
+[38] 132.94s - 137.94s: Ooh
+[39] 137.94s - 139.94s: I am worried about you
+[40] 139.94s - 144.94s: Ooh
+[41] 144.94s - 146.94s: I am worried about you
