@@ -85,7 +85,7 @@ class _MidiParser {
             bytes[offset + 2] == 0x72 && bytes[offset + 3] == 0x6B) {
           
           int trackLength = (bytes[offset + 4] << 24) + (bytes[offset + 5] << 16) + 
-                           (bytes[offset + 6] << 8) + bytes[offset + 7];
+                          (bytes[offset + 6] << 8) + bytes[offset + 7];
           offset += 8;
           int trackEnd = offset + trackLength;
           
@@ -106,8 +106,8 @@ class _MidiParser {
             }
             
                          // 델타 타임을 초로 변환
-             double deltaTime = _ticksToSeconds(deltaTicks, tempo, ticksPerBeat);
-             currentTime += deltaTime;
+            double deltaTime = _ticksToSeconds(deltaTicks, tempo, ticksPerBeat);
+            currentTime += deltaTime;
             
             if (offset >= trackEnd || offset >= bytes.length) break;
             
@@ -115,12 +115,12 @@ class _MidiParser {
             int eventType = bytes[offset];
             
                          if (eventType == 0xFF) { // 메타 이벤트
-               if (offset + 2 < trackEnd) {
-                 int metaLength = bytes[offset + 2];
-                 offset += 3 + metaLength;
-               } else {
-                 break;
-               }
+              if (offset + 2 < trackEnd) {
+                int metaLength = bytes[offset + 2];
+                offset += 3 + metaLength;
+              } else {
+                break;
+              }
             } else if ((eventType & 0xF0) == 0x90) { // Note On
               if (offset + 2 < trackEnd) {
                 int note = bytes[offset + 1];
@@ -1549,8 +1549,8 @@ Future<String> _tryDirectS3Access(String artist, String title) async {
 
     // 여러 가능한 파일명 패턴 시도
     List<String> possibleUrls = [
-      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$safeArtist\_$safeTitle.jpg',
-      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$artist\_$title.jpg',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${safeArtist}_$safeTitle.jpg',
+      'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${artist}_$title.jpg',
       'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$safeArtist/$safeTitle.jpg',
       'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$artist/$title.jpg',
     ];
