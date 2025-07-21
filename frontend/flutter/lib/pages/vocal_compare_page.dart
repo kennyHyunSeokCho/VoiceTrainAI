@@ -47,7 +47,15 @@ class _VocalComparePageState extends State<VocalComparePage> {
     _userPlayer = AudioPlayer();
     _singerPlayer = AudioPlayer();
     _aiPlayer = AudioPlayer();
-    _fetchVocalUrls();
+    // 더미 오디오 URL로 바로 세팅 (실제 오디오 파일 URL로 교체 가능)
+    userVocalUrl =
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+    singerVocalUrl =
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3';
+    aiVocalUrl =
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
+    loading = false;
+    // _fetchVocalUrls(); // 주석 처리
   }
 
   Future<void> _fetchVocalUrls() async {
@@ -187,6 +195,7 @@ class _VocalComparePageState extends State<VocalComparePage> {
         title: Text('${widget.songTitle} - ${widget.artist} 보컬 비교'),
       ),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 100),
         children: [
           const SizedBox(height: 16),
           _buildAudioPlayer(
@@ -214,6 +223,31 @@ class _VocalComparePageState extends State<VocalComparePage> {
             isPlaying: _aiPlaying,
           ),
         ],
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: OutlinedButton(
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/main', (route) => false);
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF8B5CF6),
+              side: const BorderSide(color: Color(0xFF8B5CF6)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              '홈으로 돌아가기',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
       ),
     );
   }

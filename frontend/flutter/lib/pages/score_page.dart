@@ -1,3 +1,4 @@
+import 'package:SingSang/pages/vocal_compare_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../models/song.dart';
@@ -29,42 +30,44 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
   late AnimationController _starAnimationController;
   late Animation<double> _scoreAnimation;
   late Animation<double> _starAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _scoreAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _starAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _scoreAnimation = Tween<double>(
-      begin: 0,
-      end: widget.hasRecording ? widget.totalScore.toDouble() : 0,
-    ).animate(CurvedAnimation(
-      parent: _scoreAnimationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _starAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _starAnimationController,
-      curve: Curves.elasticOut,
-    ));
-    
+
+    _scoreAnimation =
+        Tween<double>(
+          begin: 0,
+          end: widget.hasRecording ? widget.totalScore.toDouble() : 0,
+        ).animate(
+          CurvedAnimation(
+            parent: _scoreAnimationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _starAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _starAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
     // 애니메이션 시작
     Future.delayed(const Duration(milliseconds: 500), () {
       _scoreAnimationController.forward();
     });
-    
+
     Future.delayed(const Duration(milliseconds: 1000), () {
       _starAnimationController.forward();
     });
@@ -86,7 +89,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
           children: [
             // 상단 헤더
             _buildHeader(),
-            
+
             // 메인 점수 영역
             Expanded(
               child: SingleChildScrollView(
@@ -94,26 +97,26 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    
+
                     // 종합 점수 카드
                     _buildTotalScoreCard(),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // 세부 점수 카드들
                     _buildDetailScoreCards(),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // 추천곡 카드
                     _buildRecommendationCard(),
-                    
+
                     const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-            
+
             // 하단 버튼들
             _buildBottomButtons(),
           ],
@@ -172,10 +175,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF8B5CF6),
-            const Color(0xFF7C3AED),
-          ],
+          colors: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -194,17 +194,13 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
             builder: (context, child) {
               return Transform.scale(
                 scale: _starAnimation.value,
-                child: Icon(
-                  Icons.star_rounded,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                child: Icon(Icons.star_rounded, color: Colors.white, size: 48),
               );
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // 점수 텍스트
           AnimatedBuilder(
             animation: _scoreAnimation,
@@ -219,7 +215,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               );
             },
           ),
-          
+
           Text(
             '/ 100',
             style: TextStyle(
@@ -228,9 +224,9 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               color: Colors.white.withOpacity(0.8),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             widget.hasRecording ? '훌륭한 연습이었어요!' : '녹음이 없어서 점수를 매길 수 없어요',
             style: TextStyle(
@@ -258,9 +254,9 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
             hasRecording: widget.hasRecording,
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // 박자 점수 카드
         Expanded(
           child: _buildScoreCard(
@@ -297,14 +293,10 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 32,
-          ),
-          
+          Icon(icon, color: color, size: 32),
+
           const SizedBox(height: 12),
-          
+
           Text(
             title,
             style: TextStyle(
@@ -313,9 +305,9 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               color: const Color(0xFF6B7280),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             hasRecording ? '$score' : '0',
             style: TextStyle(
@@ -324,7 +316,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               color: color,
             ),
           ),
-          
+
           Text(
             '/ 100',
             style: TextStyle(
@@ -374,11 +366,13 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           if (widget.hasRecording && widget.recommendedSongs.isNotEmpty)
-            ...widget.recommendedSongs.take(3).map((song) => _buildRecommendationItem(song))
+            ...widget.recommendedSongs
+                .take(3)
+                .map((song) => _buildRecommendationItem(song))
           else
             Text(
               '녹음이 없어서 추천곡을 제공할 수 없어요',
@@ -400,10 +394,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: const Color(0xFFF8F7FF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
       ),
       child: Row(
         children: [
@@ -420,9 +411,9 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               size: 20,
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           Expanded(
             child: Text(
               song,
@@ -433,7 +424,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          
+
           Icon(
             Icons.play_arrow_rounded,
             color: const Color(0xFF8B5CF6),
@@ -455,7 +446,15 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
             height: 56,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // record_page로 돌아가기
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => VocalComparePage(
+                      userId: '사용자ID', // 실제 사용자 ID로 교체 필요
+                      songTitle: widget.song.title,
+                      artist: widget.song.artist,
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8B5CF6),
@@ -466,17 +465,14 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
                 elevation: 0,
               ),
               child: Text(
-                '다시 연습하기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                '보컬 비교 하러가기',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w200),
               ),
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 홈으로 돌아가기 버튼
           SizedBox(
             width: double.infinity,
@@ -498,10 +494,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               ),
               child: Text(
                 '홈으로 돌아가기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -509,4 +502,4 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
       ),
     );
   }
-} 
+}

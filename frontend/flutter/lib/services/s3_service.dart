@@ -1,4 +1,3 @@
-
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_storage_s3/amplify_storage_s3.dart';
 import '../models/song.dart';
@@ -19,7 +18,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/original/${cleanArtist}_$cleanTitle.wav';
   }
 
@@ -29,7 +28,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/inst/${cleanArtist}_$cleanTitle\_inst.wav';
   }
 
@@ -39,7 +38,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${cleanArtist}_$cleanTitle.jpg';
   }
 
@@ -49,7 +48,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/midi/${cleanArtist}_$cleanTitle\_midi.mid';
   }
 
