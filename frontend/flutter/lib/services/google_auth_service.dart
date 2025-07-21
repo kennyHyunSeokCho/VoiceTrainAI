@@ -83,7 +83,6 @@ class GoogleAuthService {
     try {
       // 웹에서는 직접 Google Sign-In 사용 (deprecated 경고 무시)
       final GoogleSignIn _googleSignIn = GoogleSignIn(
-        clientId: 'YOUR_GOOGLE_CLIENT_ID_HERE',
         scopes: ['email', 'profile'],
       );
 
