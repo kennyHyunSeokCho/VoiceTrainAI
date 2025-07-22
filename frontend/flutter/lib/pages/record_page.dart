@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';
 import 'dart:convert';
-import '../models/song.dart';
+import 'dart:math';
 
+import 'package:SingSang/audio_compare_plugin.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/song.dart';
 import '../services/s3_service.dart';
 import 'score_page.dart';
 
@@ -33,7 +35,7 @@ class _MidiNote {
     const double minPitch = 48.0; // C3
     const double maxPitch = 84.0; // C6
     const double visualHeight = 40.0; // 시각화 영역 높이
-    
+
     double normalizedPitch = (pitch - minPitch) / (maxPitch - minPitch);
     normalizedPitch = normalizedPitch.clamp(0.0, 1.0);
     return (1.0 - normalizedPitch) * visualHeight; // 높은 음정일수록 위쪽
@@ -45,52 +47,59 @@ class _MidiParser {
   static Future<List<_MidiNote>> parseMidiFromBytes(List<int> bytes) async {
     try {
       List<_MidiNote> notes = [];
-      
+
       // MIDI 헤더 확인
-      if (bytes.length < 14 || 
-          bytes[0] != 0x4D || bytes[1] != 0x54 || bytes[2] != 0x68 || bytes[3] != 0x64) {
+      if (bytes.length < 14 ||
+          bytes[0] != 0x4D ||
+          bytes[1] != 0x54 ||
+          bytes[2] != 0x68 ||
+          bytes[3] != 0x64) {
         print('유효하지 않은 MIDI 파일');
         return _generateSampleNotes();
       }
-      
+
       // 기본 설정
       double tempo = 500000.0; // 마이크로초/비트 (120 BPM)
       double ticksPerBeat = 1920.0;
-      
-             // 헤더에서 ticks per beat 추출
-       int headerLength = (bytes[4] << 24) + (bytes[5] << 16) + (bytes[6] << 8) + bytes[7];
-       if (headerLength >= 6) {
-         ticksPerBeat = ((bytes[12] << 8) + bytes[13]).toDouble();
-         print('Ticks per beat: $ticksPerBeat');
-       }
-      
+
+      // 헤더에서 ticks per beat 추출
+      int headerLength =
+          (bytes[4] << 24) + (bytes[5] << 16) + (bytes[6] << 8) + bytes[7];
+      if (headerLength >= 6) {
+        ticksPerBeat = ((bytes[12] << 8) + bytes[13]).toDouble();
+        print('Ticks per beat: $ticksPerBeat');
+      }
+
       // 템포 이벤트 찾기
       for (int i = 0; i < bytes.length - 6; i++) {
         if (bytes[i] == 0xFF && bytes[i + 1] == 0x51 && bytes[i + 2] == 0x03) {
-          int tempoValue = (bytes[i + 3] << 16) + (bytes[i + 4] << 8) + bytes[i + 5];
+          int tempoValue =
+              (bytes[i + 3] << 16) + (bytes[i + 4] << 8) + bytes[i + 5];
           tempo = tempoValue.toDouble();
-          print('템포 발견: ${(60000000/tempo).toStringAsFixed(1)} BPM');
+          print('템포 발견: ${(60000000 / tempo).toStringAsFixed(1)} BPM');
           break;
         }
       }
-      
+
       // 트랙 데이터 파싱
       int offset = 14; // 헤더 이후
       Map<String, double> activeNotes = {}; // note_channel -> startTime
       double currentTime = 0.0;
-      
+
       while (offset < bytes.length - 8) {
         // 트랙 헤더 확인
-        if (bytes[offset] == 0x4D && bytes[offset + 1] == 0x54 && 
-            bytes[offset + 2] == 0x72 && bytes[offset + 3] == 0x6B) {
-          
-          int trackLength = (bytes[offset + 4] << 24) + (bytes[offset + 5] << 16) + 
-                          (bytes[offset + 6] << 8) + bytes[offset + 7];
+        if (bytes[offset] == 0x4D &&
+            bytes[offset + 1] == 0x54 &&
+            bytes[offset + 2] == 0x72 &&
+            bytes[offset + 3] == 0x6B) {
+          int trackLength =
+              (bytes[offset + 4] << 24) +
+              (bytes[offset + 5] << 16) +
+              (bytes[offset + 6] << 8) +
+              bytes[offset + 7];
           offset += 8;
           int trackEnd = offset + trackLength;
-          
-          
-          
+
           while (offset < trackEnd && offset < bytes.length - 1) {
             // 델타 타임 읽기
             int deltaTicks = 0;
@@ -104,46 +113,52 @@ class _MidiParser {
               deltaTicks |= (bytes[offset] & 0x7F) << shift;
               offset++;
             }
-            
-                         // 델타 타임을 초로 변환
+
+            // 델타 타임을 초로 변환
             double deltaTime = _ticksToSeconds(deltaTicks, tempo, ticksPerBeat);
             currentTime += deltaTime;
-            
+
             if (offset >= trackEnd || offset >= bytes.length) break;
-            
+
             // 이벤트 타입 확인
             int eventType = bytes[offset];
-            
-                         if (eventType == 0xFF) { // 메타 이벤트
+
+            if (eventType == 0xFF) {
+              // 메타 이벤트
               if (offset + 2 < trackEnd) {
                 int metaLength = bytes[offset + 2];
                 offset += 3 + metaLength;
               } else {
                 break;
               }
-            } else if ((eventType & 0xF0) == 0x90) { // Note On
+            } else if ((eventType & 0xF0) == 0x90) {
+              // Note On
               if (offset + 2 < trackEnd) {
                 int note = bytes[offset + 1];
                 int velocity = bytes[offset + 2];
                 int channel = eventType & 0x0F;
-                
+
                 if (velocity > 0) {
                   String noteKey = '${note}_$channel';
                   activeNotes[noteKey] = currentTime;
-                } else { // velocity 0은 Note Off와 동일
+                } else {
+                  // velocity 0은 Note Off와 동일
                   String noteKey = '${note}_$channel';
                   if (activeNotes.containsKey(noteKey)) {
                     double startTime = activeNotes[noteKey]!;
                     double duration = currentTime - startTime;
-                    
-                    if (duration > 0.05) { // 최소 50ms
-                      notes.add(_MidiNote(
-                        startTime: startTime,
-                        duration: duration,
-                        pitch: note,
-                        velocity: 100,
-                        channel: channel,
-                      ));
+
+                    if (duration > 0.05) {
+                      // 최소 50ms
+                      notes.add(
+                        _MidiNote(
+                          startTime: startTime,
+                          duration: duration,
+                          pitch: note,
+                          velocity: 100,
+                          channel: channel,
+                        ),
+                      );
                     }
                     activeNotes.remove(noteKey);
                   }
@@ -152,24 +167,28 @@ class _MidiParser {
               } else {
                 break;
               }
-            } else if ((eventType & 0xF0) == 0x80) { // Note Off
+            } else if ((eventType & 0xF0) == 0x80) {
+              // Note Off
               if (offset + 2 < trackEnd) {
                 int note = bytes[offset + 1];
                 int channel = eventType & 0x0F;
                 String noteKey = '${note}_$channel';
-                
+
                 if (activeNotes.containsKey(noteKey)) {
                   double startTime = activeNotes[noteKey]!;
                   double duration = currentTime - startTime;
-                  
-                  if (duration > 0.05) { // 최소 50ms
-                    notes.add(_MidiNote(
-                      startTime: startTime,
-                      duration: duration,
-                      pitch: note,
-                      velocity: 100,
-                      channel: channel,
-                    ));
+
+                  if (duration > 0.05) {
+                    // 최소 50ms
+                    notes.add(
+                      _MidiNote(
+                        startTime: startTime,
+                        duration: duration,
+                        pitch: note,
+                        velocity: 100,
+                        channel: channel,
+                      ),
+                    );
                   }
                   activeNotes.remove(noteKey);
                 }
@@ -186,77 +205,206 @@ class _MidiParser {
           offset++;
         }
       }
-      
+
       // 시작 시간순으로 정렬
       notes.sort((a, b) => a.startTime.compareTo(b.startTime));
-      
+
       print('MIDI 파싱 완료: ${notes.length}개 노트');
-      
+
       // 노트가 없으면 빈 리스트 반환 (하드코딩된 샘플 노트 제거)
       if (notes.isEmpty) {
         print('MIDI 파일에 노트가 없음');
         return [];
       }
-      
+
       return notes;
     } catch (e) {
       print('MIDI 파싱 오류: $e');
       return []; // 하드코딩된 샘플 노트 대신 빈 리스트 반환
     }
   }
-  
+
   // MIDI 틱을 초로 변환
   static double _ticksToSeconds(int ticks, double tempo, double ticksPerBeat) {
     double secondsPerBeat = tempo / 1000000.0;
     double secondsPerTick = secondsPerBeat / ticksPerBeat;
     return ticks * secondsPerTick;
   }
-  
+
   // 샘플 노트 생성 (MIDI 파싱 실패 시 사용) - 가사 음절별 노트
   static List<_MidiNote> _generateSampleNotes() {
     return [
       // 첫 번째 음절: "그날"
-      _MidiNote(startTime: 0.0, duration: 0.3, pitch: 60, velocity: 100, channel: 0), // C4
-      _MidiNote(startTime: 0.3, duration: 0.3, pitch: 62, velocity: 100, channel: 0), // D4
-      
+      _MidiNote(
+        startTime: 0.0,
+        duration: 0.3,
+        pitch: 60,
+        velocity: 100,
+        channel: 0,
+      ), // C4
+      _MidiNote(
+        startTime: 0.3,
+        duration: 0.3,
+        pitch: 62,
+        velocity: 100,
+        channel: 0,
+      ), // D4
       // 두 번째 음절: "이후로"
-      _MidiNote(startTime: 0.6, duration: 0.2, pitch: 64, velocity: 100, channel: 0), // E4
-      _MidiNote(startTime: 0.8, duration: 0.2, pitch: 65, velocity: 100, channel: 0), // F4
-      _MidiNote(startTime: 1.0, duration: 0.2, pitch: 67, velocity: 100, channel: 0), // G4
-      
+      _MidiNote(
+        startTime: 0.6,
+        duration: 0.2,
+        pitch: 64,
+        velocity: 100,
+        channel: 0,
+      ), // E4
+      _MidiNote(
+        startTime: 0.8,
+        duration: 0.2,
+        pitch: 65,
+        velocity: 100,
+        channel: 0,
+      ), // F4
+      _MidiNote(
+        startTime: 1.0,
+        duration: 0.2,
+        pitch: 67,
+        velocity: 100,
+        channel: 0,
+      ), // G4
       // 세 번째 음절: "난"
-      _MidiNote(startTime: 1.2, duration: 0.4, pitch: 69, velocity: 100, channel: 0), // A4
-      
+      _MidiNote(
+        startTime: 1.2,
+        duration: 0.4,
+        pitch: 69,
+        velocity: 100,
+        channel: 0,
+      ), // A4
       // 네 번째 음절: "이렇게"
-      _MidiNote(startTime: 1.6, duration: 0.2, pitch: 71, velocity: 100, channel: 0), // B4
-      _MidiNote(startTime: 1.8, duration: 0.2, pitch: 72, velocity: 100, channel: 0), // C5
-      _MidiNote(startTime: 2.0, duration: 0.2, pitch: 71, velocity: 100, channel: 0), // B4
-      
+      _MidiNote(
+        startTime: 1.6,
+        duration: 0.2,
+        pitch: 71,
+        velocity: 100,
+        channel: 0,
+      ), // B4
+      _MidiNote(
+        startTime: 1.8,
+        duration: 0.2,
+        pitch: 72,
+        velocity: 100,
+        channel: 0,
+      ), // C5
+      _MidiNote(
+        startTime: 2.0,
+        duration: 0.2,
+        pitch: 71,
+        velocity: 100,
+        channel: 0,
+      ), // B4
       // 다섯 번째 음절: "살고"
-      _MidiNote(startTime: 2.2, duration: 0.3, pitch: 69, velocity: 100, channel: 0), // A4
-      _MidiNote(startTime: 2.5, duration: 0.3, pitch: 67, velocity: 100, channel: 0), // G4
-      
+      _MidiNote(
+        startTime: 2.2,
+        duration: 0.3,
+        pitch: 69,
+        velocity: 100,
+        channel: 0,
+      ), // A4
+      _MidiNote(
+        startTime: 2.5,
+        duration: 0.3,
+        pitch: 67,
+        velocity: 100,
+        channel: 0,
+      ), // G4
       // 여섯 번째 음절: "더는"
-      _MidiNote(startTime: 2.8, duration: 0.2, pitch: 65, velocity: 100, channel: 0), // F4
-      _MidiNote(startTime: 3.0, duration: 0.2, pitch: 64, velocity: 100, channel: 0), // E4
-      
+      _MidiNote(
+        startTime: 2.8,
+        duration: 0.2,
+        pitch: 65,
+        velocity: 100,
+        channel: 0,
+      ), // F4
+      _MidiNote(
+        startTime: 3.0,
+        duration: 0.2,
+        pitch: 64,
+        velocity: 100,
+        channel: 0,
+      ), // E4
       // 일곱 번째 음절: "기타"
-      _MidiNote(startTime: 3.2, duration: 0.2, pitch: 62, velocity: 100, channel: 0), // D4
-      _MidiNote(startTime: 3.4, duration: 0.2, pitch: 60, velocity: 100, channel: 0), // C4
-      
+      _MidiNote(
+        startTime: 3.2,
+        duration: 0.2,
+        pitch: 62,
+        velocity: 100,
+        channel: 0,
+      ), // D4
+      _MidiNote(
+        startTime: 3.4,
+        duration: 0.2,
+        pitch: 60,
+        velocity: 100,
+        channel: 0,
+      ), // C4
       // 여덟 번째 음절: "한번도"
-      _MidiNote(startTime: 3.6, duration: 0.2, pitch: 62, velocity: 100, channel: 0), // D4
-      _MidiNote(startTime: 3.8, duration: 0.2, pitch: 64, velocity: 100, channel: 0), // E4
-      _MidiNote(startTime: 4.0, duration: 0.2, pitch: 65, velocity: 100, channel: 0), // F4
-      
+      _MidiNote(
+        startTime: 3.6,
+        duration: 0.2,
+        pitch: 62,
+        velocity: 100,
+        channel: 0,
+      ), // D4
+      _MidiNote(
+        startTime: 3.8,
+        duration: 0.2,
+        pitch: 64,
+        velocity: 100,
+        channel: 0,
+      ), // E4
+      _MidiNote(
+        startTime: 4.0,
+        duration: 0.2,
+        pitch: 65,
+        velocity: 100,
+        channel: 0,
+      ), // F4
       // 아홉 번째 음절: "들지"
-      _MidiNote(startTime: 4.2, duration: 0.3, pitch: 67, velocity: 100, channel: 0), // G4
-      _MidiNote(startTime: 4.5, duration: 0.3, pitch: 69, velocity: 100, channel: 0), // A4
-      
+      _MidiNote(
+        startTime: 4.2,
+        duration: 0.3,
+        pitch: 67,
+        velocity: 100,
+        channel: 0,
+      ), // G4
+      _MidiNote(
+        startTime: 4.5,
+        duration: 0.3,
+        pitch: 69,
+        velocity: 100,
+        channel: 0,
+      ), // A4
       // 열 번째 음절: "못하고"
-      _MidiNote(startTime: 4.8, duration: 0.2, pitch: 71, velocity: 100, channel: 0), // B4
-      _MidiNote(startTime: 5.0, duration: 0.2, pitch: 72, velocity: 100, channel: 0), // C5
-      _MidiNote(startTime: 5.2, duration: 0.2, pitch: 71, velocity: 100, channel: 0), // B4
+      _MidiNote(
+        startTime: 4.8,
+        duration: 0.2,
+        pitch: 71,
+        velocity: 100,
+        channel: 0,
+      ), // B4
+      _MidiNote(
+        startTime: 5.0,
+        duration: 0.2,
+        pitch: 72,
+        velocity: 100,
+        channel: 0,
+      ), // C5
+      _MidiNote(
+        startTime: 5.2,
+        duration: 0.2,
+        pitch: 71,
+        velocity: 100,
+        channel: 0,
+      ), // B4
     ];
   }
 }
@@ -295,7 +443,7 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
   void didUpdateWidget(covariant _MidiNoteWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!mounted) return;
-    
+
     // 기준선 통과 시 콜백(한 번만)
     if (!passed && _isPassingCenter()) {
       final acc = _randomAccuracy();
@@ -305,7 +453,7 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
       lastAccuracy = acc;
       passed = true;
     }
-    
+
     // 재시작 시 초기화
     if (widget.progress == 0 && passed) {
       passed = false;
@@ -318,10 +466,10 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
     double left = _calculateLeft();
     double top = widget.note.visualPitch;
     double width = _calculateWidth();
-    
+
     // 색상 결정
     Color noteColor = _getNoteColor();
-    
+
     return Positioned(
       left: left,
       top: top,
@@ -331,65 +479,69 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           color: noteColor,
-          boxShadow: lastAccuracy != null ? [
-            BoxShadow(
-              color: noteColor.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: lastAccuracy != null
+              ? [
+                  BoxShadow(
+                    color: noteColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
       ),
     );
   }
-  
+
   double _calculateLeft() {
     // 노트의 시작 시간에 따른 X 위치 계산 (오른쪽에서 왼쪽으로)
     double width = _calculateWidth();
     double totalMove = widget.barAreaWidth - width - 24; // 24: left padding 보정
-    
+
     // 현재 재생 시간을 기준으로 4초 후의 노트들이 화면에 나타남
     double lookAheadTime = 4.0; // 4초 전부터 노트 표시
-    
+
     // 노트가 화면에 나타나기 시작하는 시간
     double appearTime = widget.currentTime + lookAheadTime;
-    
+
     // 노트가 현재 시간보다 미래에 있으면 아직 나타나지 않음
     if (widget.note.startTime > appearTime) {
       return widget.barAreaWidth; // 화면 오른쪽 밖
     }
-    
+
     // 노트가 이미 지나간 후면 화면에서 사라짐
     if (widget.note.startTime + widget.note.duration < widget.currentTime) {
       return -width; // 화면 왼쪽 밖
     }
-    
+
     // 노트가 화면에 나타나는 동안의 위치 계산
     double timeFromAppear = widget.note.startTime - widget.currentTime;
     double progress = (lookAheadTime - timeFromAppear) / lookAheadTime;
     progress = progress.clamp(0.0, 1.0);
-    
+
     // 오른쪽에서 왼쪽으로 이동
     return widget.barAreaWidth - (progress * totalMove);
   }
-  
+
   double _calculateWidth() {
     // 노트 길이에 따른 너비 계산
-    return (widget.note.duration / widget.totalDuration) * widget.barAreaWidth * 1.2;
+    return (widget.note.duration / widget.totalDuration) *
+        widget.barAreaWidth *
+        1.2;
   }
-  
+
   bool _isPassingCenter() {
     // 노트가 기준선을 지나가는 시점은 노트의 시작 시간
     double timeDiff = (widget.note.startTime - widget.currentTime).abs();
     return timeDiff <= 0.1; // 0.1초 오차 범위 내에서 감지
   }
-  
+
   Color _getNoteColor() {
     // 기준선을 지나기 전에는 기본 색상, 지난 후에는 정확도에 따른 색상
     if (lastAccuracy == null) {
       return const Color(0xFF7F8CAA); // 기본 색상 (사용자 요구사항)
     }
-    
+
     // 정확도에 따른 색상 (사용자 요구사항)
     switch (lastAccuracy!) {
       case _Accuracy.Perfect:
@@ -404,7 +556,7 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
         return const Color(0xFFB22222); // Bad: B22222
     }
   }
-  
+
   _Accuracy _randomAccuracy() {
     int r = Random().nextInt(100);
     if (r < 20) return _Accuracy.Perfect;
@@ -440,7 +592,9 @@ class RecordPage extends StatefulWidget {
 
 class _RecordPageState extends State<RecordPage> {
   bool isPlaying = true;
-  int score = 0;
+  bool isRecording = false;
+  double currentScore = 0.0;
+  StreamSubscription<double>? _scoreSub;
   int pointDelta = 0;
   int currentLyricIndex = 0;
   double progress = 0.0; // 0~1
@@ -450,7 +604,7 @@ class _RecordPageState extends State<RecordPage> {
   bool isFavorite = false; // 즐겨찾기 상태
   String? albumCoverUrl;
   bool loading = true;
-  
+
   // Inst 파일 재생 관련 변수들
   AudioPlayer? _instPlayer;
   bool _isInstPlaying = false;
@@ -460,14 +614,14 @@ class _RecordPageState extends State<RecordPage> {
   // MIDI 노트 데이터 (실제 MIDI 파일에서 파싱됨)
   List<_MidiNote> midiNotes = [];
   bool _isMidiLoading = false;
-  
+
   // 점수 계산 관련 변수들
   bool _hasRecording = false; // 실제 녹음 여부
   int _pitchScore = 0;
   int _rhythmScore = 0;
   int _totalScore = 0;
   List<String> _recommendedSongs = [];
-  
+
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩) - MIDI 로드 실패 시 사용
   final List<_MelodyBar> melodyBars = [
     _MelodyBar(start: 0, duration: 2, pitch: 2),
@@ -509,6 +663,11 @@ class _RecordPageState extends State<RecordPage> {
       _startMainTimer();
     });
     _loadData();
+    _scoreSub = AudioComparePlugin.scoreStream.listen((score) {
+      setState(() {
+        currentScore = score;
+      });
+    });
   }
 
   void _initInstPlayer() {
@@ -542,7 +701,7 @@ class _RecordPageState extends State<RecordPage> {
         });
       }
     });
-    
+
     // 노래 종료 시 점수 페이지로 이동
     _instPlayer!.onPlayerComplete.listen((_) {
       if (mounted) {
@@ -604,17 +763,17 @@ class _RecordPageState extends State<RecordPage> {
     try {
       final instUrl = S3Service.getInstSongUrl(artist, title);
       print('Inst 파일 URL: $instUrl');
-      
+
       setState(() {
         _isInstLoading = true;
       });
 
       await _instPlayer!.setSourceUrl(instUrl);
-      
+
       setState(() {
         _isInstLoading = false;
       });
-      
+
       print('Inst 파일 로드 완료');
     } catch (e) {
       print('Inst 파일 로드 실패: $e');
@@ -636,24 +795,26 @@ class _RecordPageState extends State<RecordPage> {
 
       // MIDI 파일 다운로드
       final response = await http.get(Uri.parse(midiUrl));
-      
+
       if (response.statusCode == 200) {
         print('MIDI 파일 다운로드 성공, 크기: ${response.bodyBytes.length} bytes');
-        
+
         // MIDI 파일 파싱 - 원본 악보 데이터 그대로 사용
         final notes = await _MidiParser.parseMidiFromBytes(response.bodyBytes);
-        
+
         if (mounted) {
           setState(() {
             midiNotes = notes;
             _isMidiLoading = false;
           });
-          
+
           print('MIDI 파싱 완료, 노트 개수: ${notes.length}');
-          
+
           // MIDI 노트에서 전체 길이 계산
           if (notes.isNotEmpty) {
-            double maxEndTime = notes.map((note) => note.startTime + note.duration).reduce(max);
+            double maxEndTime = notes
+                .map((note) => note.startTime + note.duration)
+                .reduce(max);
             if (maxEndTime > totalDuration) {
               setState(() {
                 totalDuration = maxEndTime;
@@ -699,7 +860,7 @@ class _RecordPageState extends State<RecordPage> {
 
   void _togglePlay() {
     if (!mounted) return;
-    
+
     if (_isInstPlaying) {
       _instPlayer!.pause();
       _stopMainTimer();
@@ -707,7 +868,7 @@ class _RecordPageState extends State<RecordPage> {
       _instPlayer!.resume();
       _startMainTimer();
     }
-    
+
     setState(() {
       isPlaying = !isPlaying;
     });
@@ -715,10 +876,12 @@ class _RecordPageState extends State<RecordPage> {
 
   void _onSeek(double value) {
     if (!mounted) return;
-    
-    final newPosition = Duration(milliseconds: (value * totalDuration * 1000).toInt());
+
+    final newPosition = Duration(
+      milliseconds: (value * totalDuration * 1000).toInt(),
+    );
     _instPlayer!.seek(newPosition);
-    
+
     setState(() {
       progress = value;
       // 가사 인덱스 갱신
@@ -734,13 +897,13 @@ class _RecordPageState extends State<RecordPage> {
   void _calculateScores() {
     // 실제 녹음 여부 확인 (현재는 임시로 true로 설정)
     _hasRecording = true; // TODO: 실제 녹음 데이터 확인 로직 추가
-    
+
     if (_hasRecording) {
       // 임시 점수 계산 (실제로는 녹음 데이터 분석 결과 사용)
       _pitchScore = Random().nextInt(40) + 60; // 60-100점
       _rhythmScore = Random().nextInt(40) + 60; // 60-100점
       _totalScore = ((_pitchScore + _rhythmScore) / 2).round();
-      
+
       // 추천곡 생성 (실제로는 사용자 음역대 분석 결과 사용)
       _recommendedSongs = [
         '아이유 - Blueming',
@@ -756,7 +919,7 @@ class _RecordPageState extends State<RecordPage> {
       _recommendedSongs = [];
     }
   }
-  
+
   // 점수 페이지로 이동
   void _navigateToScorePage() {
     // Song 객체 안전하게 가져오기
@@ -765,7 +928,7 @@ class _RecordPageState extends State<RecordPage> {
       print('Song 객체가 null입니다. 점수 페이지 이동을 건너뜁니다.');
       return;
     }
-    
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => ScorePage(
@@ -780,11 +943,34 @@ class _RecordPageState extends State<RecordPage> {
     );
   }
 
+  void _onRecordButtonPressed() async {
+    if (!isRecording) {
+      List<double> originalPitch = [440.0, 442.0, 445.0];
+      List<double> originalOnsets = [0.0, 1.0, 2.0];
+
+      await AudioComparePlugin.startAnalysis({
+        'originalPitch': originalPitch,
+        'originalOnsets': originalOnsets,
+        'sampleRate': 44100,
+      });
+
+      setState(() {
+        isRecording = true;
+      });
+    } else {
+      await AudioComparePlugin.stopAnalysis();
+      setState(() {
+        isRecording = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _stopMainTimer();
     mainTimer = null;
     _instPlayer?.dispose();
+    _scoreSub?.cancel();
     super.dispose();
   }
 
@@ -872,8 +1058,8 @@ class _RecordPageState extends State<RecordPage> {
                       AnimatedSwitcher(
                         duration: Duration(milliseconds: 300),
                         child: Text(
-                          '$score/100',
-                          key: ValueKey(score),
+                          '$currentScore/100',
+                          key: ValueKey(currentScore),
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
@@ -1026,79 +1212,83 @@ class _RecordPageState extends State<RecordPage> {
                     ),
                   // MIDI 노트들 (실제 MIDI 파일에서 파싱된 노트들)
                   if (!_isMidiLoading && midiNotes.isNotEmpty)
-                    ...midiNotes.map((note) => _MidiNoteWidget(
-                      note: note,
-                      progress: progress,
-                      totalDuration: totalDuration,
-                      barAreaWidth: barAreaWidth,
-                      barAreaHeight: barAreaHeight,
-                      centerLineX: centerLineX,
-                      currentTime: currentTime,
-                      onPassed: (accuracy) {
-                        // 실시간 노래 입력이 없으므로 점수 변화 비활성화
-                        // if (!mounted) return;
-                        // setState(() {
-                        //   int delta = 0;
-                        //   switch (accuracy) {
-                        //     case _Accuracy.Perfect:
-                        //       delta = 5;
-                        //       break;
-                        //     case _Accuracy.Great:
-                        //       delta = 3;
-                        //       break;
-                        //     case _Accuracy.Good:
-                        //       delta = 0;
-                        //       break;
-                        //     case _Accuracy.Normal:
-                        //       delta = -3;
-                        //       break;
-                        //     case _Accuracy.Bad:
-                        //       delta = -5;
-                        //       break;
-                        //   }
-                        //   score = max(0, score + delta);
-                        //   pointDelta = delta;
-                        // });
-                      },
-                    )),
+                    ...midiNotes.map(
+                      (note) => _MidiNoteWidget(
+                        note: note,
+                        progress: progress,
+                        totalDuration: totalDuration,
+                        barAreaWidth: barAreaWidth,
+                        barAreaHeight: barAreaHeight,
+                        centerLineX: centerLineX,
+                        currentTime: currentTime,
+                        onPassed: (accuracy) {
+                          // 실시간 노래 입력이 없으므로 점수 변화 비활성화
+                          // if (!mounted) return;
+                          // setState(() {
+                          //   int delta = 0;
+                          //   switch (accuracy) {
+                          //     case _Accuracy.Perfect:
+                          //       delta = 5;
+                          //       break;
+                          //     case _Accuracy.Great:
+                          //       delta = 3;
+                          //       break;
+                          //     case _Accuracy.Good:
+                          //       delta = 0;
+                          //       break;
+                          //     case _Accuracy.Normal:
+                          //       delta = -3;
+                          //       break;
+                          //     case _Accuracy.Bad:
+                          //       delta = -5;
+                          //       break;
+                          //   }
+                          //   score = max(0, score + delta);
+                          //   pointDelta = delta;
+                          // });
+                        },
+                      ),
+                    ),
                   // MIDI 로드 실패 시 기본 멜로디 바 표시
                   if (!_isMidiLoading && midiNotes.isEmpty)
-                    ...melodyBars.map((bar) => _MelodyBarWidget(
-                      bar: bar,
-                      progress: progress,
-                      totalDuration: totalDuration,
-                      barAreaWidth: barAreaWidth,
-                      barAreaHeight: barAreaHeight,
-                      centerLineX: centerLineX,
-                      onPassed: (accuracy) {
-                        // 실시간 노래 입력이 없으므로 점수 변화 비활성화
-                        // if (!mounted) return;
-                        // setState(() {
-                        //   int delta = 0;
-                        //   switch (accuracy) {
-                        //     case _Accuracy.Perfect:
-                        //       delta = 5;
-                        //       break;
-                        //     case _Accuracy.Great:
-                        //       delta = 3;
-                        //       break;
-                        //     case _Accuracy.Good:
-                        //       delta = 0;
-                        //       break;
-                        //     case _Accuracy.Normal:
-                        //       delta = -3;
-                        //       break;
-                        //     case _Accuracy.Bad:
-                        //       delta = -5;
-                        //       break;
-                        //   }
-                        //   score = max(0, score + delta);
-                        //   pointDelta = delta;
-                        // });
-                      },
-                      currentTime: currentTime,
-                      enableGradient: false,
-                    )),
+                    ...melodyBars.map(
+                      (bar) => _MelodyBarWidget(
+                        bar: bar,
+                        progress: progress,
+                        totalDuration: totalDuration,
+                        barAreaWidth: barAreaWidth,
+                        barAreaHeight: barAreaHeight,
+                        centerLineX: centerLineX,
+                        onPassed: (accuracy) {
+                          // 실시간 노래 입력이 없으므로 점수 변화 비활성화
+                          // if (!mounted) return;
+                          // setState(() {
+                          //   int delta = 0;
+                          //   switch (accuracy) {
+                          //     case _Accuracy.Perfect:
+                          //       delta = 5;
+                          //       break;
+                          //     case _Accuracy.Great:
+                          //       delta = 3;
+                          //       break;
+                          //     case _Accuracy.Good:
+                          //       delta = 0;
+                          //       break;
+                          //     case _Accuracy.Normal:
+                          //       delta = -3;
+                          //       break;
+                          //     case _Accuracy.Bad:
+                          //       delta = -5;
+                          //       break;
+                          //   }
+                          //   score = max(0, score + delta);
+                          //   pointDelta = delta;
+                          // });
+                        },
+                        currentTime: currentTime,
+                        enableGradient: false,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1196,7 +1386,7 @@ class _RecordPageState extends State<RecordPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
-                        onTap: _togglePlay,
+                        onTap: _onRecordButtonPressed,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -1211,7 +1401,7 @@ class _RecordPageState extends State<RecordPage> {
                               )
                             else
                               Icon(
-                                _isInstPlaying
+                                isRecording
                                     ? Icons.pause_circle_filled_rounded
                                     : Icons.play_circle_fill_rounded,
                                 color: Colors.white,
@@ -1219,9 +1409,7 @@ class _RecordPageState extends State<RecordPage> {
                               ),
                             SizedBox(width: 10),
                             Text(
-                              _isInstLoading 
-                                  ? '로딩 중...' 
-                                  : (_isInstPlaying ? '녹음 정지' : '녹음 시작'),
+                              isRecording ? '녹음/분석 중지' : '녹음/분석 시작',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -1232,6 +1420,15 @@ class _RecordPageState extends State<RecordPage> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    '실시간 점수: ${currentScore.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF8B5CF6),
                     ),
                   ),
                 ],
