@@ -24,6 +24,7 @@ import kotlin.math.sqrt
 import kotlin.math.log10
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.system.measureTimeMillis
 
 class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
@@ -39,7 +40,18 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     private var currentPitchIndex = 0
     private var latestPitch: Double = 0.0
     private var latestScore: Double = 0.0
+    private var latestAudioLevel: Double = 0.0
+    private var latestTimingScore: Double = 0.0
+    private var recordingStartTime: Long = 0
+    private var currentMidiNotes: List<MidiNote> = listOf()
     private var timerJob: Job? = null
+    
+    private data class MidiNote(
+        val startTime: Double,  // 시작 시간 (초)
+        val duration: Double,   // 길이 (초)
+        val pitch: Int,        // MIDI 음정
+        val velocity: Int = 64 // 기본 세기
+    )
     
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -65,7 +77,12 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                 stopRealTimeAnalysis(result)
             }
             "getCurrentPitchScore" -> {
-                val data = mapOf("pitch" to latestPitch, "score" to latestScore)
+                val data = mapOf(
+                    "pitch" to latestPitch,
+                    "score" to latestScore,
+                    "audioLevel" to latestAudioLevel,
+                    "timingScore" to latestTimingScore
+                )
                 result.success(data)
             }
             "setOriginalPitchData" -> {
@@ -76,6 +93,26 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             }
             "extractMFCC" -> {
                 extractMFCC(call, result)
+            }
+            "setMidiNotes" -> {
+                try {
+                    val notes = call.argument<List<Map<String, Any>>>("notes")
+                    if (notes != null) {
+                        currentMidiNotes = notes.map { note ->
+                            MidiNote(
+                                startTime = (note["startTime"] as Number).toDouble(),
+                                duration = (note["duration"] as Number).toDouble(),
+                                pitch = (note["pitch"] as Number).toInt(),
+                                velocity = (note["velocity"] as? Number)?.toInt() ?: 64
+                            )
+                        }
+                        result.success(true)
+                    } else {
+                        result.error("INVALID_ARGUMENT", "MIDI 노트 데이터가 없습니다", null)
+                    }
+                } catch (e: Exception) {
+                    result.error("MIDI_NOTES_ERROR", "MIDI 노트 설정 실패", e.message)
+                }
             }
             "dispose" -> {
                 dispose(result)
@@ -125,6 +162,7 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                 return
             }
             
+            recordingStartTime = System.currentTimeMillis()
             isRecording = true
             currentPitchIndex = 0
             
@@ -139,15 +177,26 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                         // ShortArray를 FloatArray로 변환
                         val floatBuffer = FloatArray(readSize) { buffer[it] / 32768.0f }
                         
-                        // 피치 추출 (FloatArray 사용)
+                        // 오디오 레벨 계산
+                        latestAudioLevel = calculateAudioLevel(floatBuffer)
+                        
+                        // 현재 녹음 시간 계산 (초)
+                        val currentTime = (System.currentTimeMillis() - recordingStartTime) / 1000.0
+                        
+                        // 피치 추출
                         val pitch = extractPitchFromBuffer(floatBuffer, sampleRate)
                         if (pitch > 0) {
                             latestPitch = pitch
                             
-                            // 원곡과 비교하여 점수 계산
-                            if (originalPitches.isNotEmpty() && currentPitchIndex < originalPitches.size) {
-                                latestScore = calculatePitchScore(pitch, originalPitches[currentPitchIndex])
-                                currentPitchIndex++
+                            // 현재 시간에 해당하는 MIDI 노트 찾기
+                            val currentNote = findCurrentMidiNote(currentTime)
+                            if (currentNote != null) {
+                                // 피치 정확도와 타이밍 정확도 계산
+                                val (pitchScore, timingScore) = calculateScores(pitch, currentTime, currentNote)
+                                latestScore = pitchScore
+                                latestTimingScore = timingScore
+                                
+                                println("🎵 분석: 시간=${currentTime.toInt()}초, 피치=${pitch.toInt()}Hz, 점수=$pitchScore, 타이밍=$timingScore")
                             }
                         }
                     }
@@ -437,5 +486,44 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+    }
+
+    private fun findCurrentMidiNote(currentTime: Double): MidiNote? {
+        return currentMidiNotes.firstOrNull { note ->
+            currentTime >= note.startTime && currentTime <= note.startTime + note.duration
+        }
+    }
+
+    private fun calculateScores(userPitch: Double, currentTime: Double, midiNote: MidiNote): Pair<Double, Double> {
+        // 피치 점수 계산 (기존 로직 활용)
+        val pitchScore = calculatePitchScore(userPitch, midiNote.pitch.toDouble())
+        
+        // 타이밍 점수 계산
+        val timingScore = calculateTimingScore(currentTime, midiNote)
+        
+        return Pair(pitchScore, timingScore)
+    }
+
+    private fun calculateTimingScore(currentTime: Double, midiNote: MidiNote): Double {
+        val noteStart = midiNote.startTime
+        val noteEnd = noteStart + midiNote.duration
+        
+        // 허용 오차 범위 (초)
+        val tolerance = 0.1
+        
+        return when {
+            // 정확한 타이밍 (허용 오차 내)
+            abs(currentTime - noteStart) <= tolerance -> 100.0
+            
+            // 노트 중간 부분
+            currentTime in noteStart..noteEnd -> 80.0
+            
+            // 노트 시작 전이나 후
+            abs(currentTime - noteStart) <= tolerance * 2 -> 60.0
+            abs(currentTime - noteEnd) <= tolerance * 2 -> 40.0
+            
+            // 완전히 벗어남
+            else -> 0.0
+        }
     }
 } 
