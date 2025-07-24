@@ -13,6 +13,7 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven { url = uri("https://mvn.0110.be/releases") }
     }
 }
 
@@ -23,3 +24,11 @@ plugins {
 }
 
 include(":app")
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://mvn.0110.be/releases") }
+    }
+}

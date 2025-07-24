@@ -15,11 +15,12 @@ class AudioComparePlugin {
     'audio_compare_plugin/onset',
   );
 
-  // MethodChannel: Native에 명령 보내기
+  // MethodChannel: Native에 명령 보내기 (분석 시작)
   static Future<void> startAnalysis(Map<String, dynamic> params) async {
     await _method.invokeMethod('startAnalysis', params);
   }
 
+  // 분석 중지
   static Future<void> stopAnalysis() async {
     await _method.invokeMethod('stopAnalysis');
   }
