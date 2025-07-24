@@ -7,9 +7,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class KakaoAuthService {
   static const String _baseUrl = 'http://localhost:8000';
 
-  // 환경변수에서 앱 키 가져오기 
-  static String get _nativeAppKey => dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? 'default_kakao_native_key';
-  static String get _javaScriptAppKey => dotenv.env['KAKAO_JAVASCRIPT_APP_KEY'] ?? 'default_kakao_js_key';
+  // 환경변수에서 앱 키 가져오기
+  static String get _nativeAppKey =>
+      dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? 'default_kakao_native_key';
+  static String get _javaScriptAppKey =>
+      dotenv.env['KAKAO_JAVASCRIPT_APP_KEY'] ?? 'default_kakao_js_key';
 
   /// 카카오 로그인 초기화
   static Future<void> initialize() async {
