@@ -5,8 +5,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+repositories {
+    google()
+    mavenCentral()
+    maven { url = uri("https://mvn.0110.be/releases") }
+    maven { url = uri("https://jitpack.io") }
+}
+
 android {
-    namespace = "com.example.flutter_application_1"
+    namespace = "com.example.singsang"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -28,6 +35,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // TensorDSP 관련 설정
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
     }
 
     buildTypes {
@@ -37,8 +49,27 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    
+    // TensorDSP 관련 설정
+    packagingOptions {
+        pickFirsts += listOf("**/libc++_shared.so", "**/libjsc.so")
+    }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // 기존 TarsosDSP
+    implementation("be.tarsos.dsp:core:2.5")
+    
+    // TensorDSP 관련 의존성들
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
+    
+    // 오디오 처리 관련
+    implementation("androidx.media:media:1.7.0")
+    implementation("com.google.android.material:material:1.11.0")
 }

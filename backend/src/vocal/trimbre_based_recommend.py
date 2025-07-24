@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity as sk_cosine
 from sklearn.metrics.pairwise import euclidean_distances
-from vocal.s3_config import AWS_ACCESS_KEY, AWS_SECRET_KEY, BUCKET_NAME, REGION_NAME
+from s3_config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME, REGION_NAME
 
 
 # 사용자 임베딩 로드 함수 (로컬 파일)
@@ -19,8 +19,8 @@ def load_user_embedding(path='backend/src/vocal/test_audio/hubert_embedding_resu
 def get_s3_client():
     return boto3.client(
         's3',
-        aws_access_key_id=AWS_ACCESS_KEY,
-        aws_secret_access_key=AWS_SECRET_KEY,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         region_name=REGION_NAME
     )
 

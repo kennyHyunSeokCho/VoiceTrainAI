@@ -76,15 +76,8 @@ class _SearchPageState extends State<SearchPage> {
             },
             decoration: InputDecoration(
               hintText: '노래, 아티스트 검색',
-              hintStyle: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 16,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: Colors.grey[600],
-                size: 20,
-              ),
+              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+              prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 20),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 20,

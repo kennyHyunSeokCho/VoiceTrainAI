@@ -1,6 +1,6 @@
-
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_storage_s3/amplify_storage_s3.dart';
+import 'dart:io';
 import '../models/song.dart';
 
 class S3Service {
@@ -13,13 +13,76 @@ class S3Service {
   }
   */
 
+  /// 파일을 S3 버킷에 업로드합니다.
+  static Future<String?> uploadFile({
+    required File file,
+    required String artist,
+    required String title,
+    required FileType fileType,
+  }) async {
+    try {
+      String cleanArtist = _cleanFileName(artist);
+      String cleanTitle = _cleanFileName(title);
+
+      // 파일 타입에 따른 경로 및 파일명 생성
+      String s3Key = _generateS3Key(cleanArtist, cleanTitle, fileType);
+
+      // Amplify Storage를 사용한 파일 업로드
+      final result = await Amplify.Storage.uploadFile(
+        path: StoragePath.fromString(s3Key),
+        localFile: AWSFile.fromPath(file.path),
+      ).result;
+
+      // 업로드 성공 시 완전한 URL 반환
+      String uploadedUrl = _generatePublicUrl(s3Key);
+      print('✅ 파일 업로드 성공: $uploadedUrl');
+      return uploadedUrl;
+    } catch (e) {
+      print('❌ 파일 업로드 실패: $e');
+      return null;
+    }
+  }
+
+  /// 파일 타입에 따른 S3 키(경로) 생성
+  static String _generateS3Key(String artist, String title, FileType fileType) {
+    switch (fileType) {
+      case FileType.original:
+        return 'MusicFile/$artist/original/${artist}_$title.wav';
+      case FileType.inst:
+        return 'MusicFile/$artist/inst/${artist}_${title}_inst.wav';
+      case FileType.albumCover:
+        return 'album_cover/${artist}_$title.jpg';
+      case FileType.midi:
+        return 'MusicFile/$artist/midi/${artist}_${title}_midi.mid';
+      case FileType.userRecording:
+        return 'recordings/${artist}_${title}_${DateTime.now().millisecondsSinceEpoch}.wav';
+    }
+  }
+
+  /// S3 키로부터 공개 URL 생성
+  static String _generatePublicUrl(String s3Key) {
+    return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/$s3Key';
+  }
+
+  /// 파일 존재 여부 확인
+  static Future<bool> checkFileExists(String s3Key) async {
+    try {
+      await Amplify.Storage.getProperties(
+        path: StoragePath.fromString(s3Key),
+      ).result;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// 원곡 파일의 S3 URL을 생성합니다.
   /// 경로: https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/가수명/original/가수명_노래제목.wav
   static String getOriginalSongUrl(String artist, String title) {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/original/${cleanArtist}_$cleanTitle.wav';
   }
 
@@ -29,7 +92,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/inst/${cleanArtist}_$cleanTitle\_inst.wav';
   }
 
@@ -39,7 +102,7 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${cleanArtist}_$cleanTitle.jpg';
   }
 
@@ -49,8 +112,19 @@ class S3Service {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
-    
+
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/midi/${cleanArtist}_$cleanTitle\_midi.mid';
+  }
+
+  /// 사용자 보컬 파일의 S3 URL을 생성합니다.
+  /// 경로: https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/recordings/가수명_노래제목_업로드파일명
+  static String getVocalSongUrl(String artist, String title, String fileName) {
+    // 파일명에서 특수문자 제거 및 공백 처리
+    String cleanArtist = _cleanFileName(artist);
+    String cleanTitle = _cleanFileName(title);
+    String cleanFileName = _cleanFileName(fileName);
+
+    return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/recordings/${cleanArtist}_${cleanTitle}_$cleanFileName';
   }
 
   /// 파일명에서 사용할 수 없는 특수문자를 제거하고 공백을 언더스코어로 변경합니다.
@@ -60,4 +134,13 @@ class S3Service {
         .replaceAll(RegExp(r'\s+'), '_') // 공백을 언더스코어로 변경
         .trim();
   }
+}
+
+/// 업로드할 파일 타입 열거형
+enum FileType {
+  original, // 원곡 파일
+  inst, // 인스트 파일
+  albumCover, // 앨범 커버
+  midi, // MIDI 파일
+  userRecording, // 사용자 녹음 파일
 }
