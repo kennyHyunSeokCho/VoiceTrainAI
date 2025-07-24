@@ -526,4 +526,25 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             else -> 0.0
         }
     }
+    
+    private fun calculateAudioLevel(buffer: FloatArray): Double {
+        if (buffer.isEmpty()) return 0.0
+        
+        // RMS (Root Mean Square) 계산
+        var sum = 0.0
+        for (sample in buffer) {
+            sum += (sample * sample).toDouble()
+        }
+        val rms = kotlin.math.sqrt(sum / buffer.size)
+        
+        // dB로 변환 (20 * log10(rms))
+        val db = if (rms > 0.0) {
+            20.0 * kotlin.math.log10(rms)
+        } else {
+            -120.0 // 무음일 때 최소값
+        }
+        
+        // 0-100 범위로 정규화 (-60dB ~ 0dB를 0-100으로 매핑)
+        return kotlin.math.max(0.0, kotlin.math.min(100.0, (db + 60.0) * (100.0 / 60.0)))
+    }
 } 

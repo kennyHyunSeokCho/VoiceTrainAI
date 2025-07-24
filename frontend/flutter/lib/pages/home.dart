@@ -45,37 +45,41 @@ class _HomePageState extends State<HomePage> {
           }
         }
 
-        setState(() {
-          songs = loadedSongs;
-          // 임시로 처음 6곡을 추천곡으로 설정 (나중에 음역대/음색 기반으로 변경)
-          recommendedSongs = loadedSongs.take(6).toList();
-        });
+        if (mounted) {
+          setState(() {
+            songs = loadedSongs;
+            // 임시로 처음 6곡을 추천곡으로 설정 (나중에 음역대/음색 기반으로 변경)
+            recommendedSongs = loadedSongs.take(6).toList();
+          });
+        }
       }
     } catch (e) {
       print('CSV 로딩 오류: $e');
       // 오류 시 기본 데이터 사용
-      setState(() {
-        recommendedSongs = [
-          {
-            'title': 'Never Ending Story',
-            'artist': 'IU',
-            'image': 'assets/images/iu.webp',
-            'lyrics': '기본 가사...',
-          },
-          {
-            'title': 'Drowning',
-            'artist': 'WOODZ',
-            'image': 'assets/images/no_pain.webp',
-            'lyrics': '기본 가사...',
-          },
-          {
-            'title': 'FAMOUS',
-            'artist': 'Allday Project',
-            'image': 'assets/images/famous.webp',
-            'lyrics': '기본 가사...',
-          },
-        ];
-      });
+      if (mounted) {
+        setState(() {
+          recommendedSongs = [
+            {
+              'title': 'Never Ending Story',
+              'artist': 'IU',
+              'image': 'assets/images/iu.webp',
+              'lyrics': '기본 가사...',
+            },
+            {
+              'title': 'Drowning',
+              'artist': 'WOODZ',
+              'image': 'assets/images/no_pain.webp',
+              'lyrics': '기본 가사...',
+            },
+            {
+              'title': 'FAMOUS',
+              'artist': 'Allday Project',
+              'image': 'assets/images/famous.webp',
+              'lyrics': '기본 가사...',
+            },
+          ];
+        });
+      }
     }
   }
 
