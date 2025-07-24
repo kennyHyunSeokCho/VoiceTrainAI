@@ -584,9 +584,13 @@ class RecordPage extends StatefulWidget {
 }
 
 class _RecordPageState extends State<RecordPage> {
-  double currentScore = 0.0; // 점수: TensorDSP 값으로만 갱신
-  double currentPitch = 0.0; // 피치: TensorDSP 값으로만 갱신
+  double currentScore = 0.0; // 피치 점수
+  double currentPitch = 0.0; // 현재 피치
+  double currentTimingScore = 0.0; // 박자 점수
   Timer? _tensorDspTimer;
+
+  // MIDI 노트 정보
+  List<Map<String, dynamic>> _midiNotes = [];
 
   // --- 실시간 분석/점수 관련 변수 모음 ---
   // 피치
@@ -682,14 +686,16 @@ class _RecordPageState extends State<RecordPage> {
       // 녹음 상태 디버깅 로그
       if (isRecording && (data['score'] != 0.0 || data['pitch'] != 0.0)) {
         print(
-          '🎙️ 녹음 데이터: 점수=${data['score']?.toStringAsFixed(1)}, '
-          '피치=${data['pitch']?.toStringAsFixed(1)}Hz',
+          '🎙️ 녹음 데이터: 피치=${data['pitch']?.toStringAsFixed(1)}Hz, '
+          '피치점수=${data['score']?.toStringAsFixed(1)}, '
+          '박자점수=${data['timingScore']?.toStringAsFixed(1)}',
         );
       }
 
       setState(() {
         currentScore = data['score'] ?? 0.0;
         currentPitch = data['pitch'] ?? 0.0;
+        currentTimingScore = data['timingScore'] ?? 0.0;
       });
     });
   }
@@ -1054,6 +1060,13 @@ class _RecordPageState extends State<RecordPage> {
       // TensorDSP 실시간 분석 시작
       print('🔧 TensorDSP 초기화 중...');
       await TensorDspService.initialize();
+
+      // MIDI 노트 데이터 설정
+      if (_midiNotes.isNotEmpty) {
+        final midiNotesSet = await TensorDspService.setMidiNotes(_midiNotes);
+        print('✅ MIDI 노트 데이터 설정: $midiNotesSet');
+      }
+
       await TensorDspService.startRealTimeAnalysis();
       print('✅ TensorDSP 시작 완료');
 
@@ -1580,12 +1593,80 @@ class _RecordPageState extends State<RecordPage> {
                             ),
                           ),
                           SizedBox(height: 4),
-                          Text(
-                            '점수: ${currentScore.toStringAsFixed(1)} | 피치: ${currentPitch.toStringAsFixed(1)}Hz',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.green.shade700,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // 피치 점수
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.green.shade200,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.music_note,
+                                          color: Colors.green.shade700,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '피치: ${currentScore.toStringAsFixed(1)}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.green.shade700,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  // 박자 점수
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.orange.shade200,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.timer,
+                                          color: Colors.orange.shade700,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '박자: ${currentTimingScore.toStringAsFixed(1)}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.orange.shade700,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ],
                       ),

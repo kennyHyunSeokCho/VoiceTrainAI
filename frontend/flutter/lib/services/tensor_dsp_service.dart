@@ -161,6 +161,19 @@ class TensorDspService {
   }
 
   /// 100ms마다 최신 점수/피치 값을 받아오는 메서드
+  /// MIDI 노트 데이터 설정
+  static Future<bool> setMidiNotes(List<Map<String, dynamic>> notes) async {
+    try {
+      final result = await _channel.invokeMethod('setMidiNotes', {
+        'notes': notes,
+      });
+      return result as bool;
+    } catch (e) {
+      print('❌ setMidiNotes 실패: $e');
+      return false;
+    }
+  }
+
   static Future<Map<String, double>> getCurrentPitchScore() async {
     try {
       final Map<dynamic, dynamic> result = await _channel.invokeMethod(
@@ -169,10 +182,11 @@ class TensorDspService {
       return {
         'score': (result['score'] as num?)?.toDouble() ?? 0.0,
         'pitch': (result['pitch'] as num?)?.toDouble() ?? 0.0,
+        'timingScore': (result['timingScore'] as num?)?.toDouble() ?? 0.0,
       };
     } catch (e) {
       print('❌ getCurrentPitchScore 실패: $e');
-      return {'score': 0.0, 'pitch': 0.0};
+      return {'score': 0.0, 'pitch': 0.0, 'timingScore': 0.0};
     }
   }
 
