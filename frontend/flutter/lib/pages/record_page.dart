@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import '../models/song.dart';
 import '../services/s3_service.dart';
 import 'score_page.dart';
+import 'package:SingSang/services/tensor_dsp_service.dart';
 
 // MIDI 노트 데이터 클래스
 class _MidiNote {
@@ -591,10 +592,22 @@ class RecordPage extends StatefulWidget {
 }
 
 class _RecordPageState extends State<RecordPage> {
+  double currentScore = 0.0; // 점수: TensorDSP 값으로만 갱신
+  double currentPitch = 0.0; // 피치: TensorDSP 값으로만 갱신
+  Timer? _tensorDspTimer;
+
+  // --- 실시간 분석/점수 관련 변수 모음 ---
+  // 피치
+  List<double> _pitchHistory = [];
+
+  // 온셋
+  double currentOnset = 0.0;
+  StreamSubscription<double>? _onsetSub;
+  List<double> _onsetHistory = [];
+  // --- END ---
+
   bool isPlaying = true;
   bool isRecording = false;
-  double currentScore = 0.0;
-  StreamSubscription<double>? _scoreSub;
   int pointDelta = 0;
   int currentLyricIndex = 0;
   double progress = 0.0; // 0~1
@@ -663,9 +676,21 @@ class _RecordPageState extends State<RecordPage> {
       _startMainTimer();
     });
     _loadData();
-    _scoreSub = AudioComparePlugin.scoreStream.listen((score) {
+    // --- 실시간 피치/온셋 구독 ---
+    _onsetSub = AudioComparePlugin.onsetStream.listen((onset) {
       setState(() {
-        currentScore = score;
+        currentOnset = onset;
+        _onsetHistory.add(onset);
+        if (_onsetHistory.length > 50) _onsetHistory.removeAt(0);
+      });
+    });
+    // AudioComparePlugin 점수/피치 스트림 구독 및 setState 코드 제거
+    _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
+      final data = await TensorDspService.getCurrentPitchScore();
+      if (!mounted) return;
+      setState(() {
+        currentScore = data['score'] ?? 0.0;
+        currentPitch = data['pitch'] ?? 0.0;
       });
     });
   }
@@ -970,7 +995,8 @@ class _RecordPageState extends State<RecordPage> {
     _stopMainTimer();
     mainTimer = null;
     _instPlayer?.dispose();
-    _scoreSub?.cancel();
+    _onsetSub?.cancel();
+    _tensorDspTimer?.cancel();
     super.dispose();
   }
 
@@ -1423,14 +1449,90 @@ class _RecordPageState extends State<RecordPage> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    '실시간 점수: ${currentScore.toStringAsFixed(1)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF8B5CF6),
-                    ),
-                  ),
+                  // --- 실시간 점수 텍스트 제거 (하단)
+                  // Text(
+                  //   '실시간 점수: {currentScore.toStringAsFixed(1)}',
+                  //   style: TextStyle(
+                  //     fontSize: 16,
+                  //     fontWeight: FontWeight.w600,
+                  //     color: const Color(0xFF8B5CF6),
+                  //   ),
+                  // ),
+                  // --- 퍼펙트 스코어 박스 전체 제거 ---
+                  // SizedBox(height: 16),
+                  // Container(
+                  //   padding: const EdgeInsets.all(16),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white,
+                  //     borderRadius: BorderRadius.circular(16),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                  //         blurRadius: 8,
+                  //         offset: const Offset(0, 2),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.center,
+                  //     children: [
+                  //       Text(
+                  //         '퍼펙트 스코어',
+                  //         style: TextStyle(
+                  //           fontSize: 18,
+                  //           fontWeight: FontWeight.bold,
+                  //           color: const Color(0xFF8B5CF6),
+                  //         ),
+                  //       ),
+                  //       SizedBox(height: 8),
+                  //       Text(
+                  //         '실시간 점수: {currentScore.toStringAsFixed(1)}',
+                  //         style: TextStyle(
+                  //           fontSize: 24,
+                  //           fontWeight: FontWeight.w800,
+                  //           color: const Color(0xFF8B5CF6),
+                  //         ),
+                  //       ),
+                  //       SizedBox(height: 8),
+                  //       // 피치 그래프 (간단한 Polyline)
+                  //       SizedBox(
+                  //         height: 60,
+                  //         width: double.infinity,
+                  //         child: CustomPaint(
+                  //           painter: _PitchGraphPainter(_pitchHistory),
+                  //           child: Container(),
+                  //         ),
+                  //       ),
+                  //       SizedBox(height: 8),
+                  //       // 온셋 바 (최근 온셋 시각화)
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.center,
+                  //         children: _onsetHistory
+                  //             .map(
+                  //               (onset) => Container(
+                  //                 margin: const EdgeInsets.symmetric(horizontal: 2),
+                  //                 width: 8,
+                  //                 height: 24,
+                  //                 decoration: BoxDecoration(
+                  //                   color: const Color(0xFF8B5CF6),
+                  //                   borderRadius: BorderRadius.circular(4),
+                  //                 ),
+                  //               ),
+                  //             )
+                  //             .toList(),
+                  //       ),
+                  //       SizedBox(height: 8),
+                  //       Text(
+                  //         '실시간 피치: {currentPitch.toStringAsFixed(1)} Hz',
+                  //         style: TextStyle(fontSize: 14, color: Colors.black87),
+                  //       ),
+                  //       Text(
+                  //         '실시간 온셋: {currentOnset.toStringAsFixed(2)} s',
+                  //         style: TextStyle(fontSize: 14, color: Colors.black54),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -1891,7 +1993,6 @@ Future<List<_LyricLine>> _tryDirectS3LyricsAccess(
               decodedContent = response.body;
             }
           }
-
           // 디코딩된 내용 로그 출력
           if (decodedContent.length > 200) {
             print('디코딩된 내용 앞 200자: ${decodedContent.substring(0, 200)}');
@@ -1943,3 +2044,44 @@ Future<List<_LyricLine>> _tryDirectS3LyricsAccess(
     return exampleLyrics;
   }
 }
+
+// --- 피치 그래프용 CustomPainter ---
+class _PitchGraphPainter extends CustomPainter {
+  final List<double> pitchHistory;
+  _PitchGraphPainter(this.pitchHistory);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (pitchHistory.isEmpty) return;
+    final paint = Paint()
+      ..color = const Color(0xFF8B5CF6)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    final path = Path();
+    double minPitch = pitchHistory.reduce((a, b) => a < b ? a : b);
+    double maxPitch = pitchHistory.reduce((a, b) => a > b ? a : b);
+    if (minPitch == maxPitch) {
+      minPitch -= 1;
+      maxPitch += 1;
+    }
+    for (int i = 0; i < pitchHistory.length; i++) {
+      final x = i * size.width / (pitchHistory.length - 1);
+      final y =
+          size.height -
+          ((pitchHistory[i] - minPitch) / (maxPitch - minPitch)) * size.height;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PitchGraphPainter oldDelegate) {
+    return oldDelegate.pitchHistory != pitchHistory;
+  }
+}
+
+// --- END ---
