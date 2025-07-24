@@ -7,9 +7,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class KakaoAuthService {
   static const String _baseUrl = 'http://localhost:8000';
 
-  // 환경변수에서 앱 키 가져오기 (Git 업로드용 더미 키)
-  static String get _nativeAppKey => 'YOUR_NATIVE_APP_KEY_HERE';
-  static String get _javaScriptAppKey => 'YOUR_JAVASCRIPT_APP_KEY_HERE';
+  // 환경변수에서 앱 키 가져오기 
+  static String get _nativeAppKey => dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? 'default_kakao_native_key';
+  static String get _javaScriptAppKey => dotenv.env['KAKAO_JAVASCRIPT_APP_KEY'] ?? 'default_kakao_js_key';
 
   /// 카카오 로그인 초기화
   static Future<void> initialize() async {
@@ -30,7 +30,7 @@ class KakaoAuthService {
     }
   }
 
-  /// 카카오 로그인 실행
+  /// 카카오 로그인 실행 (Access Token만 반환)
   static Future<Map<String, dynamic>?> signInWithKakao() async {
     try {
       print('카카오 로그인 시작...');
@@ -42,10 +42,11 @@ class KakaoAuthService {
         '카카오 로그인 성공! Access Token: ${token.accessToken?.substring(0, 20)}...',
       );
 
-      // 백엔드로 토큰 전송하여 사용자 정보 가져오기
-      final userInfo = await _sendTokenToBackend(token.accessToken!);
-
-      return userInfo;
+      // Access Token과 Refresh Token 반환
+      return {
+        'access_token': token.accessToken,
+        'refresh_token': token.refreshToken,
+      };
     } catch (error) {
       print('카카오 로그인 실패: $error');
       rethrow;
@@ -150,6 +151,37 @@ class KakaoAuthService {
     } catch (error) {
       print('카카오 계정 로그인 실패: $error');
       rethrow;
+    }
+  }
+
+  /// 백엔드 API에 카카오 Access Token을 전송하여 사용자 정보 및 JWT를 받아옵니다.
+  static Future<Map<String, dynamic>?> callBackendAuthAPI(
+    String accessToken,
+  ) async {
+    try {
+      const String backendUrl = 'http://localhost:8000';
+
+      final response = await http.post(
+        Uri.parse('$backendUrl/auth/kakao/callback'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'access_token': accessToken}),
+      );
+
+      print('카카오 백엔드 API 응답 상태: ${response.statusCode}');
+      print('카카오 백엔드 API 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data;
+        }
+      }
+
+      print('카카오 백엔드 API 호출 실패');
+      return null;
+    } catch (e) {
+      print('카카오 백엔드 API 호출 중 오류: $e');
+      return null;
     }
   }
 }

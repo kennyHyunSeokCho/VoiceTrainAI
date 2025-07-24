@@ -103,6 +103,7 @@ flutter:
     - assets/audio/
     - assets/midi/
     - assets/all_chart_songs.csv
+    - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

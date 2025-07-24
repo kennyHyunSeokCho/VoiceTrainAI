@@ -1271,12 +1271,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
         return;
       }
 
-      // S3에 사용자 보컬 파일 업로드
-      final uploadedUrl = await S3Service.uploadFile(
+      // S3에 사용자 보컬 파일 업로드 (ai-vocal-training-user 버킷)
+      String fileName =
+          '${widget.songData['title'] ?? 'unknown'}_${widget.songData['artist'] ?? 'unknown'}_vocal_${DateTime.now().millisecondsSinceEpoch}.wav';
+      final uploadedUrl = await S3Service.uploadUserVocalFile(
         file: audioFile,
-        artist: widget.songData['artist'] ?? '',
-        title: widget.songData['title'] ?? '',
-        fileType: FileType.userRecording, // 사용자 보컬 파일로 분류
+        fileName: fileName,
       );
 
       if (uploadedUrl != null) {
