@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 import '../models/song.dart';
@@ -18,6 +19,7 @@ class SongDetailPage extends StatefulWidget {
 
 class _SongDetailPageState extends State<SongDetailPage> {
   AudioPlayer? _audioPlayer;
+  StreamSubscription<PlayerState>? _audioPlayerSubscription;
   bool _isPlaying = false;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
@@ -30,10 +32,14 @@ class _SongDetailPageState extends State<SongDetailPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _audioPlayer!.onPlayerStateChanged.listen((state) {
-      setState(() {
-        _isPlaying = state == PlayerState.playing;
-      });
+    _audioPlayerSubscription = _audioPlayer!.onPlayerStateChanged.listen((
+      state,
+    ) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = state == PlayerState.playing;
+        });
+      }
     });
 
     // 페이지 로드 시 음역대 분석 시작
@@ -42,6 +48,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   @override
   void dispose() {
+    _audioPlayerSubscription?.cancel();
     _audioPlayer?.dispose();
     super.dispose();
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:io';
 
 import 'package:SingSang/audio_compare_plugin.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -8,6 +9,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../models/song.dart';
 import '../services/s3_service.dart';
@@ -631,6 +634,11 @@ class _RecordPageState extends State<RecordPage> {
   int _totalScore = 0;
   List<String> _recommendedSongs = [];
 
+  // 녹음 관련 변수들
+  late AudioRecorder _audioRecorder;
+  String? _recordingPath;
+  bool _isRecordingStarted = false;
+
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩) - MIDI 로드 실패 시 사용
   final List<_MelodyBar> melodyBars = [
     _MelodyBar(start: 0, duration: 2, pitch: 2),
@@ -667,6 +675,7 @@ class _RecordPageState extends State<RecordPage> {
   void initState() {
     super.initState();
     lyricLines = exampleLyrics;
+    _audioRecorder = AudioRecorder(); // 녹음기 초기화
     _initInstPlayer();
     // 초기에는 타이머를 시작하지 않음 (녹음 시작 시에만 시작)
     _loadData();
@@ -732,11 +741,25 @@ class _RecordPageState extends State<RecordPage> {
       }
     });
 
-    // 노래 종료 시 점수 페이지로 이동
-    _instPlayer!.onPlayerComplete.listen((_) {
+    // 노래 종료 시 녹음 중지 후 점수 페이지로 이동
+    _instPlayer!.onPlayerComplete.listen((_) async {
       if (mounted) {
-        _calculateScores();
+        print('🎵 inst 재생 완료 - 자동 처리 시작');
+
+        // 녹음이 진행 중인 경우 자동으로 중지하고 저장
+        if (isRecording && _isRecordingStarted) {
+          print('📹 녹음 진행 중 감지 - 자동 중지 및 저장 시작');
+          await _stopRecordingAndSave();
+
+          // 녹음 중지 완료 후 잠시 대기 (UI 업데이트 및 사용자 피드백)
+          await Future.delayed(Duration(milliseconds: 1500));
+        }
+
+        // 점수 계산 및 페이지 이동
+        await _calculateScores();
         _navigateToScorePage();
+
+        print('✅ inst 재생 완료 처리 완료');
       }
     });
   }
@@ -939,14 +962,15 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   // 점수 계산 메서드
-  void _calculateScores() {
-    // 실제 녹음 여부 확인 (현재는 임시로 true로 설정)
-    _hasRecording = true; // TODO: 실제 녹음 데이터 확인 로직 추가
+  Future<void> _calculateScores() async {
+    // 실제 녹음 여부는 이미 녹음 중지 시 설정됨
+    // _hasRecording 변수를 그대로 사용
 
     if (_hasRecording) {
-      // 임시 점수 계산 (실제로는 녹음 데이터 분석 결과 사용)
-      _pitchScore = Random().nextInt(40) + 60; // 60-100점
-      _rhythmScore = Random().nextInt(40) + 60; // 60-100점
+      // TensorDSP에서 점수 받아오기
+      final scores = await TensorDspService.getCurrentPitchScore();
+      _pitchScore = (scores['score'] ?? 0.0).round();
+      _rhythmScore = (scores['timingScore'] ?? 0.0).round();
       _totalScore = ((_pitchScore + _rhythmScore) / 2).round();
 
       // 추천곡 생성 (실제로는 사용자 음역대 분석 결과 사용)
@@ -963,6 +987,86 @@ class _RecordPageState extends State<RecordPage> {
       _totalScore = 0;
       _recommendedSongs = [];
     }
+  }
+
+  // 녹음 중지 및 저장 (별도 메서드로 분리)
+  Future<void> _stopRecordingAndSave() async {
+    if (!_isRecordingStarted) return;
+
+    print('🎙️ 녹음 자동 중지 시작...');
+
+    // AudioComparePlugin 중지
+    print('🔧 AudioComparePlugin 중지 중...');
+    await AudioComparePlugin.stopAnalysis();
+    print('✅ AudioComparePlugin 중지 완료');
+
+    // TensorDSP 중지
+    print('🔧 TensorDSP 중지 중...');
+    await TensorDspService.stopRealTimeAnalysis();
+    print('✅ TensorDSP 중지 완료');
+
+    // 실제 오디오 녹음 중지 및 파일 저장
+    try {
+      final recordedPath = await _audioRecorder.stop();
+      _isRecordingStarted = false;
+
+      if (recordedPath != null && recordedPath.isNotEmpty) {
+        print('✅ 녹음 파일 저장 완료: $recordedPath');
+
+        // 녹음 파일 존재 확인
+        final file = File(recordedPath);
+        if (await file.exists()) {
+          final fileSize = await file.length();
+          print('📁 녹음 파일 크기: ${fileSize} bytes');
+
+          setState(() {
+            _hasRecording = true;
+            _recordingPath = recordedPath;
+            isRecording = false; // 녹음 상태 업데이트
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '✅ 녹음이 완료되어 저장되었습니다! (${(fileSize / 1024).toStringAsFixed(1)} KB)',
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          print('❌ 녹음 파일이 생성되지 않았습니다');
+          setState(() {
+            _hasRecording = false;
+            isRecording = false;
+          });
+        }
+      } else {
+        print('❌ 녹음 파일 경로가 없습니다');
+        setState(() {
+          _hasRecording = false;
+          isRecording = false;
+        });
+      }
+    } catch (e) {
+      print('❌ 녹음 중지 실패: $e');
+      setState(() {
+        _hasRecording = false;
+        isRecording = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('녹음 저장에 실패했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
+    print('✅ 녹음 자동 중지 완료');
   }
 
   // 점수 페이지로 이동
@@ -983,6 +1087,7 @@ class _RecordPageState extends State<RecordPage> {
           totalScore: _totalScore,
           recommendedSongs: _recommendedSongs,
           hasRecording: _hasRecording,
+          recordingPath: _recordingPath, // 녹음 파일 경로 전달
         ),
       ),
     );
@@ -1034,6 +1139,21 @@ class _RecordPageState extends State<RecordPage> {
     return true;
   }
 
+  // 녹음 파일 경로 생성
+  Future<String> _generateRecordingPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final song = ModalRoute.of(context)?.settings.arguments as Song?;
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileName =
+        'recording_${song?.title ?? 'unknown'}_${song?.artist ?? 'unknown'}_$timestamp.wav';
+
+    // 특수문자 제거
+    final cleanFileName = fileName.replaceAll(RegExp(r'[^\w\s-.]'), '_');
+
+    return '${directory.path}/$cleanFileName';
+  }
+
   void _onRecordButtonPressed() async {
     if (!isRecording) {
       print('🎙️ 녹음 시작 요청...');
@@ -1070,6 +1190,36 @@ class _RecordPageState extends State<RecordPage> {
       await TensorDspService.startRealTimeAnalysis();
       print('✅ TensorDSP 시작 완료');
 
+      // 실제 오디오 녹음 시작
+      try {
+        _recordingPath = await _generateRecordingPath();
+        print('🎵 녹음 파일 경로: $_recordingPath');
+
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.wav,
+            sampleRate: 44100,
+            bitRate: 128000,
+            numChannels: 1,
+          ),
+          path: _recordingPath!,
+        );
+
+        _isRecordingStarted = true;
+        print('✅ 오디오 녹음 시작 완료');
+      } catch (e) {
+        print('❌ 오디오 녹음 시작 실패: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('녹음 시작에 실패했습니다: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       // inst 파일을 처음부터 다시 재생
       if (_instPlayer != null) {
         await _instPlayer!.seek(Duration.zero); // 처음으로 이동
@@ -1090,14 +1240,8 @@ class _RecordPageState extends State<RecordPage> {
     } else {
       print('🎙️ 녹음 중지 요청...');
 
-      // 녹음 중지와 동시에 inst 파일 일시정지
-      print('🔧 AudioComparePlugin 중지 중...');
-      await AudioComparePlugin.stopAnalysis();
-      print('✅ AudioComparePlugin 중지 완료');
-
-      print('🔧 TensorDSP 중지 중...');
-      await TensorDspService.stopRealTimeAnalysis();
-      print('✅ TensorDSP 중지 완료');
+      // 새로 분리한 메서드 사용
+      await _stopRecordingAndSave();
 
       // inst 파일 일시정지
       if (_instPlayer != null && _isInstPlaying) {
@@ -1106,7 +1250,6 @@ class _RecordPageState extends State<RecordPage> {
       }
 
       setState(() {
-        isRecording = false;
         isPlaying = false;
       });
     }
@@ -1119,6 +1262,13 @@ class _RecordPageState extends State<RecordPage> {
     _instPlayer?.dispose();
     _onsetSub?.cancel();
     _tensorDspTimer?.cancel();
+
+    // 녹음 관련 정리
+    if (_isRecordingStarted) {
+      _audioRecorder.stop();
+    }
+    _audioRecorder.dispose();
+
     super.dispose();
   }
 

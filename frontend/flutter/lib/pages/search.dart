@@ -38,10 +38,12 @@ class _SearchPageState extends State<SearchPage> {
         'image': row[3].toString(),
       });
     }
-    setState(() {
-      songs = loadedSongs;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        songs = loadedSongs;
+        _isLoading = false;
+      });
+    }
   }
 
   List<Map<String, String>> get filteredSongs {
