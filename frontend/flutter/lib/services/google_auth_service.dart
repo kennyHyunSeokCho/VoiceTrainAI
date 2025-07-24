@@ -5,8 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class GoogleAuthService {
   // Clerk를 통한 OAuth 처리 - 다른 URL 패턴 시도
-  static const String clerkOAuthUrl =
-      'https://probable-lion-70.clerk.accounts.dev/oauth/google';
+  static const String clerkOAuthUrl = '';
 
   /// Clerk를 통한 Google 로그인 (웹용)
   static Future<Map<String, dynamic>?> signInWithGoogle() async {
@@ -37,7 +36,7 @@ class GoogleAuthService {
 
       // 모바일에서는 기존 Google Sign-In 사용
       final GoogleSignIn _googleSignIn = GoogleSignIn(
-        clientId: 'YOUR_GOOGLE_CLIENT_ID_HERE',
+        clientId: '', // 하드코딩된 clientId 임시 제거
         scopes: ['email', 'profile'],
       );
 
@@ -83,7 +82,7 @@ class GoogleAuthService {
     try {
       // 웹에서는 직접 Google Sign-In 사용 (deprecated 경고 무시)
       final GoogleSignIn _googleSignIn = GoogleSignIn(
-        clientId: 'YOUR_GOOGLE_CLIENT_ID_HERE',
+        clientId: '', // 하드코딩된 clientId 임시 제거
         scopes: ['email', 'profile'],
       );
 
@@ -204,7 +203,7 @@ class GoogleAuthService {
   static Future<String?> getClerkJWTWithAccessToken(String accessToken) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/auth/google/callback'),
+        Uri.parse(''), // 하드코딩된 엔드포인트 임시 제거
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'access_token': accessToken}),
       );

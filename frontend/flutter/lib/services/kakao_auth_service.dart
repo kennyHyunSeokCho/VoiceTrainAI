@@ -5,11 +5,11 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class KakaoAuthService {
-  static const String _baseUrl = 'http://localhost:8000';
+  static const String _baseUrl = '';
 
-  // 환경변수에서 앱 키 가져오기 (Git 업로드용 더미 키)
-  static String get _nativeAppKey => 'YOUR_NATIVE_APP_KEY_HERE';
-  static String get _javaScriptAppKey => 'YOUR_JAVASCRIPT_APP_KEY_HERE';
+  // 하드코딩된 카카오 앱키 임시 제거
+  static String get _nativeAppKey => '';
+  static String get _javaScriptAppKey => '';
 
   /// 카카오 로그인 초기화
   static Future<void> initialize() async {
