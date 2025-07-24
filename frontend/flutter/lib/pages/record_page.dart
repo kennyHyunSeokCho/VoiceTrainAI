@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/song.dart';
 import '../services/s3_service.dart';
@@ -677,6 +678,15 @@ class _RecordPageState extends State<RecordPage> {
     _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
       final data = await TensorDspService.getCurrentPitchScore();
       if (!mounted) return;
+
+      // 녹음 상태 디버깅 로그
+      if (isRecording && (data['score'] != 0.0 || data['pitch'] != 0.0)) {
+        print(
+          '🎙️ 녹음 데이터: 점수=${data['score']?.toStringAsFixed(1)}, '
+          '피치=${data['pitch']?.toStringAsFixed(1)}Hz',
+        );
+      }
+
       setState(() {
         currentScore = data['score'] ?? 0.0;
         currentPitch = data['pitch'] ?? 0.0;
@@ -972,21 +982,80 @@ class _RecordPageState extends State<RecordPage> {
     );
   }
 
+  // 마이크 권한 확인 및 요청
+  Future<bool> _requestMicrophonePermission() async {
+    print('🔐 마이크 권한 확인 중...');
+
+    final status = await Permission.microphone.status;
+    print('📋 현재 마이크 권한 상태: $status');
+
+    if (status.isDenied) {
+      print('🔑 마이크 권한 요청...');
+      final result = await Permission.microphone.request();
+      print('📋 권한 요청 결과: $result');
+
+      if (result.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('마이크 권한이 필요합니다. 설정에서 권한을 허용해주세요.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return false;
+      }
+    } else if (status.isPermanentlyDenied) {
+      print('❌ 마이크 권한이 영구적으로 거부됨');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('마이크 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: '설정',
+              onPressed: () => openAppSettings(),
+            ),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+      return false;
+    }
+
+    print('✅ 마이크 권한 확인 완료');
+    return true;
+  }
+
   void _onRecordButtonPressed() async {
     if (!isRecording) {
+      print('🎙️ 녹음 시작 요청...');
+
+      // 마이크 권한 확인
+      final hasPermission = await _requestMicrophonePermission();
+      if (!hasPermission) {
+        print('❌ 마이크 권한 없음, 녹음 중단');
+        return;
+      }
+
       // 녹음 시작 - inst 파일을 처음부터 다시 재생
       List<double> originalPitch = [440.0, 442.0, 445.0];
       List<double> originalOnsets = [0.0, 1.0, 2.0];
 
+      print('🔧 AudioComparePlugin 초기화 중...');
       await AudioComparePlugin.startAnalysis({
         'originalPitch': originalPitch,
         'originalOnsets': originalOnsets,
         'sampleRate': 44100,
       });
+      print('✅ AudioComparePlugin 시작 완료');
 
       // TensorDSP 실시간 분석 시작
+      print('🔧 TensorDSP 초기화 중...');
       await TensorDspService.initialize();
       await TensorDspService.startRealTimeAnalysis();
+      print('✅ TensorDSP 시작 완료');
 
       // inst 파일을 처음부터 다시 재생
       if (_instPlayer != null) {
@@ -1006,9 +1075,16 @@ class _RecordPageState extends State<RecordPage> {
         isPlaying = true;
       });
     } else {
+      print('🎙️ 녹음 중지 요청...');
+
       // 녹음 중지와 동시에 inst 파일 일시정지
+      print('🔧 AudioComparePlugin 중지 중...');
       await AudioComparePlugin.stopAnalysis();
+      print('✅ AudioComparePlugin 중지 완료');
+
+      print('🔧 TensorDSP 중지 중...');
       await TensorDspService.stopRealTimeAnalysis();
+      print('✅ TensorDSP 중지 완료');
 
       // inst 파일 일시정지
       if (_instPlayer != null && _isInstPlaying) {
@@ -1482,6 +1558,39 @@ class _RecordPageState extends State<RecordPage> {
                     ),
                   ),
                   SizedBox(height: 16),
+                  // 녹음 상태 디버깅 표시 (임시)
+                  if (isRecording)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '🎙️ 녹음 중...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '점수: ${currentScore.toStringAsFixed(1)} | 피치: ${currentPitch.toStringAsFixed(1)}Hz',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (isRecording) SizedBox(height: 16),
                   // --- 실시간 점수 텍스트 제거 (하단)
                   // Text(
                   //   '실시간 점수: {currentScore.toStringAsFixed(1)}',
