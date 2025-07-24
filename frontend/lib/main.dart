@@ -18,25 +18,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => RecordingProvider())],
-      child: const AppRoot(),
-    );
-  }
-}
-
-class AppRoot extends StatelessWidget {
-  const AppRoot({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '🎤 음성 녹음 앱',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+      providers: [
+        ChangeNotifierProvider(create: (_) => RecordingProvider()),
+      ],
+      child: MaterialApp(
+        title: '🎤 음성 녹음 앱',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+        ),
+        home: const VoiceTrainingApp(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const VoiceTrainingApp(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -57,48 +50,50 @@ class VoiceTrainingApp extends StatelessWidget {
         centerTitle: true,
       ),
       body: Consumer<RecordingProvider>(
-        builder: (context, recordingProvider, _) {
+        builder: (context, recordingProvider, child) {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: SingleChildScrollView(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight:
-                        MediaQuery.of(context).size.height -
-                        kToolbarHeight -
-                        MediaQuery.of(context).padding.top -
-                        MediaQuery.of(context).padding.bottom -
-                        48,
+                    minHeight: MediaQuery.of(context).size.height - 
+                               kToolbarHeight - 
+                               MediaQuery.of(context).padding.top - 
+                               MediaQuery.of(context).padding.bottom - 48,
                   ),
                   child: Column(
-                    children: [
-                      // 🎤 녹음 상태 및 시간 표시
-                      VoiceTrainingApp._buildRecordingStatus(recordingProvider),
-                      const SizedBox(height: 40),
-                      // 🎚️ 데시벨 임계값 컨트롤
-                      Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: AudioThresholdControlWidget(),
-                        ),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 🎤 녹음 상태 및 시간 표시
+                    _buildRecordingStatus(recordingProvider),
+                    
+                    const SizedBox(height: 40),
+
+                    // 🎚️ 데시벨 임계값 컨트롤
+                    Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(height: 40),
-                      // 🎵 메인 녹음 버튼
-                      VoiceTrainingApp._buildMainRecordButton(
-                        context,
-                        recordingProvider,
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: AudioThresholdControlWidget(),
                       ),
-                      const SizedBox(height: 40),
-                      // 💡 간단한 안내 메시지
-                      VoiceTrainingApp._buildHelpText(recordingProvider),
-                    ],
-                  ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+
+                    // 🎵 메인 녹음 버튼
+                    _buildMainRecordButton(context, recordingProvider),
+                    
+                    const SizedBox(height: 40),
+                    
+                                      // 💡 간단한 안내 메시지
+                  _buildHelpText(recordingProvider),
+                ],
+                ),
                 ),
               ),
             ),
@@ -109,7 +104,7 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 녹음 상태 및 시간 표시
-  static Widget _buildRecordingStatus(RecordingProvider provider) {
+  Widget _buildRecordingStatus(RecordingProvider provider) {
     return Column(
       children: [
         // 녹음 상태 아이콘
@@ -118,29 +113,25 @@ class VoiceTrainingApp extends StatelessWidget {
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: provider.isRecording
-                ? Colors.red.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
+            color: provider.isRecording ? Colors.red.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
             border: Border.all(
               color: provider.isRecording ? Colors.red : Colors.grey,
               width: 3,
             ),
           ),
           child: Icon(
-            provider.isRecording
-                ? (provider.isActuallyRecording
-                      ? Icons.graphic_eq
-                      : Icons.mic_none_outlined)
+            provider.isRecording 
+                ? (provider.isActuallyRecording ? Icons.graphic_eq : Icons.mic_none_outlined)
                 : Icons.mic_none,
             size: 60,
-            color: provider.isRecording
+            color: provider.isRecording 
                 ? (provider.isActuallyRecording ? Colors.red : Colors.orange)
                 : Colors.grey[600],
           ),
         ),
-
+        
         const SizedBox(height: 20),
-
+        
         // 녹음 시간 또는 상태 텍스트
         if (provider.isRecording) ...[
           Text(
@@ -154,9 +145,11 @@ class VoiceTrainingApp extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            provider.waitingForVoice
-                ? '🎤 음성을 기다리는 중...'
-                : (provider.isActuallyRecording ? '🔴 실제 녹음 중!' : '녹음 중...'),
+            provider.waitingForVoice 
+                ? '🎤 음성을 기다리는 중...' 
+                : provider.isActuallyRecording 
+                    ? '🔴 실제 녹음 중!' 
+                    : '녹음 중...',
             style: TextStyle(
               fontSize: 16,
               color: provider.isActuallyRecording ? Colors.red : Colors.orange,
@@ -164,18 +157,23 @@ class VoiceTrainingApp extends StatelessWidget {
             ),
           ),
         ] else ...[
-          const Text(
+          Text(
             '00:00',
             style: TextStyle(
               fontSize: 48,
               fontWeight: FontWeight.w300,
               fontFamily: 'monospace',
+              color: Colors.grey[400],
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '녹음 준비됨',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ],
@@ -183,18 +181,16 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 메인 녹음 버튼
-  static Widget _buildMainRecordButton(
-    BuildContext context,
-    RecordingProvider provider,
-  ) {
+  Widget _buildMainRecordButton(BuildContext context, RecordingProvider provider) {
     return GestureDetector(
       onTap: () async {
         print('👆 버튼 클릭됨! 현재 녹음 상태: ${provider.isRecording}');
-
+        
         try {
           if (provider.isRecording) {
             print('🔄 UI: 녹음 중지 버튼 클릭');
             await provider.stopRecording();
+            
             // 완료 메시지
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -202,19 +198,18 @@ class VoiceTrainingApp extends StatelessWidget {
                   children: [
                     const Icon(Icons.check_circle, color: Colors.white),
                     const SizedBox(width: 12),
-                    const Text('✅ 녹음이 완료되었습니다!'),
+                    Text(kIsWeb ? '다운로드 완료!' : '녹음 완료!'),
                   ],
                 ),
                 backgroundColor: Colors.green,
-                duration: const Duration(seconds: 3),
+                duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
           } else {
             print('🔄 UI: 녹음 시작 버튼 클릭');
+            
             // 즉시 안내 메시지 표시
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -228,14 +223,12 @@ class VoiceTrainingApp extends StatelessWidget {
                 backgroundColor: Colors.blue,
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
-
+            
             await provider.startRecording();
-
+            
             // 녹음 시작 성공 메시지
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -250,9 +243,7 @@ class VoiceTrainingApp extends StatelessWidget {
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             );
           }
@@ -260,6 +251,7 @@ class VoiceTrainingApp extends StatelessWidget {
           print('❌❌❌ UI: 심각한 오류 발생 - $e');
           print('❌❌❌ 오류 타입: ${e.runtimeType}');
           print('❌❌❌ 스택 트레이스: ${StackTrace.current}');
+          
           // 오류 발생 시 모든 스낵바 지우고 오류 메시지 표시
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -287,9 +279,7 @@ class VoiceTrainingApp extends StatelessWidget {
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 8),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -302,14 +292,13 @@ class VoiceTrainingApp extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: provider.isRecording
+            colors: provider.isRecording 
                 ? [Colors.red.shade400, Colors.red.shade600]
                 : [Colors.blue.shade400, Colors.blue.shade600],
           ),
           boxShadow: [
             BoxShadow(
-              color: (provider.isRecording ? Colors.red : Colors.blue)
-                  .withOpacity(0.3),
+              color: (provider.isRecording ? Colors.red : Colors.blue).withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -339,7 +328,7 @@ class VoiceTrainingApp extends StatelessWidget {
   }
 
   // 도움말 텍스트
-  static Widget _buildHelpText(RecordingProvider provider) {
+  Widget _buildHelpText(RecordingProvider provider) {
     if (provider.isRecording) {
       if (provider.waitingForVoice) {
         return Text(
@@ -355,23 +344,31 @@ class VoiceTrainingApp extends StatelessWidget {
         return Text(
           '🔴 실제 녹음 중입니다!\n버튼을 눌러 녹음을 중지하세요',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.red[600], height: 1.5),
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.red[600],
+            height: 1.5,
+          ),
         );
       }
     } else {
       return Text(
         '큰 버튼을 눌러 녹음을 시작하세요\n🎚️ 위의 임계값 설정으로 잡음을 차단할 수 있습니다\n${kIsWeb ? '완료 후 자동으로 다운로드됩니다' : '파일이 로컬에 저장됩니다'}',
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 16, color: Colors.grey[600], height: 1.5),
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.grey[600],
+          height: 1.5,
+        ),
       );
     }
   }
 
   // 시간 포맷팅 함수
-  static String _formatDuration(Duration duration) {
+  String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final minutes = twoDigits(duration.inMinutes);
     final seconds = twoDigits(duration.inSeconds % 60);
     return '$minutes:$seconds';
   }
-}
+} 

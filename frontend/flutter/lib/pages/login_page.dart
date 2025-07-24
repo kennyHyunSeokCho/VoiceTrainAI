@@ -3,7 +3,7 @@ import '/main_layout.dart';
 import 'register.dart';
 import '../services/google_auth_service.dart';
 import '../services/kakao_auth_service.dart';
-// import 'dart:html' as html; // 웹 전용 라이브러리이므로 모바일에서는 주석 처리
+import 'dart:html' as html;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

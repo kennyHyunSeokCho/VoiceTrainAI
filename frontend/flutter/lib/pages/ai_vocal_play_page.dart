@@ -1,190 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/song.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:http/http.dart' as http;
-import '../services/s3_service.dart';
 
-class AiVocalPlayPage extends StatefulWidget {
-  @override
-  _AiVocalPlayPageState createState() => _AiVocalPlayPageState();
-}
-
-class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
-  String? _albumCoverUrl;
-  bool _isLoadingCover = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAlbumCover();
-  }
-
-  Future<void> _loadAlbumCover() async {
-    try {
-      final song = ModalRoute.of(context)!.settings.arguments as Song;
-      
-      // Song 객체의 albumCover 필드가 이미 S3 URL인지 확인
-      if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
-        print('Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
-        if (mounted) {
-          setState(() {
-            _albumCoverUrl = song.albumCover;
-            _isLoadingCover = false;
-          });
-        }
-      } else {
-        // 기존 방식으로 URL 생성
-        final coverUrl = await _fetchAlbumCoverUrl(song.artist, song.title);
-        
-        if (mounted) {
-          setState(() {
-            _albumCoverUrl = coverUrl;
-            _isLoadingCover = false;
-          });
-        }
-      }
-    } catch (e) {
-      print('앨범 커버 로드 실패: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingCover = false;
-        });
-      }
-    }
-  }
-
-  Future<String> _fetchAlbumCoverUrl(String artist, String title) async {
-    try {
-      // S3Service를 사용하여 앨범 커버 URL 생성
-      String albumCoverUrl = S3Service.getAlbumCoverUrl(artist, title);
-      print('앨범커버 S3 URL 생성: $albumCoverUrl');
-      
-      // URL 유효성 검사
-      try {
-        final response = await http.head(Uri.parse(albumCoverUrl));
-        print('앨범커버 S3 응답 코드: ${response.statusCode}');
-        
-        if (response.statusCode == 200) {
-          print('앨범커버 S3 성공: $albumCoverUrl');
-          return albumCoverUrl;
-        }
-      } catch (e) {
-        print('앨범커버 S3 요청 실패: $e');
-      }
-      
-      print('앨범커버 로드 실패, 기본 이미지 사용');
-      return 'https://via.placeholder.com/150x150?text=앨범커버';
-    } catch (e) {
-      print('앨범커버 URL 생성 실패: $e');
-      return 'https://via.placeholder.com/150x150?text=앨범커버';
-    }
-  }
-
-  Widget _buildAlbumCoverWidget() {
-    final song = ModalRoute.of(context)!.settings.arguments as Song;
-    
-    print('=== _buildAlbumCoverWidget 디버깅 (Play) ===');
-    print('Song 객체 정보:');
-    print('  - title: ${song.title}');
-    print('  - artist: ${song.artist}');
-    print('  - albumCover: "${song.albumCover}"');
-    print('  - albumCover.isEmpty: ${song.albumCover.isEmpty}');
-    print('  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}');
-    
-    // Song 객체의 albumCover가 있으면 사용
-    if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
-      print('✅ Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
-      return CachedNetworkImage(
-        imageUrl: song.albumCover,
-        width: 200,
-        height: 200,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 200,
-          height: 200,
-          color: Colors.grey[200],
-          child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
-          ),
-        ),
-        errorWidget: (context, url, error) {
-          print('❌ 앨범커버 로드 실패: $error');
-          return Container(
-            width: 200,
-            height: 200,
-            color: Colors.grey[200],
-            child: Icon(
-              Icons.music_note,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-          );
-        },
-      );
-    }
-    
-    print('❌ Song 객체에 URL이 없음');
-    
-    // Song 객체에 URL이 없으면 로딩 상태 표시
-    if (_isLoadingCover) {
-      return Container(
-        width: 200,
-        height: 200,
-        color: Colors.grey[200],
-        child: Center(
-          child: CircularProgressIndicator(
-            color: Colors.deepPurple,
-          ),
-        ),
-      );
-    }
-    
-    // 생성된 URL이 있으면 사용
-    if (_albumCoverUrl != null) {
-      return CachedNetworkImage(
-        imageUrl: _albumCoverUrl!,
-        width: 200,
-        height: 200,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 200,
-          height: 200,
-          color: Colors.grey[200],
-          child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
-          ),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: 200,
-          height: 200,
-          color: Colors.grey[200],
-          child: Icon(
-            Icons.music_note,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-        ),
-      );
-    }
-    
-    // 기본 아이콘 표시
-    return Container(
-      width: 200,
-      height: 200,
-      color: Colors.grey[200],
-      child: Icon(
-        Icons.music_note,
-        size: 80,
-        color: Colors.grey[400],
-      ),
-    );
-  }
-
+class AiVocalPlayPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Song song = ModalRoute.of(context)!.settings.arguments as Song;
@@ -247,7 +65,14 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                       // 앨범커버 이미지
                       ClipRRect(
                         borderRadius: BorderRadius.circular(100),
-                        child: _buildAlbumCoverWidget(),
+                        child: Image.asset(
+                          song.albumCover.isNotEmpty
+                              ? song.albumCover
+                              : 'assets/images/iu.webp',
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       // 재생 중 표시
                       Positioned(
