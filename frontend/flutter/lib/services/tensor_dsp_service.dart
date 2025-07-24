@@ -135,7 +135,8 @@ class TensorDspService {
     }
   }
 
-  /// 오디오 데이터에서 MFCC 추출
+  /// MFCC (Mel-frequency Cepstral Coefficients) 추출
+  /// 음성의 특징 벡터를 추출하여 음색 분석에 사용
   static Future<List<List<double>>> extractMFCC(
     List<double> audioData, {
     int sampleRate = 44100,
@@ -150,47 +151,12 @@ class TensorDspService {
         'numFrames': numFrames,
       });
 
-      return result.map((frame) => List<double>.from(frame)).toList();
+      return result
+          .map<List<double>>((frame) => (frame as List<dynamic>).cast<double>())
+          .toList();
     } catch (e) {
       print('❌ MFCC 추출 실패: $e');
       return [];
-    }
-  }
-
-  /// 오디오 데이터에서 스펙트럼 분석
-  static Future<Map<String, dynamic>> analyzeSpectrum(
-    List<double> audioData, {
-    int sampleRate = 44100,
-    int fftSize = 2048,
-  }) async {
-    try {
-      final Map<dynamic, dynamic> result = await _channel.invokeMethod(
-        'analyzeSpectrum',
-        {'audioData': audioData, 'sampleRate': sampleRate, 'fftSize': fftSize},
-      );
-
-      return Map<String, dynamic>.from(result);
-    } catch (e) {
-      print('❌ 스펙트럼 분석 실패: $e');
-      return {};
-    }
-  }
-
-  /// 음성 품질 분석
-  static Future<Map<String, double>> analyzeVoiceQuality(
-    List<double> audioData, {
-    int sampleRate = 44100,
-  }) async {
-    try {
-      final Map<dynamic, dynamic> result = await _channel.invokeMethod(
-        'analyzeVoiceQuality',
-        {'audioData': audioData, 'sampleRate': sampleRate},
-      );
-
-      return Map<String, double>.from(result);
-    } catch (e) {
-      print('❌ 음성 품질 분석 실패: $e');
-      return {};
     }
   }
 

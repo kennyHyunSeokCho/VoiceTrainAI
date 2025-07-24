@@ -8,13 +8,10 @@ class TensorDspTestPage extends StatefulWidget {
 }
 
 class _TensorDspTestPageState extends State<TensorDspTestPage> {
-  bool _isInitialized = false;
-  bool _isAnalyzing = false;
   List<double> _pitchData = [];
   List<List<double>> _mfccData = [];
-  Map<String, dynamic> _spectrumData = {};
-  Map<String, double> _voiceQualityData = {};
-  String _statusMessage = '초기화되지 않음';
+  String _statusMessage = 'TensorDSP 초기화 필요';
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -119,83 +116,6 @@ class _TensorDspTestPageState extends State<TensorDspTestPage> {
     }
   }
 
-  Future<void> _testSpectrumAnalysis() async {
-    if (!_isInitialized) {
-      _showSnackBar('먼저 TensorDSP를 초기화해주세요.');
-      return;
-    }
-
-    setState(() {
-      _statusMessage = '스펙트럼 분석 테스트 중...';
-    });
-
-    try {
-      // 샘플 오디오 데이터
-      final sampleRate = 44100;
-      final duration = 1.0; // 1초
-
-      final audioData = List<double>.generate(
-        (sampleRate * duration).round(),
-        (i) =>
-            0.4 * sin(i / sampleRate * 2 * pi * 440) +
-            0.3 * sin(i / sampleRate * 2 * pi * 660),
-      );
-
-      final spectrumResults = await TensorDspService.analyzeSpectrum(
-        audioData,
-        sampleRate: sampleRate,
-        fftSize: 2048,
-      );
-
-      setState(() {
-        _spectrumData = spectrumResults;
-        _statusMessage = '스펙트럼 분석 완료';
-      });
-    } catch (e) {
-      setState(() {
-        _statusMessage = '스펙트럼 분석 오류: $e';
-      });
-    }
-  }
-
-  Future<void> _testVoiceQualityAnalysis() async {
-    if (!_isInitialized) {
-      _showSnackBar('먼저 TensorDSP를 초기화해주세요.');
-      return;
-    }
-
-    setState(() {
-      _statusMessage = '음성 품질 분석 테스트 중...';
-    });
-
-    try {
-      // 샘플 오디오 데이터
-      final sampleRate = 44100;
-      final duration = 3.0; // 3초
-
-      final audioData = List<double>.generate(
-        (sampleRate * duration).round(),
-        (i) =>
-            0.5 * sin(i / sampleRate * 2 * pi * 440) +
-            0.1 * sin(i / sampleRate * 2 * pi * 220),
-      );
-
-      final qualityResults = await TensorDspService.analyzeVoiceQuality(
-        audioData,
-        sampleRate: sampleRate,
-      );
-
-      setState(() {
-        _voiceQualityData = qualityResults;
-        _statusMessage = '음성 품질 분석 완료';
-      });
-    } catch (e) {
-      setState(() {
-        _statusMessage = '음성 품질 분석 오류: $e';
-      });
-    }
-  }
-
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(
       context,
@@ -266,14 +186,6 @@ class _TensorDspTestPageState extends State<TensorDspTestPage> {
                   onPressed: _testMFCCExtraction,
                   child: Text('MFCC 추출'),
                 ),
-                ElevatedButton(
-                  onPressed: _testSpectrumAnalysis,
-                  child: Text('스펙트럼 분석'),
-                ),
-                ElevatedButton(
-                  onPressed: _testVoiceQualityAnalysis,
-                  child: Text('음성 품질'),
-                ),
               ],
             ),
 
@@ -292,16 +204,6 @@ class _TensorDspTestPageState extends State<TensorDspTestPage> {
 
                     if (_mfccData.isNotEmpty) ...[
                       _buildResultCard('MFCC 데이터', '${_mfccData.length}개 프레임'),
-                      SizedBox(height: 8),
-                    ],
-
-                    if (_spectrumData.isNotEmpty) ...[
-                      _buildResultCard('스펙트럼 데이터', '분석 완료'),
-                      SizedBox(height: 8),
-                    ],
-
-                    if (_voiceQualityData.isNotEmpty) ...[
-                      _buildResultCard('음성 품질 데이터', '분석 완료'),
                       SizedBox(height: 8),
                     ],
                   ],
