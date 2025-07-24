@@ -77,12 +77,6 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             "extractMFCC" -> {
                 extractMFCC(call, result)
             }
-            "analyzeSpectrum" -> {
-                analyzeSpectrum(call, result)
-            }
-            "analyzeVoiceQuality" -> {
-                analyzeVoiceQuality(call, result)
-            }
             "dispose" -> {
                 dispose(result)
             }
@@ -419,84 +413,6 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             
         } catch (e: Exception) {
             result.error("MFCC_EXTRACTION_ERROR", "MFCC 추출 실패", e.message)
-        }
-    }
-    
-    private fun analyzeSpectrum(call: MethodCall, result: Result) {
-        try {
-            val audioData = call.argument<List<Double>>("audioData")
-            val sampleRate = call.argument<Int>("sampleRate") ?: 44100
-            val fftSize = call.argument<Int>("fftSize") ?: 2048
-            
-            if (audioData == null) {
-                result.error("INVALID_ARGUMENT", "오디오 데이터가 없습니다", null)
-                return
-            }
-            
-            // 스펙트럼 분석 로직 구현 (간단한 버전)
-            val floatArray = audioData.map { it.toFloat() }.toFloatArray()
-            
-            // 간단한 FFT 시뮬레이션
-            val spectrum = List(fftSize / 2) { index ->
-                val frequency = index * sampleRate / fftSize.toDouble()
-                val magnitude = floatArray.take(1024).sumOf { sample -> 
-                    abs(sample * kotlin.math.sin(2 * kotlin.math.PI * frequency * index / sampleRate)).toDouble()
-                }
-                magnitude
-            }
-            
-            val resultMap = mapOf(
-                "magnitude" to spectrum,
-                "frequencies" to (0 until fftSize / 2).map { it * sampleRate / fftSize.toDouble() },
-                "sampleRate" to sampleRate,
-                "fftSize" to fftSize
-            )
-            
-            result.success(resultMap)
-            
-        } catch (e: Exception) {
-            result.error("SPECTRUM_ANALYSIS_ERROR", "스펙트럼 분석 실패", e.message)
-        }
-    }
-    
-    private fun analyzeVoiceQuality(call: MethodCall, result: Result) {
-        try {
-            val audioData = call.argument<List<Double>>("audioData")
-            val sampleRate = call.argument<Int>("sampleRate") ?: 44100
-            
-            if (audioData == null) {
-                result.error("INVALID_ARGUMENT", "오디오 데이터가 없습니다", null)
-                return
-            }
-            
-            // 음성 품질 분석 로직 구현
-            val floatArray = audioData.map { it.toFloat() }.toFloatArray()
-            
-            // RMS (Root Mean Square) 계산
-            val rms = sqrt(floatArray.map { it * it }.average())
-            
-            // 신호 대 잡음비 (SNR) 계산 (간단한 구현)
-            val mean = floatArray.average()
-            val variance = floatArray.map { (it - mean) * (it - mean) }.average()
-            val snr = 20 * log10(rms / sqrt(variance))
-            
-            // 스펙트럼 중심 주파수 계산 (간단한 버전)
-            val spectralCentroid = floatArray.take(1024).mapIndexed { index, value ->
-                val frequency = index * sampleRate / 1024.0
-                value * frequency
-            }.sum() / floatArray.take(1024).sum()
-            
-            val qualityMetrics = mapOf(
-                "rms" to rms,
-                "snr" to snr,
-                "spectralCentroid" to spectralCentroid,
-                "duration" to (audioData.size / sampleRate.toDouble())
-            )
-            
-            result.success(qualityMetrics)
-            
-        } catch (e: Exception) {
-            result.error("VOICE_QUALITY_ERROR", "음성 품질 분석 실패", e.message)
         }
     }
     

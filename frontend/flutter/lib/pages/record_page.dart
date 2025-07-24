@@ -476,19 +476,10 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
       top: top,
       child: Container(
         width: width,
-        height: 8,
+        height: 8, // 원래 크기로 복원
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(4), // 원래 크기로 복원
           color: noteColor,
-          boxShadow: lastAccuracy != null
-              ? [
-                  BoxShadow(
-                    color: noteColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
       ),
     );
@@ -606,7 +597,7 @@ class _RecordPageState extends State<RecordPage> {
   List<double> _onsetHistory = [];
   // --- END ---
 
-  bool isPlaying = true;
+  bool isPlaying = false;
   bool isRecording = false;
   int pointDelta = 0;
   int currentLyricIndex = 0;
@@ -672,9 +663,7 @@ class _RecordPageState extends State<RecordPage> {
     super.initState();
     lyricLines = exampleLyrics;
     _initInstPlayer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startMainTimer();
-    });
+    // 초기에는 타이머를 시작하지 않음 (녹음 시작 시에만 시작)
     _loadData();
     // --- 실시간 피치/온셋 구독 ---
     _onsetSub = AudioComparePlugin.onsetStream.listen((onset) {
@@ -799,7 +788,7 @@ class _RecordPageState extends State<RecordPage> {
         _isInstLoading = false;
       });
 
-      print('Inst 파일 로드 완료');
+      print('Inst 파일 로드 완료 (자동 재생 안함)');
     } catch (e) {
       print('Inst 파일 로드 실패: $e');
       setState(() {
@@ -834,6 +823,21 @@ class _RecordPageState extends State<RecordPage> {
           });
 
           print('MIDI 파싱 완료, 노트 개수: ${notes.length}');
+
+          // MIDI 노트 샘플 출력 (처음 5개)
+          if (notes.isNotEmpty) {
+            print('=== MIDI 노트 샘플 (처음 5개) ===');
+            for (int i = 0; i < notes.length.clamp(0, 5); i++) {
+              final note = notes[i];
+              print(
+                '노트 ${i + 1}: 시작=${note.startTime.toStringAsFixed(2)}s, '
+                '길이=${note.duration.toStringAsFixed(2)}s, '
+                '음정=${note.pitch} (${_midiNoteToName(note.pitch)}), '
+                '높이=${note.visualPitch.toStringAsFixed(1)}px',
+              );
+            }
+            print('===============================');
+          }
 
           // MIDI 노트에서 전체 길이 계산
           if (notes.isNotEmpty) {
@@ -970,6 +974,7 @@ class _RecordPageState extends State<RecordPage> {
 
   void _onRecordButtonPressed() async {
     if (!isRecording) {
+      // 녹음 시작 - inst 파일을 처음부터 다시 재생
       List<double> originalPitch = [440.0, 442.0, 445.0];
       List<double> originalOnsets = [0.0, 1.0, 2.0];
 
@@ -979,13 +984,41 @@ class _RecordPageState extends State<RecordPage> {
         'sampleRate': 44100,
       });
 
+      // TensorDSP 실시간 분석 시작
+      await TensorDspService.initialize();
+      await TensorDspService.startRealTimeAnalysis();
+
+      // inst 파일을 처음부터 다시 재생
+      if (_instPlayer != null) {
+        await _instPlayer!.seek(Duration.zero); // 처음으로 이동
+        await _instPlayer!.resume();
+        _startMainTimer(); // 타이머도 함께 시작
+
+        // 진행률과 가사 인덱스 초기화
+        setState(() {
+          progress = 0.0;
+          currentLyricIndex = 0;
+        });
+      }
+
       setState(() {
         isRecording = true;
+        isPlaying = true;
       });
     } else {
+      // 녹음 중지와 동시에 inst 파일 일시정지
       await AudioComparePlugin.stopAnalysis();
+      await TensorDspService.stopRealTimeAnalysis();
+
+      // inst 파일 일시정지
+      if (_instPlayer != null && _isInstPlaying) {
+        await _instPlayer!.pause();
+        _stopMainTimer(); // 타이머도 함께 중지
+      }
+
       setState(() {
         isRecording = false;
+        isPlaying = false;
       });
     }
   }
@@ -1053,7 +1086,7 @@ class _RecordPageState extends State<RecordPage> {
       );
     }
     final double barAreaWidth = MediaQuery.of(context).size.width * 0.92;
-    final double barAreaHeight = 54;
+    final double barAreaHeight = 54; // 시각화 영역 높이
     final double leftPadding = 24;
     final double centerLineX = barAreaWidth * 0.35; // 기준선을 좀 더 오른쪽으로
     double currentTime = progress * totalDuration;
@@ -1435,7 +1468,7 @@ class _RecordPageState extends State<RecordPage> {
                               ),
                             SizedBox(width: 10),
                             Text(
-                              isRecording ? '녹음/분석 중지' : '녹음/분석 시작',
+                              isRecording ? '연주 중지' : '녹음하며 연주',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -1448,7 +1481,7 @@ class _RecordPageState extends State<RecordPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 16),
                   // --- 실시간 점수 텍스트 제거 (하단)
                   // Text(
                   //   '실시간 점수: {currentScore.toStringAsFixed(1)}',
@@ -1568,6 +1601,27 @@ class _RecordPageState extends State<RecordPage> {
     if (_instPlayer != null) {
       await _instPlayer!.resume();
     }
+  }
+
+  // MIDI 노트 번호를 음계 이름으로 변환하는 헬퍼 함수
+  String _midiNoteToName(int midiNote) {
+    const List<String> noteNames = [
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B',
+    ];
+    int octave = (midiNote ~/ 12) - 1;
+    String noteName = noteNames[midiNote % 12];
+    return '$noteName$octave';
   }
 }
 
