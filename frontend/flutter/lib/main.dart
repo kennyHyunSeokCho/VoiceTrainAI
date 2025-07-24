@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/song.dart';
 import 'pages/record_page.dart';
 import 'pages/ai_vocal_loading_page.dart';
@@ -10,7 +11,53 @@ import 'pages/search.dart';
 import 'pages/notification_page.dart';
 import 'main_layout.dart';
 
-void main() {
+/// 현재 로그인된 사용자 정보를 전역으로 관리하는 클래스
+class CurrentUser {
+  static String? _userId;
+  static String? _userNickname;
+  static String? _userEmail;
+  static String? _provider;
+
+  static void setUser(
+    String id,
+    String nickname,
+    String email,
+    String provider,
+  ) {
+    _userId = id;
+    _userNickname = nickname;
+    _userEmail = email;
+    _provider = provider;
+    print('✅ 사용자 정보 저장됨: $nickname ($email)');
+  }
+
+  static String? getUserId() => _userId;
+  static String? getUserNickname() => _userNickname;
+  static String? getUserEmail() => _userEmail;
+  static String? getProvider() => _provider;
+
+  static bool isLoggedIn() => _userId != null;
+
+  static void clearUser() {
+    _userId = null;
+    _userNickname = null;
+    _userEmail = null;
+    _provider = null;
+    print('🔄 사용자 정보 초기화됨');
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // .env 파일 로딩
+  try {
+    await dotenv.load(fileName: ".env");
+    print('✅ .env 파일 로딩 성공');
+  } catch (e) {
+    print('⚠️ .env 파일 로딩 실패: $e (기본값 사용)');
+  }
+  
   runApp(MyApp());
 }
 

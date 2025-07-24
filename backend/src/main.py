@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+import boto3
+import os
 from src.auth.clerk_auth import ClerkAuth
 from src.auth.oauth_handlers import OAuthHandler
 from src.DB.database import get_db
@@ -33,6 +35,11 @@ class GoogleTokenRequest(BaseModel):
 class KakaoTokenRequest(BaseModel):
     access_token: str
 
+class PresignedUrlRequest(BaseModel):
+    bucket: str
+    s3_key: str
+    content_type: str
+
 @app.get("/")
 async def root():
     return {"message": "Voice Training AI API"}
@@ -53,46 +60,63 @@ async def google_oauth_callback(token_request: GoogleTokenRequest, db: Session =
             import httpx
             print(f"Access Token으로 People API 호출 시작: {token_request.access_token[:20]}...")
             
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "https://people.googleapis.com/v1/people/me?sources=READ_SOURCE_TYPE_PROFILE&personFields=photos,names,emailAddresses",
-                    headers={"Authorization": f"Bearer {token_request.access_token}"}
-                )
-                
-                print(f"People API 응답 상태 코드: {response.status_code}")
-                print(f"People API 응답 내용: {response.text}")
-                
-                if response.status_code == 200:
-                    user_data = response.json()
+            # 더미 토큰인지 확인 (테스트용)
+            if token_request.access_token.startswith('valid_google_token_test') or token_request.access_token == 'test':
+                print("⚠️  더미 토큰 감지됨. 테스트용 더미 데이터를 반환합니다.")
+                google_user_info = {
+                    "sub": "test_google_user_123",
+                    "email": "test.google@example.com",
+                    "name": "테스트 구글 사용자",
+                    "picture": "https://lh3.googleusercontent.com/a/test-photo",
+                    "google": {
+                        "id": "test_google_user_123",
+                        "email": "test.google@example.com",
+                        "name": "테스트 구글 사용자",
+                        "picture": "https://lh3.googleusercontent.com/a/test-photo"
+                    }
+                }
+            else:
+                # 실제 토큰으로 Google People API 호출
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(
+                        "https://people.googleapis.com/v1/people/me?sources=READ_SOURCE_TYPE_PROFILE&personFields=photos,names,emailAddresses",
+                        headers={"Authorization": f"Bearer {token_request.access_token}"}
+                    )
                     
-                    # People API 응답에서 사용자 정보 추출
-                    names = user_data.get('names', [])
-                    email_addresses = user_data.get('emailAddresses', [])
-                    photos = user_data.get('photos', [])
+                    print(f"People API 응답 상태 코드: {response.status_code}")
+                    print(f"People API 응답 내용: {response.text}")
                     
-                    name = names[0]['displayName'] if names else ''
-                    email = email_addresses[0]['value'] if email_addresses else ''
-                    picture = photos[0]['url'] if photos else ''
-                    resource_name = user_data.get('resourceName', '')
-                    user_id = resource_name.replace('people/', '') if resource_name else ''
-                    
-                    print(f"추출된 사용자 정보: {name}, {email}, {user_id}")
-                    
-                    google_user_info = {
-                        "sub": user_id,
-                        "email": email,
-                        "name": name,
-                        "picture": picture,
-                        "google": {
-                            "id": user_id,
+                    if response.status_code == 200:
+                        user_data = response.json()
+                        
+                        # People API 응답에서 사용자 정보 추출
+                        names = user_data.get('names', [])
+                        email_addresses = user_data.get('emailAddresses', [])
+                        photos = user_data.get('photos', [])
+                        
+                        name = names[0]['displayName'] if names else ''
+                        email = email_addresses[0]['value'] if email_addresses else ''
+                        picture = photos[0]['url'] if photos else ''
+                        resource_name = user_data.get('resourceName', '')
+                        user_id = resource_name.replace('people/', '') if resource_name else ''
+                        
+                        print(f"추출된 사용자 정보: {name}, {email}, {user_id}")
+                        
+                        google_user_info = {
+                            "sub": user_id,
                             "email": email,
                             "name": name,
-                            "picture": picture
+                            "picture": picture,
+                            "google": {
+                                "id": user_id,
+                                "email": email,
+                                "name": name,
+                                "picture": picture
+                            }
                         }
-                    }
-                else:
-                    print(f"People API 요청 실패: {response.status_code} - {response.text}")
-                    raise HTTPException(status_code=400, detail=f"Google People API 요청 실패: {response.status_code}")
+                    else:
+                        print(f"People API 요청 실패: {response.status_code} - {response.text}")
+                        raise HTTPException(status_code=400, detail=f"Google People API 요청 실패: {response.status_code}")
         else:
             # ID 토큰이 있는 경우 (기존 로직)
             google_user_info = {
@@ -222,6 +246,63 @@ async def get_current_user_info():
             "provider": "email"
         }
     }
+
+@app.get("/api/vocal-range/{title}/{artist}")
+async def get_vocal_range(title: str, artist: str):
+    """노래별 보컬 범위 정보 조회 (임시 더미 데이터)"""
+    # URL 디코딩
+    import urllib.parse
+    decoded_title = urllib.parse.unquote(title)
+    decoded_artist = urllib.parse.unquote(artist)
+    
+    # 임시 더미 데이터 반환
+    return {
+        "success": True,
+        "song": {
+            "title": decoded_title,
+            "artist": decoded_artist,
+            "vocal_range": {
+                "min_note": "C3",
+                "max_note": "G5",
+                "key": "C Major",
+                "bpm": 120,
+                "difficulty": "Medium"
+            }
+        }
+    }
+
+@app.post("/upload/presigned-url")
+async def get_presigned_url(request: PresignedUrlRequest):
+    """S3 업로드를 위한 presigned URL 생성"""
+    try:
+        # S3 클라이언트 생성
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+            region_name=os.getenv('AWS_REGION', 'ap-northeast-2')
+        )
+        
+        # PUT용 presigned URL 생성 (업로드용)
+        presigned_url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': request.bucket,
+                'Key': request.s3_key,
+                'ContentType': request.content_type
+            },
+            ExpiresIn=3600  # 1시간 유효
+        )
+        
+        return {
+            "success": True,
+            "presigned_url": presigned_url,
+            "bucket": request.bucket,
+            "s3_key": request.s3_key
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Presigned URL 생성 실패: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
