@@ -77,95 +77,6 @@ class _SongDetailPageState extends State<SongDetailPage> {
     }
   }
 
-  Future<void> _uploadSongFile() async {
-    try {
-      setState(() {
-        _isUploading = true;
-      });
-
-      // 파일 선택 (오디오 파일만)
-      final XFile? file = await _picker.pickMedia(
-        imageQuality: 100,
-        requestFullMetadata: false,
-      );
-
-      if (file == null) {
-        setState(() {
-          _isUploading = false;
-        });
-        return;
-      }
-
-      // 파일 확장자 확인 (오디오 파일만 허용)
-      final String extension = file.path.split('.').last.toLowerCase();
-      final List<String> allowedExtensions = [
-        'mp3',
-        'wav',
-        'm4a',
-        'aac',
-        'ogg',
-      ];
-
-      if (!allowedExtensions.contains(extension)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('오디오 파일만 업로드 가능합니다. (mp3, wav, m4a, aac, ogg)'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _isUploading = false;
-        });
-        return;
-      }
-
-      // 파일 크기 확인 (50MB 이하)
-      final File audioFile = File(file.path);
-      final int fileSizeInBytes = await audioFile.length();
-      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-
-      if (fileSizeInMB > 50) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('파일 크기는 50MB 이하여야 합니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _isUploading = false;
-        });
-        return;
-      }
-
-      setState(() {
-        _uploadedFile = audioFile;
-        _isUploading = false;
-      });
-
-      // 업로드 성공 메시지
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('파일이 성공적으로 업로드되었습니다: ${file.name}'),
-          backgroundColor: const Color(0xFF8B5CF6),
-        ),
-      );
-
-      // TODO: 실제 서버 업로드 로직 구현
-      // await _uploadToServer(audioFile);
-    } catch (e) {
-      setState(() {
-        _isUploading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('파일 업로드 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> _playOriginalSong() async {
     final songData = widget.songData;
     final artist = songData['artist'] ?? '';
@@ -449,15 +360,6 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            GestureDetector(
-                              onTap: _uploadSongFile,
-                              child: _buildQuickAction(
-                                _isUploading
-                                    ? Icons.upload_file_rounded
-                                    : Icons.upload_rounded,
-                                _isUploading ? '업로드 중...' : '노래 파일 올리기',
-                              ),
-                            ),
                             _buildQuickAction(
                               Icons.history_rounded,
                               '피드백 히스토리',
@@ -711,6 +613,238 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         ),
                         const SizedBox(height: 40),
                       ],
+
+                      // 사용자 보컬 업로드 섹션
+                      _buildSectionTitle('내 보컬 업로드'),
+                      const SizedBox(height: 20),
+
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.mic_rounded,
+                                  color: const Color(0xFF8B5CF6),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '내 보컬 파일 업로드',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF8B5CF6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            Text(
+                              '내가 부른 이 노래를 업로드하여 보컬 비교 페이지에서 분석해보세요!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: const Color(0xFF6B7280),
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 보컬 업로드 버튼
+                            GestureDetector(
+                              onTap: _isUploading
+                                  ? null
+                                  : () => _selectAndUploadVocalFile(),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _isUploading
+                                      ? Colors.grey[200]
+                                      : const Color(
+                                          0xFF8B5CF6,
+                                        ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: _isUploading
+                                        ? Colors.grey[400]!
+                                        : const Color(
+                                            0xFF8B5CF6,
+                                          ).withOpacity(0.3),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_upload_rounded,
+                                      size: 40,
+                                      color: _isUploading
+                                          ? Colors.grey[600]
+                                          : const Color(0xFF8B5CF6),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _isUploading ? '업로드 중...' : '보컬 파일 선택하기',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: _isUploading
+                                            ? Colors.grey[600]
+                                            : const Color(0xFF8B5CF6),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'WAV, MP3, FLAC, M4A 파일 지원',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _isUploading
+                                            ? Colors.grey[500]
+                                            : const Color(0xFF9CA3AF),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            if (_isUploading) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF8B5CF6,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF8B5CF6),
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      '보컬 파일을 업로드하는 중입니다...',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF8B5CF6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            if (_uploadedFile != null) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '업로드 완료!',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.green[700],
+                                            ),
+                                          ),
+                                          Text(
+                                            _uploadedFile!.path.split('/').last,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green[600],
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/compare-vocal',
+                                          arguments: {
+                                            'originalSongUrl':
+                                                S3Service.getOriginalSongUrl(
+                                                  widget.songData['artist'] ??
+                                                      '',
+                                                  widget.songData['title'] ??
+                                                      '',
+                                                ),
+                                            'vocalSongUrl':
+                                                S3Service.getVocalSongUrl(
+                                                  widget.songData['artist'] ??
+                                                      '',
+                                                  widget.songData['title'] ??
+                                                      '',
+                                                  _uploadedFile!.path
+                                                      .split('/')
+                                                      .last,
+                                                ),
+                                          },
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.compare_arrows_rounded,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
 
                       // Cover Song 섹션
                       _buildSectionTitle('Cover Song'),
@@ -1082,5 +1216,108 @@ class _SongDetailPageState extends State<SongDetailPage> {
     }
 
     return formattedLyrics;
+  }
+
+  /// 사용자 보컬 파일을 선택하고 업로드하는 메서드
+  Future<void> _selectAndUploadVocalFile() async {
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      // 파일 선택 (오디오 파일만)
+      final XFile? file = await _picker.pickMedia(
+        imageQuality: 100,
+        requestFullMetadata: false,
+      );
+
+      if (file == null) {
+        return; // 사용자가 취소한 경우
+      }
+
+      // 파일 확장자 확인 (오디오 파일만 허용)
+      final String extension = file.path.split('.').last.toLowerCase();
+      final List<String> allowedExtensions = [
+        'mp3',
+        'wav',
+        'm4a',
+        'aac',
+        'ogg',
+        'flac',
+      ];
+
+      if (!allowedExtensions.contains(extension)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('오디오 파일만 업로드 가능합니다. (mp3, wav, m4a, aac, ogg, flac)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // 파일 크기 확인 (50MB 이하)
+      final File audioFile = File(file.path);
+      final int fileSizeInBytes = await audioFile.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+
+      if (fileSizeInMB > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('파일 크기는 50MB 이하여야 합니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // S3에 사용자 보컬 파일 업로드
+      final uploadedUrl = await S3Service.uploadFile(
+        file: audioFile,
+        artist: widget.songData['artist'] ?? '',
+        title: widget.songData['title'] ?? '',
+        fileType: FileType.userRecording, // 사용자 보컬 파일로 분류
+      );
+
+      if (uploadedUrl != null) {
+        // S3 업로드 성공
+        setState(() {
+          _uploadedFile = audioFile;
+        });
+
+        // 업로드 성공 메시지
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('내 보컬 파일이 S3에 업로드되었습니다!\n파일명: ${file.name}'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        print('✅ S3 업로드 완료: $uploadedUrl');
+      } else {
+        // S3 업로드 실패
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('S3 업로드에 실패했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('내 보컬 파일 업로드 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일 업로드 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
   }
 }
