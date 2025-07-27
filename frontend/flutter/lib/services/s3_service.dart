@@ -76,7 +76,7 @@ class S3Service {
     String contentType,
   ) async {
     try {
-      const String backendUrl = 'http://localhost:8000';
+      const String backendUrl = 'http://10.0.2.2:8000';
 
       final response = await http.post(
         Uri.parse('$backendUrl/upload/presigned-url'),

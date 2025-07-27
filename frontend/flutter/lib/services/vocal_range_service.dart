@@ -35,7 +35,7 @@ class VocalRangeAnalysis {
 
 class VocalRangeService {
   // 백엔드 서버 URL 설정
-  static const String baseUrl = 'http://localhost:8000'; // 백엔드 서버 URL
+  static const String baseUrl = 'http://10.0.2.2:8000'; // 백엔드 서버 URL
 
   /// 노래의 음역대를 분석합니다.
   static Future<VocalRangeAnalysis> analyzeVocalRange(

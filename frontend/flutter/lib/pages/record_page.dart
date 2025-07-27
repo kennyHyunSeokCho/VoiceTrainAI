@@ -590,6 +590,7 @@ class _RecordPageState extends State<RecordPage> {
   double currentScore = 0.0; // 피치 점수
   double currentPitch = 0.0; // 현재 피치
   double currentTimingScore = 0.0; // 박자 점수
+  double currentAudioLevel = 0.0; // 오디오 레벨
   Timer? _tensorDspTimer;
 
   // MIDI 노트 정보
@@ -687,26 +688,7 @@ class _RecordPageState extends State<RecordPage> {
         if (_onsetHistory.length > 50) _onsetHistory.removeAt(0);
       });
     });
-    // AudioComparePlugin 점수/피치 스트림 구독 및 setState 코드 제거
-    _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
-      final data = await TensorDspService.getCurrentPitchScore();
-      if (!mounted) return;
-
-      // 녹음 상태 디버깅 로그
-      if (isRecording && (data['score'] != 0.0 || data['pitch'] != 0.0)) {
-        print(
-          '🎙️ 녹음 데이터: 피치=${data['pitch']?.toStringAsFixed(1)}Hz, '
-          '피치점수=${data['score']?.toStringAsFixed(1)}, '
-          '박자점수=${data['timingScore']?.toStringAsFixed(1)}',
-        );
-      }
-
-      setState(() {
-        currentScore = data['score'] ?? 0.0;
-        currentPitch = data['pitch'] ?? 0.0;
-        currentTimingScore = data['timingScore'] ?? 0.0;
-      });
-    });
+    // _tensorDspTimer는 여기서 시작하지 않음!
   }
 
   void _initInstPlayer() {
@@ -860,34 +842,39 @@ class _RecordPageState extends State<RecordPage> {
             midiNotes = notes;
             _isMidiLoading = false;
           });
-
-          print('MIDI 파싱 완료, 노트 개수: ${notes.length}');
-
-          // MIDI 노트 샘플 출력 (처음 5개)
           if (notes.isNotEmpty) {
-            print('=== MIDI 노트 샘플 (처음 5개) ===');
-            for (int i = 0; i < notes.length.clamp(0, 5); i++) {
-              final note = notes[i];
-              print(
-                '노트 ${i + 1}: 시작=${note.startTime.toStringAsFixed(2)}s, '
-                '길이=${note.duration.toStringAsFixed(2)}s, '
-                '음정=${note.pitch} (${_midiNoteToName(note.pitch)}), '
-                '높이=${note.visualPitch.toStringAsFixed(1)}px',
-              );
-            }
-            print('===============================');
+            print(
+              'MIDI 노트 첫 startTime: [36m{notes.first.startTime}, 마지막 endTime: [36m{notes.last.startTime + notes.last.duration}',
+            );
           }
+        }
 
-          // MIDI 노트에서 전체 길이 계산
-          if (notes.isNotEmpty) {
-            double maxEndTime = notes
-                .map((note) => note.startTime + note.duration)
-                .reduce(max);
-            if (maxEndTime > totalDuration) {
-              setState(() {
-                totalDuration = maxEndTime;
-              });
-            }
+        print('MIDI 파싱 완료, 노트 개수: ${notes.length}');
+
+        // MIDI 노트 샘플 출력 (처음 5개)
+        if (notes.isNotEmpty) {
+          print('=== MIDI 노트 샘플 (처음 5개) ===');
+          for (int i = 0; i < notes.length.clamp(0, 5); i++) {
+            final note = notes[i];
+            print(
+              '노트 ${i + 1}: 시작=${note.startTime.toStringAsFixed(2)}s, '
+              '길이=${note.duration.toStringAsFixed(2)}s, '
+              '음정=${note.pitch} (${_midiNoteToName(note.pitch)}), '
+              '높이=${note.visualPitch.toStringAsFixed(1)}px',
+            );
+          }
+          print('===============================');
+        }
+
+        // MIDI 노트에서 전체 길이 계산
+        if (notes.isNotEmpty) {
+          double maxEndTime = notes
+              .map((note) => note.startTime + note.duration)
+              .reduce(max);
+          if (maxEndTime > totalDuration) {
+            setState(() {
+              totalDuration = maxEndTime;
+            });
           }
         }
       } else {
@@ -1190,11 +1177,25 @@ class _RecordPageState extends State<RecordPage> {
       await TensorDspService.startRealTimeAnalysis();
       print('✅ TensorDSP 시작 완료');
 
+      // === 여기서 타이머 시작 ===
+      _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
+        final data = await TensorDspService.getCurrentPitchScore();
+        if (!mounted) return;
+        print('[TensorDSP] Flutter에서 받은 데이터: $data');
+        print(
+          '[TensorDSP] 실시간 점수: 피치=${data['score']}, 박자=${data['timingScore']}, 오디오레벨=${data['audioLevel']}, 피치값=${data['pitch']}',
+        );
+        setState(() {
+          currentScore = data['score'] ?? 0.0;
+          currentPitch = data['pitch'] ?? 0.0;
+          currentTimingScore = data['timingScore'] ?? 0.0;
+          currentAudioLevel = data['audioLevel'] ?? 0.0;
+        });
+      });
       // 실제 오디오 녹음 시작
       try {
         _recordingPath = await _generateRecordingPath();
         print('🎵 녹음 파일 경로: $_recordingPath');
-
         await _audioRecorder.start(
           const RecordConfig(
             encoder: AudioEncoder.wav,
@@ -1204,7 +1205,6 @@ class _RecordPageState extends State<RecordPage> {
           ),
           path: _recordingPath!,
         );
-
         _isRecordingStarted = true;
         print('✅ 오디오 녹음 시작 완료');
       } catch (e) {
@@ -1219,36 +1219,50 @@ class _RecordPageState extends State<RecordPage> {
         }
         return;
       }
-
       // inst 파일을 처음부터 다시 재생
       if (_instPlayer != null) {
         await _instPlayer!.seek(Duration.zero); // 처음으로 이동
         await _instPlayer!.resume();
         _startMainTimer(); // 타이머도 함께 시작
-
         // 진행률과 가사 인덱스 초기화
         setState(() {
           progress = 0.0;
           currentLyricIndex = 0;
         });
       }
-
+      // MIDI 노트 전달 (inst 재생 직후)
+      if (midiNotes.isNotEmpty) {
+        final midiNotesSet = await TensorDspService.setMidiNotes(
+          midiNotes
+              .map(
+                (n) => {
+                  'startTime': n.startTime,
+                  'duration': n.duration,
+                  'pitch': n.pitch,
+                  'velocity': n.velocity,
+                },
+              )
+              .toList(),
+        );
+        print('✅ MIDI 노트 데이터 설정: $midiNotesSet');
+      }
+      // TensorDSP 실시간 분석 시작
+      await TensorDspService.startRealTimeAnalysis();
+      print('✅ TensorDSP 시작 완료');
       setState(() {
         isRecording = true;
         isPlaying = true;
       });
     } else {
       print('🎙️ 녹음 중지 요청...');
-
-      // 새로 분리한 메서드 사용
       await _stopRecordingAndSave();
-
-      // inst 파일 일시정지
+      // TensorDSP 분석 중지
+      await TensorDspService.stopRealTimeAnalysis();
       if (_instPlayer != null && _isInstPlaying) {
         await _instPlayer!.pause();
-        _stopMainTimer(); // 타이머도 함께 중지
+        _stopMainTimer();
       }
-
+      _tensorDspTimer?.cancel();
       setState(() {
         isPlaying = false;
       });
@@ -1262,13 +1276,11 @@ class _RecordPageState extends State<RecordPage> {
     _instPlayer?.dispose();
     _onsetSub?.cancel();
     _tensorDspTimer?.cancel();
-
     // 녹음 관련 정리
     if (_isRecordingStarted) {
       _audioRecorder.stop();
     }
     _audioRecorder.dispose();
-
     super.dispose();
   }
 
@@ -1355,35 +1367,29 @@ class _RecordPageState extends State<RecordPage> {
                       SizedBox(width: 6),
                       AnimatedSwitcher(
                         duration: Duration(milliseconds: 300),
-                        child: Text(
-                          '$currentScore/100',
-                          key: ValueKey(currentScore),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF8B5CF6),
+                        child: Row(
+                          key: ValueKey(
+                            '${currentScore.toStringAsFixed(1)}_${currentTimingScore.toStringAsFixed(1)}',
                           ),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      AnimatedSwitcher(
-                        duration: Duration(milliseconds: 300),
-                        child: Text(
-                          pointDelta > 0
-                              ? '+$pointDelta points'
-                              : pointDelta < 0
-                              ? '$pointDelta points'
-                              : '',
-                          key: ValueKey(pointDelta),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: pointDelta > 0
-                                ? const Color(0xFF10B981)
-                                : pointDelta < 0
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF6B7280),
-                            fontWeight: FontWeight.w600,
-                          ),
+                          children: [
+                            Text(
+                              '피치 ${currentScore.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF8B5CF6),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              '박자 ${currentTimingScore.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF8B5CF6),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -2207,7 +2213,7 @@ Future<String> fetchAlbumCoverUrl(String artist, String title) async {
   try {
     // 백엔드 API를 통해 presigned URL 생성
     final apiUrl =
-        'http://localhost:8000/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
+        'http://10.0.2.2:8000/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
     print('앨범커버 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));
@@ -2294,7 +2300,7 @@ Future<List<_LyricLine>> fetchLyrics(String artist, {String? songTitle}) async {
     // 백엔드 API를 통해 가사 데이터 가져오기
     final songName = songTitle ?? 'Never Ending Story';
     final apiUrl =
-        'http://localhost:8000/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
+        'http://10.0.2.2:8000/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
     print('가사 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));
@@ -2438,44 +2444,3 @@ Future<List<_LyricLine>> _tryDirectS3LyricsAccess(
     return exampleLyrics;
   }
 }
-
-// --- 피치 그래프용 CustomPainter ---
-class _PitchGraphPainter extends CustomPainter {
-  final List<double> pitchHistory;
-  _PitchGraphPainter(this.pitchHistory);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (pitchHistory.isEmpty) return;
-    final paint = Paint()
-      ..color = const Color(0xFF8B5CF6)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    final path = Path();
-    double minPitch = pitchHistory.reduce((a, b) => a < b ? a : b);
-    double maxPitch = pitchHistory.reduce((a, b) => a > b ? a : b);
-    if (minPitch == maxPitch) {
-      minPitch -= 1;
-      maxPitch += 1;
-    }
-    for (int i = 0; i < pitchHistory.length; i++) {
-      final x = i * size.width / (pitchHistory.length - 1);
-      final y =
-          size.height -
-          ((pitchHistory[i] - minPitch) / (maxPitch - minPitch)) * size.height;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PitchGraphPainter oldDelegate) {
-    return oldDelegate.pitchHistory != pitchHistory;
-  }
-}
-
-// --- END ---
