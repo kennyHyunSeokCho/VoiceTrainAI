@@ -64,17 +64,17 @@ class _VocalComparePageState extends State<VocalComparePage> {
       // 실제 API 엔드포인트에 맞게 URL을 수정하세요!
       final userRes = await http.get(
         Uri.parse(
-          'http://localhost:8000/api/s3/user_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
+          'http://10.0.2.2:8000/api/s3/user_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
       final singerRes = await http.get(
         Uri.parse(
-          'http://localhost:8000/api/s3/singer_vocal?artist=${Uri.encodeComponent(widget.artist)}&title=${Uri.encodeComponent(widget.songTitle)}',
+          'http://10.0.2.2:8000/api/s3/singer_vocal?artist=${Uri.encodeComponent(widget.artist)}&title=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
       final aiRes = await http.get(
         Uri.parse(
-          'http://localhost:8000/api/s3/ai_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
+          'http://10.0.2.2:8000/api/s3/ai_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
 

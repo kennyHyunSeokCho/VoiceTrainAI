@@ -5,7 +5,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class KakaoAuthService {
-  static const String _baseUrl = 'http://localhost:8000';
+  static const String _baseUrl = 'http://10.0.2.2:8000';
 
   // 환경변수에서 앱 키 가져오기
   static String get _nativeAppKey =>
@@ -161,7 +161,7 @@ class KakaoAuthService {
     String accessToken,
   ) async {
     try {
-      const String backendUrl = 'http://localhost:8000';
+      const String backendUrl = 'http://10.0.2.2:8000';
 
       final response = await http.post(
         Uri.parse('$backendUrl/auth/kakao/callback'),

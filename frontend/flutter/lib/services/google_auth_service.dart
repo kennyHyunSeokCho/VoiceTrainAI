@@ -209,7 +209,7 @@ class GoogleAuthService {
   static Future<String?> getClerkJWTWithAccessToken(String accessToken) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/auth/google/callback'),
+        Uri.parse('http://10.0.2.2:8000/auth/google/callback'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'access_token': accessToken}),
       );
@@ -233,7 +233,7 @@ class GoogleAuthService {
     String accessToken,
   ) async {
     try {
-      const String backendUrl = 'http://localhost:8000'; // 백엔드 URL
+      const String backendUrl = 'http://10.0.2.2:8000'; // 백엔드 URL
 
       final response = await http.post(
         Uri.parse('$backendUrl/auth/google/callback'),

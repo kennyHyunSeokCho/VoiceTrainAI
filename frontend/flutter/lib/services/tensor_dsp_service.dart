@@ -183,10 +183,16 @@ class TensorDspService {
         'score': (result['score'] as num?)?.toDouble() ?? 0.0,
         'pitch': (result['pitch'] as num?)?.toDouble() ?? 0.0,
         'timingScore': (result['timingScore'] as num?)?.toDouble() ?? 0.0,
+        'audioLevel': (result['audioLevel'] as num?)?.toDouble() ?? 0.0,
       };
     } catch (e) {
       print('❌ getCurrentPitchScore 실패: $e');
-      return {'score': 0.0, 'pitch': 0.0, 'timingScore': 0.0};
+      return {
+        'score': 0.0,
+        'pitch': 0.0,
+        'timingScore': 0.0,
+        'audioLevel': 0.0,
+      };
     }
   }
 
