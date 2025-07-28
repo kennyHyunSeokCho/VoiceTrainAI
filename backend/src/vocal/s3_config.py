@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AWS S3 설정
 import os
 from dotenv import load_dotenv
@@ -20,3 +21,6 @@ S3_MIDI_PATH = 'midi/'
 S3_ORIGINAL_PATH = 'original/'
 S3_VOCAL_PATH = 'vocal/'
 S3_EMBEDDINGS_PATH = 'embeddings/' 
+=======
+ 
+>>>>>>> 2a42438 (feat: ChatGPT API를 활용한 자연어 피드백 시스템 구현 (보안 강화))

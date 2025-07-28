@@ -13,13 +13,16 @@ class ApiConfigService {
       // 디버그 모드에서는 에뮬레이터인지 실제 기기인지 확인
       if (Platform.isAndroid || Platform.isIOS) {
         // 실제 기기에서 실행 중
+        print('📱 실제 기기에서 실행 중 - $deviceUrl 사용');
         return _deviceUrl;
       } else {
         // 에뮬레이터에서 실행 중
+        print('🖥️ 에뮬레이터에서 실행 중 - $emulatorUrl 사용');
         return _emulatorUrl;
       }
     } else {
       // 릴리즈 모드에서는 프로덕션 URL 사용
+      print('🚀 릴리즈 모드 - $productionUrl 사용');
       return _productionUrl;
     }
   }

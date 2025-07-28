@@ -1,0 +1,49 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/nuget-populate"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/4b69d136409be7ce53f560d40b756b3c/nuget-populate.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/a739a91b472fc7d445a288431c30f2dd/nuget-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-copyfile.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"nuget-populate"
+		],
+		"name" : "nuget-populate"
+	}
+}

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="AI 음성 훈련 앱 - 음성 녹음 및 훈련을 위한 플러터 웹앱">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="voice_training_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- 마이크 권한 관련 메타 태그 추가 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Permissions-Policy" content="microphone=*">
+  <meta http-equiv="Feature-Policy" content="microphone 'self'">
+
+  <title>AI 음성 훈련 앱</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    // 서비스 워커 등록 (HTTPS 기능 향상을 위해)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('flutter-first-frame', function () {
+        navigator.serviceWorker.register('flutter_service_worker.js?v=1');
+      });
+    }
+
+    // 마이크 권한 미리 요청
+    async function requestMicrophonePermission() {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          console.log('마이크 권한 확인 중...');
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop()); // 즉시 정지
+          console.log('마이크 권한 허용됨');
+          return true;
+        }
+      } catch (error) {
+        console.warn('마이크 권한 요청 실패:', error);
+        
+        // 사용자에게 알림 표시
+        const message = document.createElement('div');
+        message.style.cssText = `
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #ff4444;
+          color: white;
+          padding: 15px 20px;
+          border-radius: 8px;
+          z-index: 9999;
+          font-family: Arial, sans-serif;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        message.innerHTML = `
+          <strong>🎤 마이크 권한이 필요합니다</strong><br>
+          브라우저 설정에서 마이크 권한을 허용해주세요
+        `;
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+          if (message.parentNode) {
+            message.parentNode.removeChild(message);
+          }
+        }, 5000);
+        
+        return false;
+      }
+    }
+
+    // 페이지 로드 후 권한 확인
+    window.addEventListener('load', function() {
+      setTimeout(requestMicrophonePermission, 1000);
+    });
+  </script>
+</head>
+<body>
+  <!-- 로딩 스피너 개선 -->
+  <div id="loading" class="loading">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <h2>🎤 AI 음성 훈련 앱</h2>
+      <p>앱을 로딩하는 중...</p>
+      <small>마이크 권한이 필요합니다</small>
+    </div>
+  </div>
+
+  <style>
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: 'Arial', sans-serif;
+    }
+    
+    .loading-content {
+      text-align: center;
+      max-width: 400px;
+      padding: 40px;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 30px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    
+    p {
+      margin: 0 0 20px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    
+    small {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+  </style>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

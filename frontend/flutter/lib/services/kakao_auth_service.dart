@@ -6,11 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'api_config_service.dart';
 
 class KakaoAuthService {
-<<<<<<< HEAD
   static String get _baseUrl => ApiConfigService.baseUrl;
-=======
-  static const String _baseUrl = 'http://10.0.2.2:8000';
->>>>>>> origin/Feature_CM2
 
   // 환경변수에서 앱 키 가져오기
   static String get _nativeAppKey =>
@@ -166,7 +162,7 @@ class KakaoAuthService {
     String accessToken,
   ) async {
     try {
-      const String backendUrl = 'http://10.0.2.2:8000';
+      final String backendUrl = ApiConfigService.baseUrl;
 
       final response = await http.post(
         Uri.parse('$backendUrl/auth/kakao/callback'),

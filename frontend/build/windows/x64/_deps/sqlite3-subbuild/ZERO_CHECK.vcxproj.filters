@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\340e45c255a1d2bf669f3eee6d435199\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{1633287A-FD6C-3D05-9383-AE08C79FBEE3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

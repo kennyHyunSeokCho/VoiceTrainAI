@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_windows_plugin_c_api.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_windows_plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_readercallback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_iunknown.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_mediatype.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include\record_windows\record_windows_plugin_c_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_windows_plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\record.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\event_stream_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{67E3593F-62F2-332F-8158-7B95E12F2A11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{39368160-C6F8-307F-8485-BC711E37284A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -3,10 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-<<<<<<< HEAD
 import 'api_config_service.dart';
-=======
->>>>>>> origin/Feature_CM2
 
 class GoogleAuthService {
   // Clerk를 통한 OAuth 처리 - 다른 URL 패턴 시도
@@ -213,11 +210,7 @@ class GoogleAuthService {
   static Future<String?> getClerkJWTWithAccessToken(String accessToken) async {
     try {
       final response = await http.post(
-<<<<<<< HEAD
         Uri.parse('${ApiConfigService.baseUrl}/auth/google/callback'),
-=======
-        Uri.parse('http://10.0.2.2:8000/auth/google/callback'),
->>>>>>> origin/Feature_CM2
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'access_token': accessToken}),
       );
@@ -241,11 +234,7 @@ class GoogleAuthService {
     String accessToken,
   ) async {
     try {
-<<<<<<< HEAD
       final String backendUrl = ApiConfigService.baseUrl; // 백엔드 URL
-=======
-      const String backendUrl = 'http://10.0.2.2:8000'; // 백엔드 URL
->>>>>>> origin/Feature_CM2
 
       final response = await http.post(
         Uri.parse('$backendUrl/auth/google/callback'),

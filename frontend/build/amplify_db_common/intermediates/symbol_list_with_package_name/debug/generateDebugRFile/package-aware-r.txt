@@ -1,0 +1,1 @@
+com.amazonaws.amplify.amplify_db_common

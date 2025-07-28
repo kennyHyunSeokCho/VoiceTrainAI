@@ -10,6 +10,7 @@ import 'pages/login_page.dart';
 import 'pages/search.dart';
 import 'pages/notification_page.dart';
 import 'main_layout.dart';
+import 'services/api_config_service.dart';
 
 /// 현재 로그인된 사용자 정보를 전역으로 관리하는 클래스
 class CurrentUser {
@@ -49,7 +50,7 @@ class CurrentUser {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // .env 파일 로딩
   try {
     await dotenv.load(fileName: ".env");
@@ -57,7 +58,10 @@ void main() async {
   } catch (e) {
     print('⚠️ .env 파일 로딩 실패: $e (기본값 사용)');
   }
-  
+
+  // API 환경 설정 로그 출력
+  ApiConfigService.logCurrentEnvironment();
+
   runApp(MyApp());
 }
 

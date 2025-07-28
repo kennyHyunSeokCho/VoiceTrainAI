@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\6c166deb6273dad70f4c7c7d9ba76a0b\sqlite3-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\3a7241e36fda6044003d7f7535a25087\sqlite3-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\340e45c255a1d2bf669f3eee6d435199\sqlite3-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\sqlite3-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{1633287A-FD6C-3D05-9383-AE08C79FBEE3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
