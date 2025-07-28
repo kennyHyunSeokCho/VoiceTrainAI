@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../services/s3_service.dart';
+import '../services/api_config_service.dart';
 
 class VocalComparePage extends StatefulWidget {
   final String userId;
@@ -50,6 +52,46 @@ class _VocalComparePageState extends State<VocalComparePage> {
     _singerPlayer = AudioPlayer();
     _aiPlayer = AudioPlayer();
 
+    // 각 플레이어 초기화
+    _initPlayer(
+      _userPlayer,
+      (duration) {
+        setState(() => _userDuration = duration);
+      },
+      (position) {
+        setState(() => _userPosition = position);
+      },
+      (playing) {
+        setState(() => _userPlaying = playing);
+      },
+    );
+
+    _initPlayer(
+      _singerPlayer,
+      (duration) {
+        setState(() => _singerDuration = duration);
+      },
+      (position) {
+        setState(() => _singerPosition = position);
+      },
+      (playing) {
+        setState(() => _singerPlaying = playing);
+      },
+    );
+
+    _initPlayer(
+      _aiPlayer,
+      (duration) {
+        setState(() => _aiDuration = duration);
+      },
+      (position) {
+        setState(() => _aiPosition = position);
+      },
+      (playing) {
+        setState(() => _aiPlaying = playing);
+      },
+    );
+
     // 녹음 파일이 있으면 S3 URL 또는 로컬 파일 사용, 없으면 더미 URL 사용
     if (widget.recordingPath != null) {
       if (widget.recordingPath!.startsWith('http')) {
@@ -67,9 +109,26 @@ class _VocalComparePageState extends State<VocalComparePage> {
       print('⚠️ 녹음 파일이 없어서 더미 파일을 사용합니다.');
     }
 
-    // 더미 오디오 URL로 바로 세팅 (실제 오디오 파일 URL로 교체 가능)
-    singerVocalUrl =
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3';
+    // 원곡 파일 URL 설정 (S3에서 가져오기)
+    singerVocalUrl = S3Service.getOriginalSongUrl(
+      widget.artist,
+      widget.songTitle,
+    );
+    print('🎵 원곡 파일 URL: $singerVocalUrl');
+
+    // URL 인코딩 확인
+    if (singerVocalUrl != null) {
+      try {
+        Uri.parse(singerVocalUrl!);
+        print('✅ 원곡 URL 인코딩 확인 완료');
+      } catch (e) {
+        print('❌ 원곡 URL 인코딩 오류: $e');
+        singerVocalUrl = Uri.encodeFull(singerVocalUrl!);
+        print('🔧 인코딩된 원곡 URL: $singerVocalUrl');
+      }
+    }
+
+    // AI 변환 보컬은 더미 URL로 설정 (나중에 실제 AI 보컬로 교체)
     aiVocalUrl =
         'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
     loading = false;
@@ -82,17 +141,17 @@ class _VocalComparePageState extends State<VocalComparePage> {
       // 실제 API 엔드포인트에 맞게 URL을 수정하세요!
       final userRes = await http.get(
         Uri.parse(
-          'http://10.0.2.2:8000/api/s3/user_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
+          '${ApiConfigService.baseUrl}/api/s3/user_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
       final singerRes = await http.get(
         Uri.parse(
-          'http://10.0.2.2:8000/api/s3/singer_vocal?artist=${Uri.encodeComponent(widget.artist)}&title=${Uri.encodeComponent(widget.songTitle)}',
+          '${ApiConfigService.baseUrl}/api/s3/singer_vocal?artist=${Uri.encodeComponent(widget.artist)}&title=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
       final aiRes = await http.get(
         Uri.parse(
-          'http://10.0.2.2:8000/api/s3/ai_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
+          '${ApiConfigService.baseUrl}/api/s3/ai_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
         ),
       );
 
@@ -183,41 +242,108 @@ class _VocalComparePageState extends State<VocalComparePage> {
                 ],
               ],
             ),
-            Slider(
-              value: position.inSeconds.toDouble(),
-              min: 0,
-              max: duration.inSeconds.toDouble() > 0
-                  ? duration.inSeconds.toDouble()
-                  : 1,
-              onChanged: (v) {
-                player.seek(Duration(seconds: v.toInt()));
-              },
+            const SizedBox(height: 12),
+            // 진행 바
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: const Color(0xFF8B5CF6),
+                inactiveTrackColor: Colors.grey[300],
+                thumbColor: const Color(0xFF8B5CF6),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              ),
+              child: Slider(
+                value: position.inSeconds.toDouble(),
+                min: 0,
+                max: duration.inSeconds.toDouble() > 0
+                    ? duration.inSeconds.toDouble()
+                    : 1,
+                onChanged: (v) {
+                  player.seek(Duration(seconds: v.toInt()));
+                },
+              ),
             ),
+            // 시간 표시
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_formatTime(position)),
-                Text(_formatTime(duration)),
+                Text(
+                  _formatTime(position),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  _formatTime(duration),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
+            const SizedBox(height: 12),
+            // 컨트롤 버튼
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                  onPressed: () async {
-                    if (isPlaying) {
-                      await player.pause();
-                    } else {
-                      await player.setSourceUrl(url);
-                      await player.resume();
-                    }
-                  },
+                // 재생/일시정지 버튼
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () async {
+                      if (isPlaying) {
+                        await player.pause();
+                      } else {
+                        try {
+                          // 다른 플레이어들 중지
+                          await _userPlayer.pause();
+                          await _singerPlayer.pause();
+                          await _aiPlayer.pause();
+
+                          // 현재 플레이어 재생
+                          await player.setSourceUrl(url);
+                          await player.resume();
+                        } catch (e) {
+                          print('❌ 오디오 재생 실패: $e');
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('오디오 파일을 재생할 수 없습니다: $e'),
+                                backgroundColor: Colors.red,
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.stop),
-                  onPressed: () async {
-                    await player.stop();
-                  },
+                const SizedBox(width: 16),
+                // 정지 버튼
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.stop, color: Colors.grey, size: 24),
+                    onPressed: () async {
+                      await player.stop();
+                    },
+                  ),
                 ),
               ],
             ),

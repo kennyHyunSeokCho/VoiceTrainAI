@@ -3,9 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'api_config_service.dart';
 
 class KakaoAuthService {
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  static String get _baseUrl => ApiConfigService.baseUrl;
 
   // 환경변수에서 앱 키 가져오기
   static String get _nativeAppKey =>

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../services/api_config_service.dart';
 
 class VocalRangeAnalysis {
   final String songTitle;
@@ -35,7 +36,7 @@ class VocalRangeAnalysis {
 
 class VocalRangeService {
   // 백엔드 서버 URL 설정
-  static const String baseUrl = 'http://10.0.2.2:8000'; // 백엔드 서버 URL
+  static String get baseUrl => ApiConfigService.baseUrl;
 
   /// 노래의 음역대를 분석합니다.
   static Future<VocalRangeAnalysis> analyzeVocalRange(
