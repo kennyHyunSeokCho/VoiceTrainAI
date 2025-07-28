@@ -7,11 +7,13 @@ class VocalComparePage extends StatefulWidget {
   final String userId;
   final String songTitle;
   final String artist;
+  final String? recordingPath; // 녹음 파일 경로 추가
 
   const VocalComparePage({
     required this.userId,
     required this.songTitle,
     required this.artist,
+    this.recordingPath, // 선택적 매개변수로 추가
     Key? key,
   }) : super(key: key);
 
@@ -47,9 +49,25 @@ class _VocalComparePageState extends State<VocalComparePage> {
     _userPlayer = AudioPlayer();
     _singerPlayer = AudioPlayer();
     _aiPlayer = AudioPlayer();
+
+    // 녹음 파일이 있으면 S3 URL 또는 로컬 파일 사용, 없으면 더미 URL 사용
+    if (widget.recordingPath != null) {
+      if (widget.recordingPath!.startsWith('http')) {
+        // S3 URL인 경우
+        userVocalUrl = widget.recordingPath!;
+        print('☁️ S3 녹음 파일 URL: ${widget.recordingPath}');
+      } else {
+        // 로컬 파일인 경우
+        userVocalUrl = 'file://${widget.recordingPath}';
+        print('📁 로컬 녹음 파일 경로: ${widget.recordingPath}');
+      }
+    } else {
+      userVocalUrl =
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      print('⚠️ 녹음 파일이 없어서 더미 파일을 사용합니다.');
+    }
+
     // 더미 오디오 URL로 바로 세팅 (실제 오디오 파일 URL로 교체 가능)
-    userVocalUrl =
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
     singerVocalUrl =
         'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3';
     aiVocalUrl =
@@ -122,6 +140,10 @@ class _VocalComparePageState extends State<VocalComparePage> {
     required Duration position,
     required bool isPlaying,
   }) {
+    // 녹음 파일 여부 확인
+    final bool isUserRecording =
+        label == "사용자 보컬" && widget.recordingPath != null;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Padding(
@@ -129,9 +151,37 @@ class _VocalComparePageState extends State<VocalComparePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                if (isUserRecording) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      '실제 녹음',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             Slider(
               value: position.inSeconds.toDouble(),
