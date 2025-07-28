@@ -85,13 +85,23 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                 stopRealTimeAnalysis(result)
             }
             "getCurrentPitchScore" -> {
+                val currentPitchScore: Double
+                val currentTimingScore: Double
+                val currentTotalCount: Int
+                
+                synchronized(this) {
+                    currentPitchScore = averagePitchScore
+                    currentTimingScore = averageTimingScore
+                    currentTotalCount = totalScoreCount
+                }
+                
                 val data = mapOf(
                     "pitch" to latestPitch,
-                    "score" to averagePitchScore,  // 누적 평균 피치 점수
+                    "score" to currentPitchScore,  // 누적 평균 피치 점수
                     "audioLevel" to latestAudioLevel,
-                    "timingScore" to averageTimingScore  // 누적 평균 타이밍 점수
+                    "timingScore" to currentTimingScore  // 누적 평균 타이밍 점수
                 )
-                println("[TensorDSP] getCurrentPitchScore 호출: data=$data (누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}, 총점수수=$totalScoreCount)")
+                println("[TensorDSP] getCurrentPitchScore 호출: data=$data (누적평균: 피치=${currentPitchScore.toInt()}, 타이밍=${currentTimingScore.toInt()}, 총점수수=$currentTotalCount)")
                 result.success(data)
             }
             "setOriginalPitchData" -> {
@@ -148,27 +158,14 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     
     private fun startRealTimeAnalysis(call: MethodCall, result: Result) {
         try {
-            if (isRecording) {
-                println("[TensorDSP] 이미 분석 중입니다")
-                result.success(true)
-                return
-            }
+            println("[TensorDSP] 실시간 분석 시작 요청")
             
             val sampleRate = 44100
-            val bufferSize = 1024
+            val bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
             
-            println("[TensorDSP] 실시간 분석 시작 준비: sampleRate=$sampleRate, bufferSize=$bufferSize")
+            println("[TensorDSP] AudioRecord 설정: sampleRate=$sampleRate, bufferSize=$bufferSize")
             
-            // AudioRecord 설정
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            
-            println("[TensorDSP] AudioRecord 설정: sampleRate=$sampleRate, minBufferSize=$minBufferSize, bufferSize=$bufferSize")
-            
-            // 여러 오디오 소스 시도
+            // AudioRecord 초기화 시도 (여러 오디오 소스 시도)
             val audioSources = listOf(
                 MediaRecorder.AudioSource.MIC,
                 MediaRecorder.AudioSource.VOICE_COMMUNICATION,
@@ -176,44 +173,44 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                 MediaRecorder.AudioSource.DEFAULT
             )
             
-            var audioRecordCreated = false
-            for (audioSource in audioSources) {
+            
+            var audioRecord: AudioRecord? = null
+            var selectedSource = MediaRecorder.AudioSource.MIC
+            
+            for (source in audioSources) {
                 try {
-                    println("[TensorDSP] 오디오 소스 시도: $audioSource")
+                    println("[TensorDSP] AudioRecord 초기화 시도: source=$source")
+                    audioRecord = AudioRecord(source, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
                     
-                    audioRecord = AudioRecord(
-                        audioSource,
-                        sampleRate,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        minBufferSize
-                    )
-                    
-                    if (audioRecord?.state == AudioRecord.STATE_INITIALIZED) {
-                        println("[TensorDSP] AudioRecord 초기화 성공: audioSource=$audioSource")
-                        audioRecordCreated = true
+                    if (audioRecord.state == AudioRecord.STATE_INITIALIZED) {
+                        selectedSource = source
+                        println("[TensorDSP] AudioRecord 초기화 성공: source=$source")
                         break
                     } else {
-                        println("[TensorDSP] AudioRecord 초기화 실패: audioSource=$audioSource, state=${audioRecord?.state}")
-                        audioRecord?.release()
+                        println("[TensorDSP] AudioRecord 초기화 실패: source=$source, state=${audioRecord.state}")
+                        audioRecord.release()
                         audioRecord = null
                     }
                 } catch (e: Exception) {
-                    println("[TensorDSP] AudioRecord 생성 실패: audioSource=$audioSource, error=${e.message}")
+                    println("[TensorDSP] AudioRecord 초기화 예외: source=$source, error=${e.message}")
                     audioRecord?.release()
                     audioRecord = null
                 }
             }
             
-            if (!audioRecordCreated) {
-                println("[TensorDSP] 모든 오디오 소스에서 AudioRecord 생성 실패")
-                result.error("AUDIO_RECORD_ERROR", "AudioRecord 초기화 실패", null)
+            if (audioRecord == null) {
+                println("[TensorDSP] 모든 AudioRecord 초기화 실패")
+                result.error("AUDIO_INIT_ERROR", "AudioRecord 초기화에 실패했습니다", null)
                 return
             }
             
-            recordingStartTime = System.currentTimeMillis()
-            isRecording = true
-            currentPitchIndex = 0
+            // 분석 상태 초기화
+            isAnalyzing = true
+            var currentTime = 0.0
+            latestPitch = 0.0
+            latestScore = 0.0
+            latestTimingScore = 0.0
+            latestAudioLevel = 0.0
             
             // 누적 점수 초기화
             accumulatedPitchScores.clear()
@@ -221,159 +218,138 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             totalScoreCount = 0
             averagePitchScore = 0.0
             averageTimingScore = 0.0
-            println("[TensorDSP] 누적 점수 초기화 완료")
             
-            // 실시간 오디오 분석 시작
-            timerJob = CoroutineScope(Dispatchers.IO).launch {
-                val buffer = ShortArray(bufferSize)
-                audioRecord?.startRecording()
-                println("[TensorDSP] 실시간 분석 시작: bufferSize=$bufferSize, sampleRate=$sampleRate")
-                
-                // 초기 버퍼 테스트
-                val testReadSize = audioRecord?.read(buffer, 0, bufferSize) ?: 0
-                println("[TensorDSP] 초기 버퍼 테스트: readSize=$testReadSize, buffer[0]=${buffer.getOrNull(0)}")
-                
-                while (isRecording) {
-                    val readSize = audioRecord?.read(buffer, 0, bufferSize) ?: 0
+            // 연속 0값 카운터 (디버깅용)
+            var consecutiveZeroCount = 0
+            
+            println("[TensorDSP] 분석 상태 초기화 완료")
+            
+            // 분석 스레드 시작
+            Thread {
+                try {
+                    audioRecord.startRecording()
+                    println("[TensorDSP] AudioRecord 녹음 시작")
                     
-                    // AudioRecord read 결과 로그
-                    if (readSize > 0) {
-                        // 버퍼 값 상세 분석
-                        val nonZeroCount = buffer.take(readSize).count { it != 0.toShort() }
-                        val maxValue = buffer.take(readSize).maxOrNull() ?: 0.toShort()
-                        val minValue = buffer.take(readSize).minOrNull() ?: 0.toShort()
+                    val buffer = ShortArray(bufferSize)
+                    val floatBuffer = FloatArray(bufferSize)
+                    
+                    while (isAnalyzing) {
+                        val readSize = audioRecord.read(buffer, 0, bufferSize)
                         
-                        println("[TensorDSP] AudioRecord read 성공: readSize=$readSize, buffer[0]=${buffer.getOrNull(0)}, nonZeroCount=$nonZeroCount, maxValue=$maxValue, minValue=$minValue")
-                        
-                        val floatBuffer = FloatArray(readSize) { buffer[it] / 32768.0f }
-                        println("[TensorDSP] Float 변환 완료: floatBuffer[0]=${floatBuffer.getOrNull(0)}, maxFloat=${floatBuffer.maxOrNull()}, minFloat=${floatBuffer.minOrNull()}")
-                        
-                        latestAudioLevel = calculateAudioLevel(floatBuffer)
-                        println("[TensorDSP] 오디오 레벨 계산 완료: latestAudioLevel=$latestAudioLevel")
-                        
-                        val currentTime = (System.currentTimeMillis() - recordingStartTime) / 1000.0
-                        val pitch = extractPitchFromBuffer(floatBuffer, sampleRate)
-                        
-                        // 디버깅을 위한 상세 로그
-                        println("[TensorDSP] [디버그] currentTime=$currentTime, pitch=$pitch, audioLevel=$latestAudioLevel")
-                        
-                        // MIDI 노트 범위 및 마이크 입력 로그
-                        if (currentMidiNotes.isNotEmpty()) {
-                            val first = currentMidiNotes.first()
-                            val last = currentMidiNotes.last()
-                            println("[TensorDSP] [분석루프] currentTime: $currentTime, RMS: $latestAudioLevel, 피치: $pitch | MIDI 첫: start=${first.startTime}, pitch=${first.pitch}, dur=${first.duration} / 마지막: start=${last.startTime}, pitch=${last.pitch}, dur=${last.duration}")
+                        if (readSize > 0) {
+                            // 버퍼 분석 (더 자세한 로그)
+                            var nonZeroCount = 0
+                            var maxValue = 0
+                            var minValue = 0
+                            var sum = 0L
+                            
+                            for (i in 0 until readSize) {
+                                val value = buffer[i]
+                                if (value != 0.toShort()) {
+                                    nonZeroCount++
+                                    if (value > maxValue) maxValue = value.toInt()
+                                    if (value < minValue) minValue = value.toInt()
+                                }
+                                sum += value.toLong()
+                            }
+                            
+                            // 연속 0값 카운트
+                            if (nonZeroCount == 0) {
+                                consecutiveZeroCount++
+                            } else {
+                                consecutiveZeroCount = 0
+                            }
+                            
+                            // Float 변환
+                            for (i in 0 until readSize) {
+                                floatBuffer[i] = buffer[i] / 32768.0f
+                            }
+                            
+                            // 오디오 레벨 계산 (더 민감한 방법)
+                            latestAudioLevel = calculateAudioLevelSensitive(floatBuffer, readSize)
+                            
+                            println("[TensorDSP] AudioRecord read 성공: readSize=$readSize, buffer[0]=${buffer[0]}, nonZeroCount=$nonZeroCount, maxValue=$maxValue, minValue=$minValue, avg=${if (readSize > 0) sum / readSize else 0}, consecutiveZeroCount=$consecutiveZeroCount")
+                            
+                            // 피치 추출
+                            val pitch = extractPitchFromBuffer(floatBuffer, sampleRate)
+                            if (pitch > 0) {
+                                latestPitch = pitch
+                                println("[TensorDSP] 피치 감지: pitch=$pitch")
+                            }
+                            
+                            // 점수 계산 (오디오 레벨이 낮아도 일정 수준까진 계산)
+                            if (latestAudioLevel > 0.1) {  // 더 낮은 임계값
+                                val scores = calculateScores(latestPitch, currentTime)
+                                val pitchScore = scores.first
+                                val timingScore = scores.second
+                                
+                                if (pitchScore > 0 || timingScore > 0) {
+                                    synchronized(this) {
+                                        accumulatedPitchScores.add(pitchScore)
+                                        accumulatedTimingScores.add(timingScore)
+                                        totalScoreCount++
+                                        
+                                        // 평균 계산
+                                        averagePitchScore = accumulatedPitchScores.average()
+                                        averageTimingScore = accumulatedTimingScores.average()
+                                    }
+                                    
+                                    println("[TensorDSP] 점수 계산: pitchScore=$pitchScore, timingScore=$timingScore, 누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}")
+                                }
+                            } else {
+                                println("[TensorDSP] 오디오 레벨이 너무 낮음: $latestAudioLevel, 점수 계산 생략")
+                            }
+                            
+                            currentTime += readSize.toDouble() / sampleRate
                         } else {
-                            println("[TensorDSP] [분석루프] currentTime: $currentTime, RMS: $latestAudioLevel, 피치: $pitch | MIDI 노트 없음")
+                            println("[TensorDSP] AudioRecord read 실패: readSize=$readSize")
                         }
                         
-                                // 오디오 레벨이 너무 낮으면 점수 계산하지 않음
-        if (latestAudioLevel < 5.0) {
-            println("[TensorDSP] 오디오 레벨이 너무 낮음: $latestAudioLevel, 점수 계산 생략")
-            latestScore = 0.0
-            latestTimingScore = 0.0
-            // 피치도 리셋 (소리가 없으면 피치도 의미없음)
-            if (latestAudioLevel < 1.0) {
-                latestPitch = 0.0
-            }
-        } else {
-            // 피치 감지 조건 수정 (실제로 감지된 피치인지 확인)
-            if (pitch > 0) {
-                latestPitch = pitch
-                println("[TensorDSP] 피치 감지됨: $pitch Hz")
-
-                val currentNote = findCurrentMidiNote(currentTime)
-                if (currentNote != null) {
-                    val (pitchScore, timingScore) = calculateScores(pitch, currentTime, currentNote)
-                    latestScore = pitchScore
-                    latestTimingScore = timingScore
-                    
-                    // 누적 점수 업데이트 (0이 아닌 점수만 누적)
-                    if (pitchScore > 0.0) {
-                        accumulatedPitchScores.add(pitchScore)
-                        totalScoreCount++
-                    }
-                    if (timingScore > 0.0) {
-                        accumulatedTimingScores.add(timingScore)
+                        Thread.sleep(10) // 10ms 대기
                     }
                     
-                    // 평균 계산
-                    averagePitchScore = if (accumulatedPitchScores.isNotEmpty()) accumulatedPitchScores.average() else 0.0
-                    averageTimingScore = if (accumulatedTimingScores.isNotEmpty()) accumulatedTimingScores.average() else 0.0
+                    audioRecord.stop()
+                    audioRecord.release()
+                    println("[TensorDSP] AudioRecord 정리 완료")
                     
-                    println("🎵 분석: 시간=${currentTime.toInt()}초, 피치=${pitch.toInt()}Hz, 점수=$pitchScore, 타이밍=$timingScore, MIDI=${currentNote.pitch}")
-                    println("📊 누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}, 총점수수=$totalScoreCount")
-                } else {
-                    println("[TensorDSP] 현재 시간(${currentTime.toInt()}초)에 해당하는 MIDI 노트 없음")
-                    // MIDI 노트가 없어도 기본 점수 설정
-                    latestScore = 0.0
-                    latestTimingScore = 0.0
+                } catch (e: Exception) {
+                    println("[TensorDSP] 분석 스레드 예외: ${e.message}")
+                    e.printStackTrace()
+                    audioRecord?.release()
                 }
-            } else {
-                // 피치가 감지되지 않았지만 이전 피치 값이 있고 오디오 레벨이 충분하면 유지
-                if (latestPitch > 0 && latestAudioLevel >= 10.0) {
-                    println("[TensorDSP] 피치 추출 실패했지만 이전 피치 유지: pitch=$pitch, latestPitch=$latestPitch, audioLevel=$latestAudioLevel")
-                    // 이전 피치 값으로 계속 분석
-                    val currentNote = findCurrentMidiNote(currentTime)
-                    if (currentNote != null) {
-                        val (pitchScore, timingScore) = calculateScores(latestPitch, currentTime, currentNote)
-                        latestScore = pitchScore
-                        latestTimingScore = timingScore
-                        
-                        // 누적 점수 업데이트 (0이 아닌 점수만 누적)
-                        if (pitchScore > 0.0) {
-                            accumulatedPitchScores.add(pitchScore)
-                            totalScoreCount++
-                        }
-                        if (timingScore > 0.0) {
-                            accumulatedTimingScores.add(timingScore)
-                        }
-                        
-                        // 평균 계산
-                        averagePitchScore = if (accumulatedPitchScores.isNotEmpty()) accumulatedPitchScores.average() else 0.0
-                        averageTimingScore = if (accumulatedTimingScores.isNotEmpty()) accumulatedTimingScores.average() else 0.0
-                        
-                        println("🎵 분석(이전피치): 시간=${currentTime.toInt()}초, 피치=${latestPitch.toInt()}Hz, 점수=$pitchScore, 타이밍=$timingScore, MIDI=${currentNote.pitch}")
-                        println("📊 누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}, 총점수수=$totalScoreCount")
-                    } else {
-                        println("[TensorDSP] 현재 시간(${currentTime.toInt()}초)에 해당하는 MIDI 노트 없음")
-                        latestScore = 0.0
-                        latestTimingScore = 0.0
-                    }
-                } else {
-                    println("[TensorDSP] 피치 추출 실패 또는 오디오 레벨 부족: pitch=$pitch, audioLevel=$latestAudioLevel")
-                    // 피치가 없어도 기본값 설정
-                    latestPitch = 0.0
-                    latestScore = 0.0
-                    latestTimingScore = 0.0
-                }
-            }
-        }
-                    } else {
-                        println("[TensorDSP] AudioRecord read 실패: readSize=$readSize")
-                    }
-                    delay(100) // 100ms 간격으로 분석
-                }
-            }
+            }.start()
             
             result.success(true)
             
         } catch (e: Exception) {
-            result.error("REAL_TIME_ANALYSIS_ERROR", "실시간 분석 시작 실패", e.message)
+            println("[TensorDSP] startRealTimeAnalysis 예외: ${e.message}")
+            e.printStackTrace()
+            result.error("ANALYSIS_ERROR", "실시간 분석 시작 실패: ${e.message}", null)
         }
     }
     
     private fun stopRealTimeAnalysis(result: Result) {
         try {
+            println("[TensorDSP] 실시간 분석 중지 요청")
+            
+            // 분석 플래그들을 모두 false로 설정
+            isAnalyzing = false
             isRecording = false
+            
+            // AudioRecord 정리
             audioRecord?.stop()
             audioRecord?.release()
             audioRecord = null
+            
+            // 타이머 작업 취소
             timerJob?.cancel()
             timerJob = null
             
+            println("[TensorDSP] 실시간 분석 중지 완료")
             result.success(true)
             
         } catch (e: Exception) {
+            println("[TensorDSP] 실시간 분석 중지 오류: ${e.message}")
             result.error("STOP_ANALYSIS_ERROR", "실시간 분석 중지 실패", e.message)
         }
     }
@@ -440,10 +416,10 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             val handler = PitchDetectionHandler { pitchDetectionResult, _ ->
                 println("[TensorDSP] PitchDetectionHandler 호출: pitchInHz=${pitchDetectionResult?.pitch}, probability=${pitchDetectionResult?.probability}, isPitched=${pitchDetectionResult?.isPitched}")
                 if (pitchDetectionResult != null) {
-                    // 더 관대한 피치 감지 조건 (확률도 고려)
+                    // 더 관대한 피치 감지 조건 (확률 임계값을 더 낮게 조정)
                     if (pitchDetectionResult.pitch > 50.0 && 
                         pitchDetectionResult.pitch < 2000.0 && 
-                        pitchDetectionResult.probability > 0.1) {  // 확률 임계값 추가
+                        pitchDetectionResult.probability > 0.05) {  // 0.1에서 0.05로 변경
                         if (pitchDetectionResult.probability > maxProbability) {
                             maxProbability = pitchDetectionResult.probability
                             detectedPitch = pitchDetectionResult.pitch.toDouble()
@@ -496,18 +472,19 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             
             println("[TensorDSP] 피치 점수 계산: 사용자=$userPitch Hz, 기준=$originalPitch Hz, 반음차이=${abs(semitoneDifference)}")
             
-            // 옥타브 차이를 고려한 점수 계산 (더 관대한 기준)
+            // 더 관대한 점수 계산 (옥타브 차이까지 고려)
             val absSemitoneDiff = abs(semitoneDifference)
             val score = when {
                 absSemitoneDiff <= 0.5 -> 100.0      // Perfect (정확)
                 absSemitoneDiff <= 1.0 -> 95.0       // Great (거의 정확)
-                absSemitoneDiff <= 2.0 -> 85.0       // Good (좋음)
-                absSemitoneDiff <= 4.0 -> 70.0       // Normal (보통)
-                absSemitoneDiff <= 6.0 -> 50.0       // Fair (양호)
-                absSemitoneDiff <= 8.0 -> 30.0       // Poor (미흡)
-                absSemitoneDiff <= 12.0 -> 15.0      // Very Poor (매우 미흡, 옥타브 차이 허용)
-                absSemitoneDiff <= 16.0 -> 5.0       // Barely Acceptable (간신히 허용)
-                else -> 0.0                          // Miss (완전히 벗어남)
+                absSemitoneDiff <= 2.0 -> 90.0       // Good (좋음)
+                absSemitoneDiff <= 4.0 -> 80.0       // Normal (보통)
+                absSemitoneDiff <= 6.0 -> 65.0       // Fair (양호)
+                absSemitoneDiff <= 8.0 -> 50.0       // Poor (미흡)
+                absSemitoneDiff <= 12.0 -> 35.0      // Very Poor (매우 미흡, 옥타브 차이 허용)
+                absSemitoneDiff <= 16.0 -> 20.0      // Barely Acceptable (간신히 허용)
+                absSemitoneDiff <= 24.0 -> 10.0      // Octave Error (옥타브 오차)
+                else -> 5.0                          // Miss (완전히 벗어남도 최소 점수)
             }
             
             println("[TensorDSP] 피치 점수 결과: $score (반음차이: $absSemitoneDiff)")
@@ -664,17 +641,17 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         return 440.0 * Math.pow(2.0, (midiNote - 69) / 12.0)
     }
 
-    private fun calculateScores(userPitch: Double, currentTime: Double, midiNote: MidiNote): Pair<Double, Double> {
+    private fun calculateScores(userPitch: Double, currentTime: Double): Pair<Double, Double> {
         // MIDI 노트 번호를 실제 주파수로 변환
-        val midiFrequency = midiNoteToFrequency(midiNote.pitch)
+        val midiFrequency = midiNoteToFrequency(currentMidiNotes.first().pitch) // 현재 노트의 주파수
         
-        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${midiNote.pitch}번(${midiFrequency}Hz)")
+        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${currentMidiNotes.first().pitch}번(${midiFrequency}Hz)")
         
         // 피치 점수 계산 (실제 주파수 비교)
         val pitchScore = calculatePitchScore(userPitch, midiFrequency)
         
         // 타이밍 점수 계산
-        val timingScore = calculateTimingScore(currentTime, midiNote)
+        val timingScore = calculateTimingScore(currentTime, currentMidiNotes.first())
         
         println("[TensorDSP] 점수 결과: 피치점수=$pitchScore, 타이밍점수=$timingScore")
         
@@ -721,14 +698,15 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         }
         val rms = kotlin.math.sqrt(sum / buffer.size)
         
-        // 더 민감한 오디오 레벨 계산 (RMS를 직접 사용)
-        // RMS 값이 0.001 정도면 약 10-20% 레벨로 계산
+        // 더 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
+        // RMS 값을 더 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
         val normalizedLevel = when {
-            rms <= 0.0001 -> 0.0      // 무음
-            rms <= 0.001 -> rms * 10000.0  // 매우 작은 소리 (0-10%)
-            rms <= 0.01 -> rms * 1000.0    // 작은 소리 (10-100%)
-            rms <= 0.1 -> rms * 100.0      // 보통 소리 (100-1000%)
-            else -> 100.0                   // 큰 소리 (최대)
+            rms <= 0.00001 -> 0.0     // 완전 무음
+            rms <= 0.0001 -> rms * 100000.0  // 극도로 작은 소리 (0-10%)
+            rms <= 0.001 -> rms * 10000.0    // 매우 작은 소리 (10-100%)
+            rms <= 0.01 -> rms * 1000.0      // 작은 소리 (100-1000%)
+            rms <= 0.1 -> rms * 100.0        // 보통 소리 (1000-10000%)
+            else -> 100.0                     // 큰 소리 (최대)
         }
         
         // 0-100 범위로 제한
@@ -736,6 +714,32 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         
         println("[TensorDSP] calculateAudioLevel: buffer.size=${buffer.size}, buffer[0]=${buffer.getOrNull(0)}, rms=$rms, normalizedLevel=$finalLevel")
         
+        return finalLevel
+    }
+
+    private fun calculateAudioLevelSensitive(buffer: FloatArray, readSize: Int): Double {
+        if (readSize == 0) return 0.0
+
+        var sum = 0.0
+        for (i in 0 until readSize) {
+            sum += (buffer[i] * buffer[i]).toDouble()
+        }
+        val rms = kotlin.math.sqrt(sum / readSize)
+
+        // 더 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
+        // RMS 값을 더 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
+        val normalizedLevel = when {
+            rms <= 0.00001 -> 0.0     // 완전 무음
+            rms <= 0.0001 -> rms * 100000.0  // 극도로 작은 소리 (0-10%)
+            rms <= 0.001 -> rms * 10000.0    // 매우 작은 소리 (10-100%)
+            rms <= 0.01 -> rms * 1000.0      // 작은 소리 (100-1000%)
+            rms <= 0.1 -> rms * 100.0        // 보통 소리 (1000-10000%)
+            else -> 100.0                     // 큰 소리 (최대)
+        }
+
+        // 0-100 범위로 제한
+        val finalLevel = kotlin.math.max(0.0, kotlin.math.min(100.0, normalizedLevel))
+
         return finalLevel
     }
 } 

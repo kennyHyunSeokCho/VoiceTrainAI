@@ -321,6 +321,18 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
             ),
             textAlign: TextAlign.center,
           ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            widget.hasRecording ? '(음정 + 박자) ÷ 2' : '',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -653,6 +665,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
                       userId: '사용자ID', // 실제 사용자 ID로 교체 필요
                       songTitle: widget.song.title,
                       artist: widget.song.artist,
+                      recordingPath: widget.recordingPath, // 녹음 파일 경로 전달
                     ),
                   ),
                 );
