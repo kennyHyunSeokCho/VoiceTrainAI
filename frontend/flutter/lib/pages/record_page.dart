@@ -1145,19 +1145,35 @@ class _RecordPageState extends State<RecordPage> {
     if (!_hasRecording) {
       print('❌ 녹음 데이터가 없습니다. 점수 계산을 건너뜁니다.');
       // 녹음이 없어도 점수 페이지로 이동 (점수는 0으로 표시)
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ScorePage(
-            song: song,
-            pitchScore: 0,
-            rhythmScore: 0,
-            totalScore: 0,
-            recommendedSongs: [],
-            hasRecording: false,
-            recordingPath: null,
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: 0,
+              rhythmScore: 0,
+              totalScore: 0,
+              recommendedSongs: [],
+              hasRecording: false,
+              recordingPath: null,
+            ),
           ),
-        ),
-      );
+        );
+      } else if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: 0,
+              rhythmScore: 0,
+              totalScore: 0,
+              recommendedSongs: [],
+              hasRecording: false,
+              recordingPath: null,
+            ),
+          ),
+        );
+      }
       return;
     }
 
@@ -1199,8 +1215,22 @@ class _RecordPageState extends State<RecordPage> {
       print('📊 계산된 점수: 피치=$pitchScore, 타이밍=$timingScore, 총점=$totalScore');
 
       // 점수 페이지로 이동 (안전한 네비게이션)
-      if (mounted) {
+      if (mounted && Navigator.canPop(context)) {
         Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: pitchScore,
+              rhythmScore: timingScore,
+              totalScore: totalScore,
+              recommendedSongs: recommendedSongs,
+              hasRecording: _hasRecording,
+              recordingPath: _recordingPath,
+            ),
+          ),
+        );
+      } else if (mounted) {
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ScorePage(
               song: song,
@@ -1217,8 +1247,22 @@ class _RecordPageState extends State<RecordPage> {
     } catch (e) {
       print('❌ 점수 계산 실패: $e');
       // 오류 발생 시 기본값으로 점수 페이지 이동
-      if (mounted) {
+      if (mounted && Navigator.canPop(context)) {
         Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: 0,
+              rhythmScore: 0,
+              totalScore: 0,
+              recommendedSongs: [],
+              hasRecording: _hasRecording,
+              recordingPath: _recordingPath,
+            ),
+          ),
+        );
+      } else if (mounted) {
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ScorePage(
               song: song,
@@ -1463,6 +1507,14 @@ class _RecordPageState extends State<RecordPage> {
     _instPlayer?.dispose();
     _onsetSub?.cancel();
     _tensorDspTimer?.cancel();
+
+    // TensorDSP 정리
+    try {
+      TensorDspService.stopRealTimeAnalysis();
+    } catch (e) {
+      print('❌ TensorDSP 정리 중 오류: $e');
+    }
+
     // 녹음 관련 정리
     if (_isRecordingStarted) {
       _audioRecorder.stop();
