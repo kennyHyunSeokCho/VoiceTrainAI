@@ -13,11 +13,25 @@ class AiVocalPlayPage extends StatefulWidget {
 class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
   String? _albumCoverUrl;
   bool _isLoadingCover = true;
+  AudioPlayer? _audioPlayer;
+  bool _isPlaying = false;
+  bool _isLoadingAudio = false;
+  String? _aiVocalUrl;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
 
   @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer();
     _loadAlbumCover();
+    _loadAiVocalAudio();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAlbumCover() async {
@@ -52,6 +66,103 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
         });
       }
     }
+  }
+
+  Future<void> _loadAiVocalAudio() async {
+    try {
+      final song = ModalRoute.of(context)!.settings.arguments as Song;
+
+      setState(() {
+        _isLoadingAudio = true;
+      });
+
+      print('🎵 AI 보컬 오디오 로드 시작: ${song.artist} - ${song.title}');
+
+      // AI 보컬 presigned URL 가져오기
+      final aiVocalUrl = await S3Service.getAiVocalPresignedUrl(
+        song.artist,
+        song.title,
+      );
+
+      if (aiVocalUrl != null) {
+        setState(() {
+          _aiVocalUrl = aiVocalUrl;
+          _isLoadingAudio = false;
+        });
+
+        // 오디오 플레이어 이벤트 리스너 설정
+        _audioPlayer!.onPositionChanged.listen((position) {
+          if (mounted) {
+            setState(() {
+              _position = position;
+            });
+          }
+        });
+
+        _audioPlayer!.onDurationChanged.listen((duration) {
+          if (mounted) {
+            setState(() {
+              _duration = duration;
+            });
+          }
+        });
+
+        _audioPlayer!.onPlayerStateChanged.listen((state) {
+          if (mounted) {
+            setState(() {
+              _isPlaying = state == PlayerState.playing;
+            });
+          }
+        });
+
+        print('✅ AI 보컬 오디오 로드 성공');
+      } else {
+        setState(() {
+          _isLoadingAudio = false;
+        });
+        print('❌ AI 보컬 오디오 로드 실패');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingAudio = false;
+      });
+      print('❌ AI 보컬 오디오 로드 오류: $e');
+    }
+  }
+
+  Future<void> _togglePlayPause() async {
+    if (_aiVocalUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('AI 보컬 파일을 찾을 수 없습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      if (_isPlaying) {
+        await _audioPlayer!.pause();
+      } else {
+        await _audioPlayer!.play(UrlSource(_aiVocalUrl!));
+      }
+    } catch (e) {
+      print('재생 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('재생 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
   }
 
   Future<String> _fetchAlbumCoverUrl(String artist, String title) async {
@@ -250,30 +361,31 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                         child: _buildAlbumCoverWidget(),
                       ),
                       // 재생 중 표시
-                      Positioned(
-                        bottom: 20,
-                        right: 20,
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurple,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.deepPurple.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 28,
+                      if (_isPlaying)
+                        Positioned(
+                          bottom: 20,
+                          right: 20,
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.deepPurple.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.pause,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -334,6 +446,69 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                     ),
                   ],
                 ),
+                SizedBox(height: 16),
+                // AI 보컬 로딩 상태
+                if (_isLoadingAudio)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.orange[700]!,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'AI 보컬 로딩 중...',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_aiVocalUrl == null && !_isLoadingAudio)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 16,
+                          color: Colors.red[700],
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'AI 보컬 파일을 찾을 수 없습니다',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 SizedBox(height: 32),
                 // 재생바
                 Container(
@@ -343,7 +518,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                       Row(
                         children: [
                           Text(
-                            '1:46',
+                            _formatDuration(_position),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -352,17 +527,26 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                           ),
                           Expanded(
                             child: Slider(
-                              value: 106,
-                              min: 0,
-                              max: 220,
-                              onChanged: (v) {},
+                              value: _duration.inMilliseconds > 0
+                                  ? _position.inMilliseconds.toDouble()
+                                  : 0.0,
+                              min: 0.0,
+                              max: _duration.inMilliseconds > 0
+                                  ? _duration.inMilliseconds.toDouble()
+                                  : 1.0,
+                              onChanged: (value) {
+                                final newPosition = Duration(
+                                  milliseconds: value.toInt(),
+                                );
+                                _audioPlayer?.seek(newPosition);
+                              },
                               activeColor: Colors.deepPurple,
                               inactiveColor: Colors.grey[300],
                               thumbColor: Colors.deepPurple,
                             ),
                           ),
                           Text(
-                            song.duration,
+                            _formatDuration(_duration),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -399,8 +583,11 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                         ],
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.pause, size: 36),
-                        onPressed: () {},
+                        icon: Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          size: 36,
+                        ),
+                        onPressed: _isLoadingAudio ? null : _togglePlayPause,
                         color: Colors.white,
                       ),
                     ),

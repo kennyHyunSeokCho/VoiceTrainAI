@@ -30,7 +30,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
     _progressAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
+
     // 디버깅: Song 객체 확인
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final song = ModalRoute.of(context)!.settings.arguments as Song;
@@ -40,10 +40,12 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
       print('  - artist: ${song.artist}');
       print('  - albumCover: ${song.albumCover}');
       print('  - albumCover.isEmpty: ${song.albumCover.isEmpty}');
-      print('  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}');
+      print(
+        '  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}',
+      );
       print('=== initState 확인 완료 ===');
     });
-    
+
     // 로딩 진행률 시뮬레이션
     _startLoading();
     _loadAlbumCover();
@@ -52,15 +54,17 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
   Future<void> _loadAlbumCover() async {
     try {
       final song = ModalRoute.of(context)!.settings.arguments as Song;
-      
+
       print('=== 앨범 커버 로드 디버깅 ===');
       print('Song 객체 정보:');
       print('  - title: ${song.title}');
       print('  - artist: ${song.artist}');
       print('  - albumCover: ${song.albumCover}');
       print('  - albumCover.isEmpty: ${song.albumCover.isEmpty}');
-      print('  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}');
-      
+      print(
+        '  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}',
+      );
+
       // Song 객체의 albumCover 필드가 이미 S3 URL인지 확인
       if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
         print('✅ Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
@@ -74,7 +78,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
         print('❌ Song 객체에 URL이 없음, 새로 생성 시도');
         // 기존 방식으로 URL 생성
         final coverUrl = await _fetchAlbumCoverUrl(song.artist, song.title);
-        
+
         if (mounted) {
           setState(() {
             _albumCoverUrl = coverUrl;
@@ -82,7 +86,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           });
         }
       }
-      
+
       print('최종 _albumCoverUrl: $_albumCoverUrl');
       print('=== 디버깅 완료 ===');
     } catch (e) {
@@ -100,12 +104,12 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
       // S3Service를 사용하여 앨범 커버 URL 생성
       String albumCoverUrl = S3Service.getAlbumCoverUrl(artist, title);
       print('앨범커버 S3 URL 생성: $albumCoverUrl');
-      
+
       // URL 유효성 검사
       try {
         final response = await http.head(Uri.parse(albumCoverUrl));
         print('앨범커버 S3 응답 코드: ${response.statusCode}');
-        
+
         if (response.statusCode == 200) {
           print('앨범커버 S3 성공: $albumCoverUrl');
           return albumCoverUrl;
@@ -113,7 +117,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
       } catch (e) {
         print('앨범커버 S3 요청 실패: $e');
       }
-      
+
       print('앨범커버 로드 실패, 기본 이미지 사용');
       return 'https://via.placeholder.com/150x150?text=앨범커버';
     } catch (e) {
@@ -136,18 +140,21 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           } else {
             _progress += 0.001; // 마무리 단계: 매우 느리게
           }
-          
+
           if (_progress > 1.0) _progress = 1.0;
         });
-        
+
         // 애니메이션 업데이트
-        _progressAnimation = Tween<double>(
-          begin: _progressAnimation.value,
-          end: _progress,
-        ).animate(CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ));
+        _progressAnimation =
+            Tween<double>(
+              begin: _progressAnimation.value,
+              end: _progress,
+            ).animate(
+              CurvedAnimation(
+                parent: _animationController,
+                curve: Curves.easeInOut,
+              ),
+            );
         _animationController.forward(from: 0.0);
       } else {
         timer.cancel();
@@ -155,7 +162,11 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
         Future.delayed(Duration(seconds: 1), () {
           if (mounted) {
             final song = ModalRoute.of(context)!.settings.arguments as Song;
-            Navigator.pushReplacementNamed(context, '/ai-vocal-ready', arguments: song);
+            Navigator.pushReplacementNamed(
+              context,
+              '/ai-vocal-ready',
+              arguments: song,
+            );
           }
         });
       }
@@ -171,15 +182,17 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
 
   Widget _buildAlbumCoverWidget() {
     final song = ModalRoute.of(context)!.settings.arguments as Song;
-    
+
     print('=== _buildAlbumCoverWidget 디버깅 ===');
     print('Song 객체 정보:');
     print('  - title: ${song.title}');
     print('  - artist: ${song.artist}');
     print('  - albumCover: "${song.albumCover}"');
     print('  - albumCover.isEmpty: ${song.albumCover.isEmpty}');
-    print('  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}');
-    
+    print(
+      '  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}',
+    );
+
     // Song 객체의 albumCover가 있으면 사용
     if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
       print('✅ Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
@@ -193,9 +206,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           height: 160,
           color: Colors.grey[200],
           child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
+            child: CircularProgressIndicator(color: Colors.deepPurple),
           ),
         ),
         errorWidget: (context, url, error) {
@@ -204,18 +215,14 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
             width: 160,
             height: 160,
             color: Colors.grey[200],
-            child: Icon(
-              Icons.music_note,
-              size: 60,
-              color: Colors.grey[400],
-            ),
+            child: Icon(Icons.music_note, size: 60, color: Colors.grey[400]),
           );
         },
       );
     }
-    
+
     print('❌ Song 객체에 URL이 없음');
-    
+
     // Song 객체에 URL이 없으면 로딩 상태 표시
     if (_isLoadingCover) {
       return Container(
@@ -223,13 +230,11 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
         height: 160,
         color: Colors.grey[200],
         child: Center(
-          child: CircularProgressIndicator(
-            color: Colors.deepPurple,
-          ),
+          child: CircularProgressIndicator(color: Colors.deepPurple),
         ),
       );
     }
-    
+
     // 생성된 URL이 있으면 사용
     if (_albumCoverUrl != null) {
       return CachedNetworkImage(
@@ -242,34 +247,24 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
           height: 160,
           color: Colors.grey[200],
           child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
+            child: CircularProgressIndicator(color: Colors.deepPurple),
           ),
         ),
         errorWidget: (context, url, error) => Container(
           width: 160,
           height: 160,
           color: Colors.grey[200],
-          child: Icon(
-            Icons.music_note,
-            size: 60,
-            color: Colors.grey[400],
-          ),
+          child: Icon(Icons.music_note, size: 60, color: Colors.grey[400]),
         ),
       );
     }
-    
+
     // 기본 아이콘 표시
     return Container(
       width: 160,
       height: 160,
       color: Colors.grey[200],
-      child: Icon(
-        Icons.music_note,
-        size: 60,
-        color: Colors.grey[400],
-      ),
+      child: Icon(Icons.music_note, size: 60, color: Colors.grey[400]),
     );
   }
 
@@ -449,10 +444,7 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                     SizedBox(width: 8),
                     Text(
                       'AI가 당신의 목소리를 분석하고 있습니다',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                     SizedBox(width: 8),
                     SvgPicture.asset(
@@ -469,8 +461,13 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                   ElevatedButton(
                     onPressed: () {
                       _timer?.cancel();
-                      final song = ModalRoute.of(context)!.settings.arguments as Song;
-                      Navigator.pushReplacementNamed(context, '/ai-vocal-ready', arguments: song);
+                      final song =
+                          ModalRoute.of(context)!.settings.arguments as Song;
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/ai-vocal-ready',
+                        arguments: song,
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
@@ -481,7 +478,13 @@ class _AiVocalLoadingPageState extends State<AiVocalLoadingPage>
                       ),
                       elevation: 4,
                     ),
-                    child: Text('테스트: 바로 완료', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      '테스트',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
