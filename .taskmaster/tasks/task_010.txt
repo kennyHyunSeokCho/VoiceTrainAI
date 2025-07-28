@@ -3,71 +3,41 @@
 # Status: pending
 # Dependencies: 9, 11, 14
 # Priority: medium
-# Description: Spring Boot + Spring Data JPA + Redis를 사용하여 사용자의 연습 기록을 분석하고 시각화에 필요한 데이터를 제공하는 API를 개발합니다. 이 태스크는 데이터 처리 및 제공에만 집중하고, 실제 UI 구현은 태스크 14에서 담당합니다.
+# Description: 사용자의 연습 기록을 분석하여 시각화에 필요한 데이터를 제공하는 API를 개발합니다. 이 태스크는 데이터 처리 및 제공에만 집중하고, 실제 UI 구현은 태스크 14에서 담당합니다.
 # Details:
-Spring Boot 서버에서 사용자의 보컬 연습 활동을 자동으로 로깅하고, @Scheduled를 통해 시간에 따른 피치 정확도, 감정 표현력, 음역대 확장 등의 성장 지표를 분석합니다. 분석된 데이터를 Spring MVC API를 통해 제공하고, Redis 캐싱으로 성능을 최적화하여 다른 시스템에서 시각화를 위한 데이터를 활용할 수 있도록 합니다.
+사용자의 보컬 연습 활동을 자동으로 로깅하고, 시간에 따른 피치 정확도, 감정 표현력, 음역대 확장 등의 성장 지표를 분석합니다. 분석된 데이터를 API를 통해 제공하여, 다른 시스템에서 시각화를 위한 데이터를 활용할 수 있도록 합니다.
 
 # Test Strategy:
-Spring Boot Test를 사용하여 API의 데이터 처리 정확성과 응답 속도를 테스트합니다. 제공된 데이터가 시각화에 적합한지 확인하고, Redis 캐싱과 Supabase 연동 성능을 검증합니다.
+API의 데이터 처리 정확성과 응답 속도를 테스트합니다. 제공된 데이터가 시각화에 적합한지 확인하고, 데이터의 일관성과 신뢰성을 검증합니다.
 
 # Subtasks:
-## 1. Spring Data JPA 로그 데이터 모델링 [pending]
+## 1. 로그 데이터 모델링 [pending]
 ### Dependencies: None
-### Description: Spring Data JPA를 사용하여 사용자 행동 데이터를 저장할 엔티티 클래스와 DB 스키마를 설계합니다.
+### Description: 사용자 행동 데이터를 저장할 DB 스키마를 설계합니다.
 ### Details:
-1. UserLog 엔티티 클래스 생성 (@Entity)
-2. PracticeSession 엔티티 (연습 세션 정보)
-3. VocalScore 엔티티 (피치 정확도, 점수 기록)
-4. FeedbackInteraction 엔티티 (피드백 상호작용)
-5. JPA 관계 매핑 설정 (@OneToMany, @ManyToOne)
+연습 기록, 점수, 피드백 상호작용 등을 포함한 데이터 모델을 설계합니다.
 
-## 2. Spring MVC 로그 수집 API 구현 [pending]
+## 2. 로그 수집 API 구현 [pending]
 ### Dependencies: 10.1
-### Description: Spring MVC를 사용하여 사용자 행동 데이터를 수신하고 Supabase에 저장하는 REST API를 개발합니다.
+### Description: 사용자 행동 데이터를 수신하고 저장하는 API 엔드포인트를 개발합니다.
 ### Details:
-1. LogController 클래스 생성 (@RestController)
-2. 연습 세션 시작/종료 엔드포인트 구현
-3. 실시간 피치 스코어 수집 API (@PostMapping)
-4. @Valid를 사용한 로그 데이터 검증
-5. @Transactional을 통한 트랜잭션 무결성 보장
+프론트엔드에서 발생하는 로그 데이터를 수집하여 DB에 저장하는 기능을 구현합니다.
 
-## 3. Spring @Scheduled 데이터 분석 및 집계 [pending]
+## 3. 데이터 분석 및 집계 로직 [pending]
 ### Dependencies: 10.2
-### Description: Spring @Scheduled를 사용하여 의미있는 통계 데이터를 주기적으로 계산하는 배치 로직을 구현합니다.
+### Description: 의미있는 통계 데이터를 계산하는 로직을 구현합니다.
 ### Details:
-1. AnalyticsService 클래스 구현 (@Service)
-2. @Scheduled 어노테이션으로 일간/주간 분석 작업 스케줄링
-3. JPA 쿼리를 통한 성장 추이 계산
-4. 평균 점수, 연습 시간, 개선도 등 통계 계산
-5. 분석 결과를 AnalyticsResult 엔티티로 저장
+일간/주간 성장 추이, 평균 점수 등을 계산하는 로직을 개발합니다.
 
-## 4. Redis 캐싱 인사이트 API 구현 [pending]
+## 4. 인사이트 제공 API 구현 [pending]
 ### Dependencies: 10.3
-### Description: Spring Cache와 Redis를 활용하여 분석된 통계 데이터를 제공하는 고성능 API를 구현합니다.
+### Description: 분석된 통계 데이터를 전달하기 위한 API 엔드포인트를 개발합니다.
 ### Details:
-1. InsightController 클래스 생성 (@RestController)
-2. @Cacheable을 사용한 인사이트 데이터 캐싱
-3. 사용자별 대시보드 데이터 조회 API
-4. 일간/주간/월간 성장 리포트 제공
-5. Redis TTL 설정을 통한 적절한 캐시 만료
+프론트엔드 대시보드에 필요한 인사이트 데이터를 제공하는 API를 구현합니다.
 
-## 5. Spring Boot Actuator API 문서화 및 최적화 [pending]
+## 5. API 문서화 및 최적화 [pending]
 ### Dependencies: 10.4
-### Description: Spring Boot Actuator와 Swagger를 사용하여 개발된 API를 문서화하고 성능을 최적화합니다.
+### Description: 개발된 API의 문서를 작성하고 성능을 최적화합니다.
 ### Details:
-1. Swagger 3 (OpenAPI) 설정 및 API 문서 자동 생성
-2. Spring Boot Actuator를 통한 API 성능 메트릭 수집
-3. @Profile을 활용한 환경별 성능 튜닝
-4. JPA 쿼리 최적화 및 N+1 문제 해결
-5. Redis 캐시 히트율 모니터링 및 최적화
-
-## 6. S3 로그 아카이빙 시스템 [pending]
-### Dependencies: 10.5
-### Description: Spring Boot AWS SDK를 사용하여 오래된 로그 데이터를 S3에 아카이빙하는 시스템을 구현합니다.
-### Details:
-1. LogArchiveService 클래스 구현 (@Service)
-2. @Scheduled를 통한 주기적 아카이빙 작업
-3. Supabase에서 S3로 데이터 이전 (JSON 형식)
-4. 아카이빙된 데이터 검색 API 구현
-5. 데이터 보관 정책 및 라이프사이클 관리
+API 사용법을 문서화하고, 성능 및 응답 시간을 최적화합니다.
 

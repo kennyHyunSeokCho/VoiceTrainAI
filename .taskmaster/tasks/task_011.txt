@@ -3,71 +3,41 @@
 # Status: pending
 # Dependencies: 9
 # Priority: medium
-# Description: Spring Boot + Spring @Configuration + ML 모델 연동을 통해 노래 스타일을 분석하고 유사한 아티스트와 매칭합니다.
+# Description: 노래 스타일을 분석하고 유사한 아티스트와 매칭합니다.
 # Details:
-Spring Boot 서버에서 Python librosa 및 DTW와 연동하여 스타일 분석을 수행합니다. Spring Data JPA로 아티스트 데이터베이스를 관리하고, S3에 저장된 음성 특징을 활용하여 사용자 노래 스타일을 아티스트와 비교한 후 매칭 피드백을 제공합니다. @Async를 통한 비동기 처리로 성능을 최적화합니다.
+librosa 및 DTW를 사용하여 스타일 분석을 수행합니다. 사용자 노래 스타일을 아티스트 데이터베이스와 비교하고 매칭 피드백을 제공합니다.
 
 # Test Strategy:
-Spring Boot Test를 사용하여 스타일 분석 정확도 및 매칭 관련성을 테스트합니다. S3 파일 처리 성능과 Redis 캐싱 효과를 검증하고 피드백 품질을 확인합니다.
+스타일 분석 정확도 및 매칭 관련성을 테스트합니다. 피드백 품질을 검증합니다.
 
 # Subtasks:
-## 1. Spring @Service 오디오 특징 추출 [pending]
+## 1. 오디오 특징 추출 [pending]
 ### Dependencies: None
-### Description: Spring @Service와 Python 연동을 통해 사용자의 노래에서 MFCCs와 같은 음향적 특징을 추출합니다.
+### Description: 사용자의 노래에서 MFCCs와 같은 음향적 특징을 추출합니다.
 ### Details:
-1. AudioFeatureService 클래스 구현 (@Service)
-2. ProcessBuilder를 통한 Python librosa 스크립트 호출
-3. S3에서 오디오 파일 다운로드 및 임시 처리
-4. MFCCs, spectral features 추출 및 JSON 변환
-5. 추출된 특징을 S3에 저장 (style_analysis/{user_id}_{song_id}.json)
+librosa 라이브러리를 사용하여 입력된 오디오 파일에서 MFCCs를 추출합니다.
 
-## 2. Spring @Async 스타일 분석 알고리즘 개발 [pending]
+## 2. 스타일 분석 알고리즘 개발 [pending]
 ### Dependencies: 11.1
-### Description: Spring @Async와 CompletableFuture를 사용하여 DTW 기반 사용자 노래 스타일과 아티스트 데이터베이스 간의 유사도를 비동기 계산합니다.
+### Description: DTW를 사용하여 사용자의 노래 스타일과 아티스트 데이터베이스의 노래 스타일 간의 유사도를 계산합니다.
 ### Details:
-1. StyleAnalysisService 클래스 구현 (@Service, @Async)
-2. Python DTW 알고리즘 스크립트와 ProcessBuilder 연동
-3. CompletableFuture를 통한 다중 아티스트 비교 병렬 처리
-4. 유사도 점수 계산 및 순위 매기기
-5. 분석 결과를 Redis에 캐싱 (TTL 설정)
+DTW 알고리즘을 구현하여 두 노래의 MFCCs 시퀀스 간의 유사도를 측정합니다.
 
-## 3. Spring Data JPA 아티스트 데이터베이스 관리 [pending]
+## 3. 아티스트 데이터베이스 구축 [pending]
 ### Dependencies: None
-### Description: Spring Data JPA를 사용하여 Supabase에 다양한 아티스트의 노래 특징을 분석하고 데이터베이스를 구축합니다.
+### Description: 다양한 아티스트의 노래 특징을 분석하여 데이터베이스를 구축합니다.
 ### Details:
-1. Artist 엔티티 클래스 생성 (@Entity)
-2. ArtistSong 엔티티 (아티스트별 곡 정보)
-3. ArtistRepository 인터페이스 구현 (JpaRepository 상속)
-4. @Scheduled를 통한 아티스트 특징 업데이트 배치 작업
-5. S3에 저장된 아티스트 MFCCs 파일 경로 관리
+다양한 아티스트의 노래에서 MFCCs를 추출하고 데이터베이스에 저장합니다.
 
-## 4. Spring MVC 매칭 및 피드백 API 구현 [pending]
+## 4. 매칭 및 피드백 API 구현 [pending]
 ### Dependencies: 11.2, 11.3
-### Description: Spring MVC를 사용하여 분석 결과를 바탕으로 유사한 아티스트를 매칭하고 피드백을 제공하는 REST API를 구현합니다.
+### Description: 분석 결과를 바탕으로 유사한 아티스트를 매칭하고 피드백을 제공하는 API 엔드포인트를 구현합니다.
 ### Details:
-1. StyleMatchController 클래스 생성 (@RestController)
-2. 사용자별 스타일 분석 요청 API (/api/style/analyze/{userId})
-3. 아티스트 매칭 결과 조회 API (/api/style/match/{userId})
-4. @Cacheable을 사용한 매칭 결과 캐싱
-5. 상세 피드백 생성 API (유사도 점수, 스타일 특징 설명)
+유사도 분석 결과를 기반으로 아티스트를 매칭하고 사용자에게 피드백을 제공하는 RESTful API를 개발합니다.
 
-## 5. Spring @Configuration ML 모델 통합 및 최적화 [pending]
+## 5. 시스템 통합 및 최적화 [pending]
 ### Dependencies: 11.4
-### Description: Spring @Configuration을 사용하여 ML 모델을 통합하고 전체 시스템 성능을 최적화합니다.
+### Description: 전체 시스템을 통합하고 성능을 최적화합니다.
 ### Details:
-1. MLModelConfig 클래스 생성 (@Configuration)
-2. Python 모델 호출을 위한 ThreadPoolTaskExecutor 설정
-3. S3 다운로드 병목 최적화 (MultipartFile 병렬 처리)
-4. Redis 캐시 최적화 및 히트율 모니터링
-5. Spring Boot Actuator를 통한 ML 처리 성능 메트릭 수집
-
-## 6. Spring WebSocket 실시간 분석 진행률 알림 [pending]
-### Dependencies: 11.5
-### Description: Spring WebSocket + STOMP를 사용하여 스타일 분석 진행률을 실시간으로 사용자에게 알립니다.
-### Details:
-1. StyleAnalysisProgressController 클래스 구현
-2. @MessageMapping을 통한 분석 진행률 구독 관리
-3. SimpMessagingTemplate을 사용한 실시간 진행률 업데이트
-4. 분석 완료 시 매칭 결과 자동 전송
-5. 에러 발생 시 WebSocket을 통한 오류 메시지 전달
+모든 모듈을 통합하여 시스템의 성능을 최적화하고 병목 현상을 제거합니다.
 

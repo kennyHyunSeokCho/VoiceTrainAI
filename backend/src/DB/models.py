@@ -3,7 +3,7 @@
 Clerk 인증 시스템 기반 보컬 트레이닝 앱의 테이블 구조를 정의합니다.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Double, BigInteger
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
@@ -34,6 +34,7 @@ class UsersSync(Base):
     score_histories = relationship("ScoreHistory", back_populates="user")
     rankings = relationship("Ranking", back_populates="user")
     ai_covers = relationship("AiCover", back_populates="user")
+    recommend_songs = relationship("RecommendSongs", back_populates="user", uselist=False)
 
 class UserProfile(Base):
     """사용자 프로필 정보"""
@@ -120,8 +121,8 @@ class SongLine(Base):
     
     song_line_id = Column(Integer, primary_key=True, autoincrement=True)
     song_id = Column(Integer, ForeignKey("song.song_id"), nullable=False)
-    start_time = Column(Double)
-    end_time = Column(Double)
+    start_time = Column(Float)
+    end_time = Column(Float)
     start_node = Column(Integer)
     end_node = Column(Integer)
     
@@ -161,9 +162,9 @@ class Result(Base):
     user_id = Column(Text, ForeignKey("users_sync.id"), nullable=False)
     song_id = Column(Integer, ForeignKey("song.song_id"), nullable=False)
     record_file = Column(Text)
-    pitch_score = Column(Double)
-    rhythm_score = Column(Double)
-    emotion_score = Column(Double)
+    pitch_score = Column(Float)
+    rhythm_score = Column(Float)
+    emotion_score = Column(Float)
     total_score = Column(Integer)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     is_public = Column(Boolean, default=True)
@@ -212,9 +213,9 @@ class ScoreHistory(Base):
     score_history_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Text, ForeignKey("users_sync.id"), nullable=False)
     song_id = Column(Integer, ForeignKey("song.song_id"), nullable=False)
-    pitch_score = Column(Double)
-    rhythm_score = Column(Double)
-    emotion_score = Column(Double)
+    pitch_score = Column(Float)
+    rhythm_score = Column(Float)
+    emotion_score = Column(Float)
     total_score = Column(Integer)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     
@@ -251,4 +252,27 @@ class AiCover(Base):
     
     # 관계 설정
     user = relationship("UsersSync", back_populates="ai_covers")
-    song = relationship("Song", back_populates="ai_covers") 
+    song = relationship("Song", back_populates="ai_covers")
+
+class RecommendSongs(Base):
+    """사용자별 추천 노래 정보"""
+    __tablename__ = "recommend_songs"
+    
+    user_id = Column(Text, ForeignKey("users_sync.id"), primary_key=True)
+    
+    # 추천 노래 5개 (제목으로 저장)
+    song1 = Column(String(255), nullable=True)
+    song2 = Column(String(255), nullable=True)
+    song3 = Column(String(255), nullable=True)
+    song4 = Column(String(255), nullable=True)
+    song5 = Column(String(255), nullable=True)
+    
+    # 추천 가수 3개
+    singer1 = Column(String(255), nullable=True)
+    singer2 = Column(String(255), nullable=True)
+    singer3 = Column(String(255), nullable=True)
+    
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # 관계 설정
+    user = relationship("UsersSync", back_populates="recommend_songs") 

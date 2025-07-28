@@ -99,9 +99,17 @@ class _SongDetailPageState extends State<SongDetailPage> {
       return;
     }
 
+<<<<<<< HEAD
     setState(() {
       _isLoading = true;
     });
+=======
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+>>>>>>> origin/Feature_CM2
 
     try {
       final songUrl = S3Service.getOriginalSongUrl(artist, title);
@@ -120,9 +128,17 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ),
       );
     } finally {
+<<<<<<< HEAD
       setState(() {
         _isLoading = false;
       });
+=======
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+>>>>>>> origin/Feature_CM2
     }
   }
 
