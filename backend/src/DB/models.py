@@ -184,7 +184,9 @@ class Feedback(Base):
     __tablename__ = "feedback"
     
     feedback_id = Column(Integer, primary_key=True, autoincrement=True)
-    result_id = Column(Integer, ForeignKey("result.result_id"), nullable=False)
+    user_id = Column(Text, ForeignKey("users_sync.id"), nullable=False)
+    result_id = Column(Integer, ForeignKey("result.result_id"), nullable=True)
+    song_id = Column(Integer, ForeignKey("song.song_id"), nullable=True)
     content = Column(Text)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     
@@ -215,8 +217,6 @@ class ScoreHistory(Base):
     song_id = Column(Integer, ForeignKey("song.song_id"), nullable=False)
     pitch_score = Column(Float)
     rhythm_score = Column(Float)
-    emotion_score = Column(Float)
-    total_score = Column(Integer)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     
     # 관계 설정

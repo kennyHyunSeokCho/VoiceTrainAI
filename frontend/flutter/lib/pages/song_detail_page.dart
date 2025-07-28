@@ -99,17 +99,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
       return;
     }
 
-<<<<<<< HEAD
-    setState(() {
-      _isLoading = true;
-    });
-=======
     if (mounted) {
       setState(() {
         _isLoading = true;
       });
     }
->>>>>>> origin/Feature_CM2
 
     try {
       final songUrl = S3Service.getOriginalSongUrl(artist, title);
@@ -128,17 +122,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ),
       );
     } finally {
-<<<<<<< HEAD
-      setState(() {
-        _isLoading = false;
-      });
-=======
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
->>>>>>> origin/Feature_CM2
     }
   }
 
@@ -249,6 +237,45 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
                       const SizedBox(height: 24),
 
+                      // [임시] 음역대 추출 박스 (더미데이터)
+                      Center(
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE0E7FF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Color(0xFF8B5CF6).withOpacity(0.3),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFF8B5CF6).withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '음역대',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF8B5CF6),
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text('최저음: C3  |  최고음: G5'),
+                            ],
+                          ),
+                        ),
+                      ),
+
                       // 태그 (더 세련된 디자인)
                       Center(
                         child: Wrap(
@@ -318,6 +345,35 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF1F2937),
+                                ),
+                              ),
+                              // [음역대 더미 정보]
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(
+                                  top: 4,
+                                  bottom: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFD1FAE5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '음역대 (더미)',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF059669),
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text('최저음: C3  |  최고음: G5'),
+                                    Text('Key: C Major  |  BPM: 120'),
+                                    Text('난이도: Medium'),
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 8),

@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\CMakeFiles\035896b54d012c4a032d81e40962346a\flutter_windows.dll.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\CMakeFiles\c396cf3311c95b36f010fec9f707051e\flutter_assemble.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\windows\flutter\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\flutter\CMakeFiles\flutter_assemble" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4C08FC62-B9C4-34B0-8961-2AD0F6EFF736}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

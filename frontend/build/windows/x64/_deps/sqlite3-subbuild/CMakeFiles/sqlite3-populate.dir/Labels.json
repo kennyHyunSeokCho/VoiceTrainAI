@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/sqlite3-populate"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/340e45c255a1d2bf669f3eee6d435199/sqlite3-populate.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/3a7241e36fda6044003d7f7535a25087/sqlite3-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/6c166deb6273dad70f4c7c7d9ba76a0b/sqlite3-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"sqlite3-populate"
+		],
+		"name" : "sqlite3-populate"
+	}
+}

@@ -1,0 +1,15 @@
+# Target labels
+ nuget-populate
+# Source files and their labels
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/nuget-populate
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/4b69d136409be7ce53f560d40b756b3c/nuget-populate.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/a739a91b472fc7d445a288431c30f2dd/nuget-populate-complete.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-build.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-configure.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-copyfile.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-download.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-install.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-mkdir.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-patch.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-test.rule
+C:/Users/user/Desktop/project/VoiceTrainAI/frontend/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/296755d28267cccbf226ff9d4118a05c/nuget-populate-update.rule

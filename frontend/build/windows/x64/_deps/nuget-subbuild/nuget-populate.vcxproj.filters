@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-copyfile.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\296755d28267cccbf226ff9d4118a05c\nuget-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\a739a91b472fc7d445a288431c30f2dd\nuget-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\4b69d136409be7ce53f560d40b756b3c\nuget-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\user\Desktop\project\VoiceTrainAI\frontend\build\windows\x64\_deps\nuget-subbuild\CMakeFiles\nuget-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{22D6B102-30A1-3EAB-9EDE-9287C6F53029}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

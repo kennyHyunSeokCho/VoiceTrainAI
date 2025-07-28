@@ -621,19 +621,43 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         val last = currentMidiNotes.last()
         println("[TensorDSP] [findCurrentMidiNote] MIDI 노트 범위: ${first.startTime} ~ ${last.startTime + last.duration}, currentTime: $currentTime")
         
-        // 가장 가까운 노트 찾기 (더 관대한 매칭)
-        val note = currentMidiNotes.firstOrNull { n ->
-            val noteEnd = n.startTime + n.duration
-            // 노트 시작 전 0.5초부터 노트 끝 후 0.5초까지 허용
-            currentTime >= (n.startTime - 0.5) && currentTime <= (noteEnd + 0.5)
+        // 현재 시간에 가장 적합한 노트 찾기
+        var bestNote: MidiNote? = null
+        var minDistance = Double.MAX_VALUE
+        
+        for (note in currentMidiNotes) {
+            val noteEnd = note.startTime + note.duration
+            
+            // 노트가 현재 시간과 겹치는지 확인
+            if (currentTime >= note.startTime && currentTime <= noteEnd) {
+                // 정확히 노트 내부에 있음
+                bestNote = note
+                minDistance = 0.0
+                break
+            } else {
+                // 노트와의 거리 계산
+                val distance = when {
+                    currentTime < note.startTime -> note.startTime - currentTime
+                    currentTime > noteEnd -> currentTime - noteEnd
+                    else -> 0.0
+                }
+                
+                // 더 가까운 노트 선택
+                if (distance < minDistance) {
+                    minDistance = distance
+                    bestNote = note
+                }
+            }
         }
         
-        if (note != null) {
-            println("[TensorDSP] [findCurrentMidiNote] 매칭된 노트: start=${note.startTime}, dur=${note.duration}, pitch=${note.pitch}")
+        if (bestNote != null) {
+            val noteEnd = bestNote.startTime + bestNote.duration
+            println("[TensorDSP] [findCurrentMidiNote] 매칭된 노트: start=${bestNote.startTime}, end=$noteEnd, dur=${bestNote.duration}, pitch=${bestNote.pitch}, 거리=$minDistance")
         } else {
             println("[TensorDSP] [findCurrentMidiNote] 매칭되는 노트 없음")
         }
-        return note
+        
+        return bestNote
     }
 
     // MIDI 노트 번호를 주파수로 변환하는 함수
@@ -642,16 +666,24 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     private fun calculateScores(userPitch: Double, currentTime: Double): Pair<Double, Double> {
-        // MIDI 노트 번호를 실제 주파수로 변환
-        val midiFrequency = midiNoteToFrequency(currentMidiNotes.first().pitch) // 현재 노트의 주파수
+        // 현재 시간에 해당하는 MIDI 노트 찾기
+        val currentNote = findCurrentMidiNote(currentTime)
         
-        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${currentMidiNotes.first().pitch}번(${midiFrequency}Hz)")
+        if (currentNote == null) {
+            println("[TensorDSP] 현재 시간($currentTime)에 해당하는 MIDI 노트가 없습니다")
+            return Pair(0.0, 0.0)
+        }
+        
+        // MIDI 노트 번호를 실제 주파수로 변환
+        val midiFrequency = midiNoteToFrequency(currentNote.pitch)
+        
+        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${currentNote.pitch}번(${midiFrequency}Hz), 현재시간=$currentTime")
         
         // 피치 점수 계산 (실제 주파수 비교)
         val pitchScore = calculatePitchScore(userPitch, midiFrequency)
         
-        // 타이밍 점수 계산
-        val timingScore = calculateTimingScore(currentTime, currentMidiNotes.first())
+        // 타이밍 점수 계산 (현재 노트 사용)
+        val timingScore = calculateTimingScore(currentTime, currentNote)
         
         println("[TensorDSP] 점수 결과: 피치점수=$pitchScore, 타이밍점수=$timingScore")
         
@@ -662,21 +694,29 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         val noteStart = midiNote.startTime
         val noteEnd = noteStart + midiNote.duration
         
-        // 허용 오차 범위를 더 관대하게 조정 (초)
+        // 허용 오차 범위를 0.2초로 설정
         val tolerance = 0.2
         
         val timingScore = when {
-            // 정확한 타이밍 (허용 오차 내)
+            // 정확한 타이밍 (허용 오차 내) - 100점
             abs(currentTime - noteStart) <= tolerance -> 100.0
             
-            // 노트 중간 부분
+            // 노트 중간 부분 - 80점
             currentTime in noteStart..noteEnd -> 80.0
             
-            // 노트 시작 전이나 후 (더 관대한 범위)
-            abs(currentTime - noteStart) <= tolerance * 3 -> 60.0
+            // 노트 시작 전이나 후 (관대한 범위) - 60점
+            abs(currentTime - noteStart) <= tolerance * 2 -> 60.0
+            abs(currentTime - noteEnd) <= tolerance * 2 -> 60.0
+            
+            // 더 넓은 범위에서도 점수 부여 - 40점
+            abs(currentTime - noteStart) <= tolerance * 3 -> 40.0
             abs(currentTime - noteEnd) <= tolerance * 3 -> 40.0
             
-            // 완전히 벗어남
+            // 매우 넓은 범위에서도 최소 점수 부여 - 20점
+            abs(currentTime - noteStart) <= tolerance * 4 -> 20.0
+            abs(currentTime - noteEnd) <= tolerance * 4 -> 20.0
+            
+            // 완전히 벗어남 - 0점
             else -> 0.0
         }
         
