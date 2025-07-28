@@ -51,6 +51,7 @@ dependencies:
   kakao_flutter_sdk_user: ^1.9.0
   flutter_dotenv: ^5.1.0
   file_picker: ^8.0.0+1
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1
