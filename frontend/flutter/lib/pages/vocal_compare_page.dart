@@ -131,7 +131,14 @@ class _VocalComparePageState extends State<VocalComparePage> {
     // AI 변환 보컬은 더미 URL로 설정 (나중에 실제 AI 보컬로 교체)
     aiVocalUrl =
         'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
-    loading = false;
+
+    // 로딩 상태 업데이트
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+    }
+    print('✅ 보컬 비교 페이지 초기화 완료');
     // _fetchVocalUrls(); // 주석 처리
   }
 
