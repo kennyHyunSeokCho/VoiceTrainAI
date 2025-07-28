@@ -8,6 +8,8 @@ from src.auth.clerk_auth import ClerkAuth
 from src.auth.oauth_handlers import OAuthHandler
 from src.DB.database import get_db
 from sqlalchemy.orm import Session
+from src.api.recommend import router as recommend_router
+from src.api.feedback import router as feedback_router
 
 app = FastAPI(title="Voice Training AI API", version="1.0.0")
 
@@ -19,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 라우터 등록
+app.include_router(recommend_router)
+app.include_router(feedback_router)
 
 # Clerk 인증 인스턴스 (테스트 모드로 초기화)
 try:
