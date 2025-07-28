@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/song.dart';
 import '../main.dart'; // CurrentUser 사용을 위해
-import 'api_config_service.dart';
 
 class S3Service {
   // 기존 getSongsFromS3 메서드는 일시적으로 주석 처리
@@ -77,7 +76,7 @@ class S3Service {
     String contentType,
   ) async {
     try {
-      final String backendUrl = ApiConfigService.baseUrl;
+      const String backendUrl = 'http://10.0.2.2:8000';
 
       final response = await http.post(
         Uri.parse('$backendUrl/upload/presigned-url'),

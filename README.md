@@ -4,8 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=java&logoColor=white)](https://www.oracle.com/java/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 
 ## 📖 프로젝트 개요
@@ -23,7 +22,7 @@
 ### 🎵 스마트 노래 분석
 - **보컬 분리**: 원곡에서 보컬과 반주 자동 분리
 - **실시간 피치 시각화**: 노래방 스타일 음정 비교
-- **음역대 & 음색 분석**: HuBERT 기반 1024차원 음색 임베딩 분석
+- **음역대 & 음색 분석**: ECAPA-TDNN 기반 개인 특성 분석
 
 ### 🤖 AI 기반 피드백 시스템
 - **GPT-4o 자연어 피드백**: "고음 구간에서 음정이 흔들렸습니다. 복식호흡 연습을 권장합니다."
@@ -42,22 +41,19 @@
 - **Chart.js** - 데이터 시각화 (WebView 연동)
 
 ### Backend
-- **Spring Boot** - RESTful API + WebSocket 실시간 통신
-- **Spring WebFlux** - 비동기 반응형 프로그래밍
-- **Spring Security** - JWT 인증 및 권한 관리
-- **Spring Data JPA** - 데이터베이스 연동
+- **FastAPI** - RESTful API + WebSocket 실시간 통신
 - **PostgreSQL** - Supabase 기반 데이터베이스
 - **Firebase/AWS S3** - 파일 저장소
 
 ### AI/ML Stack
 - **RVC V2** - PyTorch 기반 음성 합성 모델
 - **CREPE/YIN** - 피치 분석
-- **HuBERT** - 1024차원 음색 분석 및 화자 임베딩 (superb/hubert-large-superb-sid)
+- **ECAPA-TDNN** - 음색 분석 및 화자 임베딩
 - **DTW, MFCC, Mel-spectrogram** - 음성 비교 분석
 - **GPT-4o** - 자연어 피드백 생성
 
 ### Authentication & Security
-- **Spring Security** - Kakao/Google OAuth, SMS 인증
+- **Firebase Auth** - Kakao/Google OAuth, SMS 인증
 - **JWT** - 안전한 세션 관리
 
 ## 📁 프로젝트 구조
@@ -68,16 +64,10 @@ VoiceTrainingAI/
 │   ├── lib/                  # Dart 소스 코드
 │   ├── assets/               # 이미지, 폰트 등 리소스
 │   └── pubspec.yaml         # Flutter 의존성
-├── 🖥️ backend/               # Spring Boot 백엔드 서버  
-│   ├── src/main/java/        # Java 소스 코드
-│   │   ├── controller/       # REST API 컨트롤러
-│   │   ├── service/          # 비즈니스 로직
-│   │   ├── repository/       # 데이터베이스 접근
-│   │   └── config/           # 설정 클래스
-│   ├── src/main/resources/   # 설정 파일
-│   │   ├── application.yml   # Spring Boot 설정
-│   │   └── static/           # 정적 파일
-│   └── pom.xml               # Maven 의존성
+├── 🖥️ backend/               # FastAPI 백엔드 서버  
+│   ├── app/                  # API 라우터 및 서비스
+│   ├── models/               # 데이터베이스 모델
+│   └── requirements.txt      # Python 의존성
 ├── 🤖 model-server/          # RVC V2 모델 서버
 │   ├── rvc/                  # RVC V2 구현
 │   ├── training/             # 모델 훈련 스크립트
@@ -93,9 +83,8 @@ VoiceTrainingAI/
 ## 🚀 빠른 시작 가이드
 
 ### 사전 요구사항
-- **Java 17+** (Spring Boot 백엔드용)
-- **Maven 3.6+** (의존성 관리)
 - **Python 3.8+** (AI 모델 서버용)
+- **Node.js 16+** (백엔드 의존성)
 - **Flutter SDK 3.0+** (모바일 앱)
 - **CUDA GPU** (모델 훈련, 선택사항)
 
@@ -105,20 +94,17 @@ git clone https://github.com/kennyHyunSeokCho/VoiceTrainAI.git
 cd VoiceTrainingAI
 ```
 
-### 2️⃣ 백엔드 설정 (Spring Boot)
+### 2️⃣ 백엔드 설정
 ```bash
 cd backend
-# Maven을 사용한 의존성 설치 및 빌드
-mvn clean install
-# 또는 Gradle을 사용하는 경우
-./gradlew build
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 ### 3️⃣ 모델 서버 설정
 ```bash
 cd model-server
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 # GPU 사용 시 PyTorch CUDA 버전 설치
 ```
@@ -131,38 +117,11 @@ flutter run
 ```
 
 ### 5️⃣ 환경 변수 설정
-Spring Boot 설정 파일인 `application.yml`에 다음 설정들을 추가하세요:
-
-```yaml
-# application.yml
-spring:
-  datasource:
-    url: ${SUPABASE_URL}
-    username: ${SUPABASE_USER}
-    password: ${SUPABASE_PASSWORD}
-  
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-          kakao:
-            client-id: ${KAKAO_CLIENT_ID}
-            client-secret: ${KAKAO_CLIENT_SECRET}
-
-openai:
-  api-key: ${OPENAI_API_KEY}
-
-firebase:
-  api-key: ${FIREBASE_API_KEY}
-  
-server:
-  port: 8080
+```bash
+cp .env.example .env
 ```
 
-또는 `.env` 파일을 사용하여 환경 변수를 설정할 수 있습니다:
+`.env` 파일에 다음 API 키들을 설정하세요:
 ```env
 # OpenAI API (GPT-4o 피드백용)
 OPENAI_API_KEY=your_openai_api_key
@@ -171,41 +130,18 @@ OPENAI_API_KEY=your_openai_api_key
 FIREBASE_API_KEY=your_firebase_key
 
 # Kakao OAuth
-KAKAO_CLIENT_ID=your_kakao_client_id
-KAKAO_CLIENT_SECRET=your_kakao_client_secret
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+KAKAO_API_KEY=your_kakao_key
 
 # Database
 SUPABASE_URL=your_supabase_url
-SUPABASE_USER=your_supabase_user
-SUPABASE_PASSWORD=your_supabase_password
-```
-
-### 6️⃣ 애플리케이션 실행
-```bash
-# 백엔드 서버 실행
-cd backend
-mvn spring-boot:run
-# 또는 Gradle을 사용하는 경우
-./gradlew bootRun
-
-# 모델 서버 실행
-cd model-server
-python app.py
-
-# 프론트엔드 실행
-cd frontend
-flutter run
+SUPABASE_ANON_KEY=your_supabase_key
 ```
 
 ## 📋 개발 로드맵
 
 ### 🏁 Phase 1 - MVP (현재 단계)
 - [x] **프로젝트 저장소 설정** - Git 구조 및 초기 설정
-- [ ] **사용자 인증 구현** - Spring Security + Kakao/Google OAuth + SMS
+- [ ] **사용자 인증 구현** - Firebase Auth + Kakao/Google OAuth + SMS
 - [ ] **음성 녹음 기능** - 고품질 음성 캡처 및 저장
 - [ ] **RVC V2 모델 훈련** - 개인화된 음성 모델 생성
 - [ ] **노래 가져오기 & 음성 교체** - 보컬 분리 및 합성
@@ -260,10 +196,10 @@ task-master update-subtask --id=1.1 --prompt="구현 완료"
 
 ## 🙏 감사인사
 
-- **Spring Boot** - 현대적인 Java 웹 프레임워크
 - **RVC V2** - 음성 변환 기술
 - **OpenAI GPT-4o** - 자연어 피드백
 - **Flutter 팀** - 크로스 플랫폼 프레임워크
+- **FastAPI** - 현대적인 Python 웹 프레임워크
 
 ## 📞 연락처
 

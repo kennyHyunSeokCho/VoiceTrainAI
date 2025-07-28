@@ -278,26 +278,24 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
                             }
                             
                             // 점수 계산 (오디오 레벨이 낮아도 일정 수준까진 계산)
-                            if (latestAudioLevel > 0.01) {  // 더욱 낮은 임계값 (0.1 -> 0.01)
+                            if (latestAudioLevel > 0.1) {  // 더 낮은 임계값
                                 val scores = calculateScores(latestPitch, currentTime)
                                 val pitchScore = scores.first
                                 val timingScore = scores.second
                                 
-                                // 피치가 감지되지 않아도 기본 점수 제공 (테스트용)
-                                val finalPitchScore = if (pitchScore > 0) pitchScore else 50.0  // 기본 점수
-                                val finalTimingScore = if (timingScore > 0) timingScore else 50.0  // 기본 점수
-                                
-                                synchronized(this) {
-                                    accumulatedPitchScores.add(finalPitchScore)
-                                    accumulatedTimingScores.add(finalTimingScore)
-                                    totalScoreCount++
+                                if (pitchScore > 0 || timingScore > 0) {
+                                    synchronized(this) {
+                                        accumulatedPitchScores.add(pitchScore)
+                                        accumulatedTimingScores.add(timingScore)
+                                        totalScoreCount++
+                                        
+                                        // 평균 계산
+                                        averagePitchScore = accumulatedPitchScores.average()
+                                        averageTimingScore = accumulatedTimingScores.average()
+                                    }
                                     
-                                    // 평균 계산
-                                    averagePitchScore = accumulatedPitchScores.average()
-                                    averageTimingScore = accumulatedTimingScores.average()
+                                    println("[TensorDSP] 점수 계산: pitchScore=$pitchScore, timingScore=$timingScore, 누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}")
                                 }
-                                
-                                println("[TensorDSP] 점수 계산: pitchScore=$finalPitchScore, timingScore=$finalTimingScore, 누적평균: 피치=${averagePitchScore.toInt()}, 타이밍=${averageTimingScore.toInt()}")
                             } else {
                                 println("[TensorDSP] 오디오 레벨이 너무 낮음: $latestAudioLevel, 점수 계산 생략")
                             }
@@ -418,10 +416,10 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
             val handler = PitchDetectionHandler { pitchDetectionResult, _ ->
                 println("[TensorDSP] PitchDetectionHandler 호출: pitchInHz=${pitchDetectionResult?.pitch}, probability=${pitchDetectionResult?.probability}, isPitched=${pitchDetectionResult?.isPitched}")
                 if (pitchDetectionResult != null) {
-                    // 더욱 관대한 피치 감지 조건 (확률 임계값을 더 낮게 조정)
-                    if (pitchDetectionResult.pitch > 20.0 && 
-                        pitchDetectionResult.pitch < 3000.0 && 
-                        pitchDetectionResult.probability > 0.01) {  // 0.05에서 0.01로 변경, 주파수 범위 확장
+                    // 더 관대한 피치 감지 조건 (확률 임계값을 더 낮게 조정)
+                    if (pitchDetectionResult.pitch > 50.0 && 
+                        pitchDetectionResult.pitch < 2000.0 && 
+                        pitchDetectionResult.probability > 0.05) {  // 0.1에서 0.05로 변경
                         if (pitchDetectionResult.probability > maxProbability) {
                             maxProbability = pitchDetectionResult.probability
                             detectedPitch = pitchDetectionResult.pitch.toDouble()
@@ -644,24 +642,16 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     private fun calculateScores(userPitch: Double, currentTime: Double): Pair<Double, Double> {
-        // 현재 시간에 맞는 MIDI 노트 찾기
-        val currentNote = findCurrentMidiNote(currentTime)
-        
-        if (currentNote == null) {
-            println("[TensorDSP] 현재 시간($currentTime)에 맞는 MIDI 노트가 없음")
-            return Pair(0.0, 0.0)
-        }
-        
         // MIDI 노트 번호를 실제 주파수로 변환
-        val midiFrequency = midiNoteToFrequency(currentNote.pitch)
+        val midiFrequency = midiNoteToFrequency(currentMidiNotes.first().pitch) // 현재 노트의 주파수
         
-        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${currentNote.pitch}번(${midiFrequency}Hz), 시간=$currentTime")
+        println("[TensorDSP] 점수 계산: 사용자피치=${userPitch}Hz, MIDI노트=${currentMidiNotes.first().pitch}번(${midiFrequency}Hz)")
         
         // 피치 점수 계산 (실제 주파수 비교)
         val pitchScore = calculatePitchScore(userPitch, midiFrequency)
         
         // 타이밍 점수 계산
-        val timingScore = calculateTimingScore(currentTime, currentNote)
+        val timingScore = calculateTimingScore(currentTime, currentMidiNotes.first())
         
         println("[TensorDSP] 점수 결과: 피치점수=$pitchScore, 타이밍점수=$timingScore")
         
@@ -708,16 +698,15 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         }
         val rms = kotlin.math.sqrt(sum / buffer.size)
         
-        // 더욱 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
-        // RMS 값을 더욱 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
+        // 더 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
+        // RMS 값을 더 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
         val normalizedLevel = when {
-            rms <= 0.000001 -> 0.0    // 완전 무음
-            rms <= 0.00001 -> rms * 1000000.0 // 극도로 작은 소리 (0-10%)
-            rms <= 0.0001 -> rms * 100000.0   // 매우 작은 소리 (10-100%)
-            rms <= 0.001 -> rms * 10000.0     // 작은 소리 (100-1000%)
-            rms <= 0.01 -> rms * 1000.0       // 보통 소리 (1000-10000%)
-            rms <= 0.1 -> rms * 100.0         // 큰 소리 (10000-100000%)
-            else -> 100.0                      // 매우 큰 소리 (최대)
+            rms <= 0.00001 -> 0.0     // 완전 무음
+            rms <= 0.0001 -> rms * 100000.0  // 극도로 작은 소리 (0-10%)
+            rms <= 0.001 -> rms * 10000.0    // 매우 작은 소리 (10-100%)
+            rms <= 0.01 -> rms * 1000.0      // 작은 소리 (100-1000%)
+            rms <= 0.1 -> rms * 100.0        // 보통 소리 (1000-10000%)
+            else -> 100.0                     // 큰 소리 (최대)
         }
         
         // 0-100 범위로 제한
@@ -737,16 +726,15 @@ class TensorDspPlugin: FlutterPlugin, MethodCallHandler {
         }
         val rms = kotlin.math.sqrt(sum / readSize)
 
-        // 더욱 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
-        // RMS 값을 더욱 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
+        // 더 민감한 오디오 레벨 계산 (매우 작은 소리도 감지)
+        // RMS 값을 더 민감하게 매핑하여 작은 소리도 감지할 수 있도록 함
         val normalizedLevel = when {
-            rms <= 0.000001 -> 0.0    // 완전 무음
-            rms <= 0.00001 -> rms * 1000000.0 // 극도로 작은 소리 (0-10%)
-            rms <= 0.0001 -> rms * 100000.0   // 매우 작은 소리 (10-100%)
-            rms <= 0.001 -> rms * 10000.0     // 작은 소리 (100-1000%)
-            rms <= 0.01 -> rms * 1000.0       // 보통 소리 (1000-10000%)
-            rms <= 0.1 -> rms * 100.0         // 큰 소리 (10000-100000%)
-            else -> 100.0                      // 매우 큰 소리 (최대)
+            rms <= 0.00001 -> 0.0     // 완전 무음
+            rms <= 0.0001 -> rms * 100000.0  // 극도로 작은 소리 (0-10%)
+            rms <= 0.001 -> rms * 10000.0    // 매우 작은 소리 (10-100%)
+            rms <= 0.01 -> rms * 1000.0      // 작은 소리 (100-1000%)
+            rms <= 0.1 -> rms * 100.0        // 보통 소리 (1000-10000%)
+            else -> 100.0                     // 큰 소리 (최대)
         }
 
         // 0-100 범위로 제한
