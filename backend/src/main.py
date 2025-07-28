@@ -2,44 +2,14 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-import asyncio
-from contextlib import asynccontextmanager
+import boto3
+import os
 from src.auth.clerk_auth import ClerkAuth
 from src.auth.oauth_handlers import OAuthHandler
 from src.DB.database import get_db
 from sqlalchemy.orm import Session
-# from src.vocal.rvc_training_api import router as rvc_router  # 임시로 비활성화
-from src.vocal.ai_synthesis_api import router as ai_synthesis_router
-from src.api.recommend import router as recommend_router
-from src.services.s3_monitor import s3_monitor
-from src.services.wav_processor import wav_processor
 
-# 백그라운드 태스크 관리
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 앱 시작 시 백그라운드 서비스들 시작
-    print("🚀 백그라운드 서비스 시작...")
-    
-    # S3 모니터링 시작 (추천 시스템)
-    print("📊 S3 모니터링 서비스 시작...")
-    asyncio.create_task(s3_monitor.start_monitoring(check_interval=60))  # 60초마다 체크
-    
-    # wav 파일 처리 서비스 시작 (임베딩 추출)
-    print("🎵 wav 파일 처리 서비스 시작...")
-    asyncio.create_task(wav_processor.start_monitoring(check_interval=30))  # 30초마다 체크
-    
-    yield
-    
-    # 앱 종료 시 모든 백그라운드 서비스 중지
-    print("🛑 백그라운드 서비스 중지...")
-    s3_monitor.stop_monitoring()
-    wav_processor.stop_monitoring()
-
-app = FastAPI(
-    title="Voice Training AI API", 
-    version="1.0.0",
-    lifespan=lifespan
-)
+app = FastAPI(title="Voice Training AI API", version="1.0.0")
 
 # CORS 설정
 app.add_middleware(
@@ -49,11 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 라우터 등록
-# app.include_router(rvc_router)  # 임시로 비활성화 (RVCTrainingJob 모델 문제)
-app.include_router(ai_synthesis_router)
-app.include_router(recommend_router)
 
 # Clerk 인증 인스턴스 (테스트 모드로 초기화)
 try:
@@ -69,6 +34,11 @@ class GoogleTokenRequest(BaseModel):
 
 class KakaoTokenRequest(BaseModel):
     access_token: str
+
+class PresignedUrlRequest(BaseModel):
+    bucket: str
+    s3_key: str
+    content_type: str
 
 @app.get("/")
 async def root():
@@ -90,108 +60,249 @@ async def google_oauth_callback(token_request: GoogleTokenRequest, db: Session =
             import httpx
             print(f"Access Token으로 People API 호출 시작: {token_request.access_token[:20]}...")
             
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "https://people.googleapis.com/v1/people/me?sources=READ_SOURCE_TYPE_PROFILE&personFields=photos,names,emailAddresses",
-                    headers={"Authorization": f"Bearer {token_request.access_token}"}
-                )
-                
-                print(f"People API 응답 상태 코드: {response.status_code}")
-                print(f"People API 응답 내용: {response.text}")
-                
-                if response.status_code == 200:
-                    user_data = response.json()
-                    
-                    # People API 응답에서 사용자 정보 추출
-                    names = user_data.get('names', [])
-                    email_addresses = user_data.get('emailAddresses', [])
-                    photos = user_data.get('photos', [])
-                    
-                    # 사용자 정보 구성
-                    user_info = {
-                        "email": email_addresses[0]['value'] if email_addresses else None,
-                        "name": names[0]['displayName'] if names else None,
-                        "picture": photos[0]['url'] if photos else None,
-                        "provider": "google"
+            # 더미 토큰인지 확인 (테스트용)
+            if token_request.access_token.startswith('valid_google_token_test') or token_request.access_token == 'test':
+                print("⚠️  더미 토큰 감지됨. 테스트용 더미 데이터를 반환합니다.")
+                google_user_info = {
+                    "sub": "test_google_user_123",
+                    "email": "test.google@example.com",
+                    "name": "테스트 구글 사용자",
+                    "picture": "https://lh3.googleusercontent.com/a/test-photo",
+                    "google": {
+                        "id": "test_google_user_123",
+                        "email": "test.google@example.com",
+                        "name": "테스트 구글 사용자",
+                        "picture": "https://lh3.googleusercontent.com/a/test-photo"
                     }
+                }
+            else:
+                # 실제 토큰으로 Google People API 호출
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(
+                        "https://people.googleapis.com/v1/people/me?sources=READ_SOURCE_TYPE_PROFILE&personFields=photos,names,emailAddresses",
+                        headers={"Authorization": f"Bearer {token_request.access_token}"}
+                    )
                     
-                    # OAuth 핸들러로 처리
-                    oauth_handler = OAuthHandler()
-                    result = await oauth_handler.handle_google_oauth(user_info, db)
+                    print(f"People API 응답 상태 코드: {response.status_code}")
+                    print(f"People API 응답 내용: {response.text}")
                     
-                    return result
-                else:
-                    raise HTTPException(status_code=400, detail=f"Google People API 오류: {response.status_code}")
+                    if response.status_code == 200:
+                        user_data = response.json()
+                        
+                        # People API 응답에서 사용자 정보 추출
+                        names = user_data.get('names', [])
+                        email_addresses = user_data.get('emailAddresses', [])
+                        photos = user_data.get('photos', [])
+                        
+                        name = names[0]['displayName'] if names else ''
+                        email = email_addresses[0]['value'] if email_addresses else ''
+                        picture = photos[0]['url'] if photos else ''
+                        resource_name = user_data.get('resourceName', '')
+                        user_id = resource_name.replace('people/', '') if resource_name else ''
+                        
+                        print(f"추출된 사용자 정보: {name}, {email}, {user_id}")
+                        
+                        google_user_info = {
+                            "sub": user_id,
+                            "email": email,
+                            "name": name,
+                            "picture": picture,
+                            "google": {
+                                "id": user_id,
+                                "email": email,
+                                "name": name,
+                                "picture": picture
+                            }
+                        }
+                    else:
+                        print(f"People API 요청 실패: {response.status_code} - {response.text}")
+                        raise HTTPException(status_code=400, detail=f"Google People API 요청 실패: {response.status_code}")
+        else:
+            # ID 토큰이 있는 경우 (기존 로직)
+            google_user_info = {
+                "sub": "google_user_123",
+                "email": "test@gmail.com",
+                "name": "테스트 구글 사용자",
+                "picture": "https://lh3.googleusercontent.com/a/test-photo",
+                "google": {
+                    "id": "google_user_id_123",
+                    "email": "test@gmail.com",
+                    "name": "테스트 구글 사용자",
+                    "picture": "https://lh3.googleusercontent.com/a/test-photo"
+                }
+            }
         
-        # ID 토큰이 있으면 Google ID 토큰 검증
-        elif token_request.id_token:
-            # Google ID 토큰 검증 및 사용자 정보 추출
-            oauth_handler = OAuthHandler()
-            result = await oauth_handler.handle_google_id_token(token_request.id_token, db)
-            return result
-            
+        # OAuth 사용자 정보 추출
+        user_info = OAuthHandler.extract_google_user_info(google_user_info)
+        
+        # 데이터베이스에 사용자 동기화
+        synced_user = OAuthHandler.sync_oauth_user_to_database(user_info, db)
+        
+        # Clerk JWT 토큰 생성 (실제로는 Clerk API 사용)
+        # 여기서는 테스트용으로 간단한 토큰 반환
+        jwt_token = f"test_jwt_token_for_user_{synced_user.id}"
+        
+        return {
+            "success": True,
+            "jwt_token": jwt_token,
+            "user": {
+                "id": synced_user.id,
+                "email": synced_user.email,
+                "name": synced_user.name,
+                "provider": user_info["provider"]
+            }
+        }
+        
     except Exception as e:
-        print(f"Google OAuth 콜백 처리 오류: {e}")
-        raise HTTPException(status_code=500, detail=f"OAuth 처리 중 오류가 발생했습니다: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Google OAuth 처리 실패: {str(e)}")
 
 @app.post("/auth/kakao/callback")
 async def kakao_oauth_callback(token_request: KakaoTokenRequest, db: Session = Depends(get_db)):
     """
-    Kakao OAuth 콜백 처리
-    Kakao Access Token을 받아서 Clerk JWT로 변환하고 사용자 정보를 데이터베이스에 동기화
+    카카오 OAuth 콜백 처리
+    카카오 Access Token을 받아서 사용자 정보를 가져오고 데이터베이스에 동기화
     """
     try:
-        print(f"Kakao Access Token으로 사용자 정보 가져오기 시작: {token_request.access_token[:20]}...")
-        
-        # Kakao 사용자 정보 API 호출
         import httpx
+        print(f"카카오 Access Token으로 사용자 정보 요청 시작: {token_request.access_token[:20]}...")
+        
         async with httpx.AsyncClient() as client:
+            # 카카오 사용자 정보 API 호출
             response = await client.get(
                 "https://kapi.kakao.com/v2/user/me",
-                headers={"Authorization": f"Bearer {token_request.access_token}"}
+                headers={
+                    "Authorization": f"Bearer {token_request.access_token}",
+                    "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
+                }
             )
             
-            print(f"Kakao API 응답 상태 코드: {response.status_code}")
-            print(f"Kakao API 응답 내용: {response.text}")
+            print(f"카카오 API 응답 상태 코드: {response.status_code}")
+            print(f"카카오 API 응답 내용: {response.text}")
             
             if response.status_code == 200:
                 user_data = response.json()
                 
-                # Kakao 사용자 정보 추출
-                kakao_account = user_data.get('kakao_account', {})
-                profile = kakao_account.get('profile', {})
+                # 카카오 사용자 정보 추출
+                kakao_id = str(user_data.get('id', ''))
+                account = user_data.get('kakao_account', {})
+                profile = account.get('profile', {})
                 
-                user_info = {
-                    "email": kakao_account.get('email'),
-                    "name": profile.get('nickname'),
-                    "picture": profile.get('profile_image_url'),
-                    "provider": "kakao",
-                    "kakao_id": str(user_data.get('id'))
+                name = profile.get('nickname', '')
+                email = account.get('email', '')
+                picture = profile.get('profile_image_url', '')
+                is_email_verified = account.get('email_needs_agreement', False) == False
+                
+                print(f"추출된 카카오 사용자 정보: {name}, {email}, {kakao_id}")
+                
+                kakao_user_info = {
+                    "sub": f"kakao_{kakao_id}",  # Clerk User ID 형식
+                    "email": email,
+                    "name": name,
+                    "picture": picture,
+                    "email_verified": is_email_verified,
+                    "kakao": {
+                        "id": kakao_id,
+                        "email": email,
+                        "name": name,
+                        "picture": picture
+                    }
                 }
-                
-                # OAuth 핸들러로 처리
-                oauth_handler = OAuthHandler()
-                result = await oauth_handler.handle_kakao_oauth(user_info, db)
-                
-                return result
             else:
-                raise HTTPException(status_code=400, detail=f"Kakao API 오류: {response.status_code}")
-                
+                print(f"카카오 API 요청 실패: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=400, detail=f"카카오 API 요청 실패: {response.status_code}")
+        
+        # OAuth 사용자 정보 추출
+        user_info = OAuthHandler.extract_kakao_user_info(kakao_user_info)
+        
+        # 데이터베이스에 사용자 동기화
+        synced_user = OAuthHandler.sync_oauth_user_to_database(user_info, db)
+        
+        # Clerk JWT 토큰 생성 (실제로는 Clerk API 사용)
+        jwt_token = f"test_jwt_token_for_user_{synced_user.id}"
+        
+        return {
+            "success": True,
+            "jwt_token": jwt_token,
+            "user": {
+                "id": synced_user.id,
+                "email": synced_user.email,
+                "name": synced_user.name,
+                "provider": user_info["provider"]
+            }
+        }
+        
     except Exception as e:
-        print(f"Kakao OAuth 콜백 처리 오류: {e}")
-        raise HTTPException(status_code=500, detail=f"OAuth 처리 중 오류가 발생했습니다: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"카카오 OAuth 처리 실패: {str(e)}")
 
 @app.get("/auth/me")
 async def get_current_user_info():
-    """
-    현재 인증된 사용자 정보 조회 (테스트용)
-    """
+    """현재 로그인된 사용자 정보 조회 (테스트용)"""
+    # 테스트 모드에서는 더미 사용자 정보 반환
     return {
-        "message": "현재 인증된 사용자 정보",
-        "note": "실제 구현에서는 JWT 토큰에서 사용자 정보를 추출합니다."
+        "user": {
+            "id": "test_user_123",
+            "email": "test@example.com",
+            "name": "테스트 사용자",
+            "provider": "email"
+        }
     }
 
+@app.get("/api/vocal-range/{title}/{artist}")
+async def get_vocal_range(title: str, artist: str):
+    """노래별 보컬 범위 정보 조회 (임시 더미 데이터)"""
+    # URL 디코딩
+    import urllib.parse
+    decoded_title = urllib.parse.unquote(title)
+    decoded_artist = urllib.parse.unquote(artist)
+    
+    # 임시 더미 데이터 반환
+    return {
+        "success": True,
+        "song": {
+            "title": decoded_title,
+            "artist": decoded_artist,
+            "vocal_range": {
+                "min_note": "C3",
+                "max_note": "G5",
+                "key": "C Major",
+                "bpm": 120,
+                "difficulty": "Medium"
+            }
+        }
+    }
+
+@app.post("/upload/presigned-url")
+async def get_presigned_url(request: PresignedUrlRequest):
+    """S3 업로드를 위한 presigned URL 생성"""
+    try:
+        # S3 클라이언트 생성
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+            region_name=os.getenv('AWS_REGION', 'ap-northeast-2')
+        )
+        
+        # PUT용 presigned URL 생성 (업로드용)
+        presigned_url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': request.bucket,
+                'Key': request.s3_key,
+                'ContentType': request.content_type
+            },
+            ExpiresIn=3600  # 1시간 유효
+        )
+        
+        return {
+            "success": True,
+            "presigned_url": presigned_url,
+            "bucket": request.bucket,
+            "s3_key": request.s3_key
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Presigned URL 생성 실패: {str(e)}")
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
-    
-    
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -10,6 +10,7 @@ class ScorePage extends StatefulWidget {
   final int totalScore;
   final List<String> recommendedSongs;
   final bool hasRecording;
+  final String? recordingPath; // 녹음 파일 경로 추가
 
   const ScorePage({
     Key? key,
@@ -19,6 +20,7 @@ class ScorePage extends StatefulWidget {
     required this.totalScore,
     required this.recommendedSongs,
     required this.hasRecording,
+    this.recordingPath, // 선택적 매개변수로 추가
   }) : super(key: key);
 
   @override
@@ -80,6 +82,84 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // 기본 피드백 시스템
+  String _generateOverallFeedback() {
+    if (!widget.hasRecording) {
+      return "녹음이 감지되지 않았습니다. 다시 시도해보세요!";
+    }
+
+    final totalScore = widget.totalScore;
+
+    if (totalScore >= 90) {
+      return "🎉 완벽해요! 프로 수준의 실력입니다!";
+    } else if (totalScore >= 80) {
+      return "🌟 훌륭해요! 조금만 더 연습하면 완벽할 것 같아요!";
+    } else if (totalScore >= 70) {
+      return "👍 잘했어요! 음정과 박자를 조금 더 맞춰보세요!";
+    } else if (totalScore >= 60) {
+      return "💪 좋은 시도예요! 연습을 통해 더 발전할 수 있어요!";
+    } else if (totalScore >= 40) {
+      return "📚 아직 연습이 필요해요. 천천히 따라 불러보세요!";
+    } else {
+      return "🎯 처음이시군요! 가사를 보며 천천히 연습해보세요!";
+    }
+  }
+
+  String _generateDetailedFeedback() {
+    if (!widget.hasRecording) {
+      return "마이크 권한을 확인하시고 다시 녹음해보세요.";
+    }
+
+    List<String> feedback = [];
+
+    // 음정 피드백
+    if (widget.pitchScore >= 85) {
+      feedback.add("🎵 음정: 정확한 음정으로 노래하셨네요!");
+    } else if (widget.pitchScore >= 70) {
+      feedback.add("🎵 음정: 대체로 정확해요. 높은 음과 낮은 음에 더 집중해보세요.");
+    } else if (widget.pitchScore >= 50) {
+      feedback.add("🎵 음정: 기본기를 다지고 계시네요. 스케일 연습을 해보세요.");
+    } else {
+      feedback.add("🎵 음정: 천천히 멜로디를 따라 불러보며 연습해보세요.");
+    }
+
+    // 박자 피드백
+    if (widget.rhythmScore >= 85) {
+      feedback.add("🥁 박자: 완벽한 타이밍이에요!");
+    } else if (widget.rhythmScore >= 70) {
+      feedback.add("🥁 박자: 좋은 감각이에요. 메트로놈과 함께 연습해보세요.");
+    } else if (widget.rhythmScore >= 50) {
+      feedback.add("🥁 박자: 박자감을 기르고 계시네요. 손뼉을 치며 리듬을 익혀보세요.");
+    } else {
+      feedback.add("🥁 박자: 음악을 들으며 박자에 맞춰 몸을 움직여보세요.");
+    }
+
+    // 녹음 품질 피드백
+    if (widget.recordingPath != null) {
+      feedback.add("🎙️ 녹음: 깨끗하게 녹음되었어요!");
+    }
+
+    return feedback.join('\n\n');
+  }
+
+  String _generateRecommendation() {
+    if (!widget.hasRecording) {
+      return "다시 녹음하기를 권장합니다.";
+    }
+
+    final totalScore = widget.totalScore;
+
+    if (totalScore >= 85) {
+      return "🚀 더 어려운 곡에 도전해보세요!";
+    } else if (totalScore >= 70) {
+      return "🎯 이 곡을 한 번 더 연습하시거나 비슷한 난이도의 곡을 시도해보세요.";
+    } else if (totalScore >= 50) {
+      return "📖 가사를 숙지하고 천천히 따라 불러보세요.";
+    } else {
+      return "🎼 기초 발성 연습과 스케일 연습을 권장합니다.";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,6 +185,11 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
 
                     // 세부 점수 카드들
                     _buildDetailScoreCards(),
+
+                    const SizedBox(height: 24),
+
+                    // 피드백 카드
+                    _buildFeedbackCard(),
 
                     const SizedBox(height: 24),
 
@@ -236,6 +321,18 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
             ),
             textAlign: TextAlign.center,
           ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            widget.hasRecording ? '(음정 + 박자) ÷ 2' : '',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -323,6 +420,122 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeedbackCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 피드백 헤더
+          Row(
+            children: [
+              Icon(
+                Icons.feedback_outlined,
+                color: const Color(0xFF8B5CF6),
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '상세 피드백',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // 전체 피드백
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F7FF),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            ),
+            child: Text(
+              _generateOverallFeedback(),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1F2937),
+                height: 1.4,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 세부 피드백
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            ),
+            child: Text(
+              _generateDetailedFeedback(),
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF374151),
+                height: 1.5,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 추천사항
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBBF7D0), width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: const Color(0xFF059669),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _generateRecommendation(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF059669),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -452,6 +665,7 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
                       userId: '사용자ID', // 실제 사용자 ID로 교체 필요
                       songTitle: widget.song.title,
                       artist: widget.song.artist,
+                      recordingPath: widget.recordingPath, // 녹음 파일 경로 전달
                     ),
                   ),
                 );

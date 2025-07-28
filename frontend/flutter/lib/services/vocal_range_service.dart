@@ -34,26 +34,29 @@ class VocalRangeAnalysis {
 }
 
 class VocalRangeService {
-  // Android 에뮬레이터에서는 10.0.2.2를 사용해야 호스트 컴퓨터에 접근 가능
+  // 백엔드 서버 URL 설정
   static const String baseUrl = 'http://10.0.2.2:8000'; // 백엔드 서버 URL
 
   /// 노래의 음역대를 분석합니다.
-  static Future<VocalRangeAnalysis> analyzeVocalRange(String title, String artist) async {
+  static Future<VocalRangeAnalysis> analyzeVocalRange(
+    String title,
+    String artist,
+  ) async {
     try {
       print('HTTP 요청 시작: $baseUrl/api/vocal-range/$title/$artist'); // 디버깅용
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/vocal-range/$title/$artist'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(
-        const Duration(seconds: 10), // 10초 타임아웃 설정
-        onTimeout: () {
-          print('HTTP 요청 타임아웃'); // 디버깅용
-          throw Exception('Request timeout');
-        },
-      );
+
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/vocal-range/$title/$artist'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(
+            const Duration(seconds: 10), // 10초 타임아웃 설정
+            onTimeout: () {
+              print('HTTP 요청 타임아웃'); // 디버깅용
+              throw Exception('Request timeout');
+            },
+          );
 
       print('HTTP 응답 상태 코드: ${response.statusCode}'); // 디버깅용
       print('HTTP 응답 본문: ${response.body}'); // 디버깅용
@@ -90,14 +93,19 @@ class VocalRangeService {
   }
 
   /// URL 인코딩을 처리하여 안전한 API 호출을 합니다.
-  static Future<VocalRangeAnalysis> analyzeVocalRangeSafe(String title, String artist) async {
+  static Future<VocalRangeAnalysis> analyzeVocalRangeSafe(
+    String title,
+    String artist,
+  ) async {
     try {
       // URL 인코딩 처리
       final encodedTitle = Uri.encodeComponent(title);
       final encodedArtist = Uri.encodeComponent(artist);
-      
-      print('API 호출: $baseUrl/api/vocal-range/$encodedTitle/$encodedArtist'); // 디버깅용
-      
+
+      print(
+        'API 호출: $baseUrl/api/vocal-range/$encodedTitle/$encodedArtist',
+      ); // 디버깅용
+
       return await analyzeVocalRange(encodedTitle, encodedArtist);
     } catch (e) {
       print('음역대 분석 오류: $e'); // 디버깅용
@@ -112,4 +120,4 @@ class VocalRangeService {
       );
     }
   }
-} 
+}

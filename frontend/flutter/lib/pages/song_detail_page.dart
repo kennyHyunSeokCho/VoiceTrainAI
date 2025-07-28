@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 import '../models/song.dart';
@@ -18,6 +19,7 @@ class SongDetailPage extends StatefulWidget {
 
 class _SongDetailPageState extends State<SongDetailPage> {
   AudioPlayer? _audioPlayer;
+  StreamSubscription<PlayerState>? _audioPlayerSubscription;
   bool _isPlaying = false;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
@@ -30,10 +32,14 @@ class _SongDetailPageState extends State<SongDetailPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _audioPlayer!.onPlayerStateChanged.listen((state) {
-      setState(() {
-        _isPlaying = state == PlayerState.playing;
-      });
+    _audioPlayerSubscription = _audioPlayer!.onPlayerStateChanged.listen((
+      state,
+    ) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = state == PlayerState.playing;
+        });
+      }
     });
 
     // 페이지 로드 시 음역대 분석 시작
@@ -42,6 +48,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   @override
   void dispose() {
+    _audioPlayerSubscription?.cancel();
     _audioPlayer?.dispose();
     super.dispose();
   }
@@ -1271,12 +1278,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
         return;
       }
 
-      // S3에 사용자 보컬 파일 업로드
-      final uploadedUrl = await S3Service.uploadFile(
+      // S3에 사용자 보컬 파일 업로드 (ai-vocal-training-user 버킷)
+      String fileName =
+          '${widget.songData['title'] ?? 'unknown'}_${widget.songData['artist'] ?? 'unknown'}_vocal_${DateTime.now().millisecondsSinceEpoch}.wav';
+      final uploadedUrl = await S3Service.uploadUserVocalFile(
         file: audioFile,
-        artist: widget.songData['artist'] ?? '',
-        title: widget.songData['title'] ?? '',
-        fileType: FileType.userRecording, // 사용자 보컬 파일로 분류
+        fileName: fileName,
       );
 
       if (uploadedUrl != null) {

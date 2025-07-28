@@ -3,6 +3,7 @@ import '/main_layout.dart';
 import 'register.dart';
 import '../services/google_auth_service.dart';
 import '../services/kakao_auth_service.dart';
+import '../main.dart'; // CurrentUser 클래스 사용을 위해
 // import 'dart:html' as html; // 웹 전용 라이브러리이므로 모바일에서는 주석 처리
 
 class LoginPage extends StatefulWidget {
@@ -25,6 +26,9 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login(BuildContext context) {
     // 로그인 검증 생략
+    // 임시 테스트용 사용자 정보 설정
+    CurrentUser.setUser('test_user_123', '테스트사용자', 'test@example.com', 'email');
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const MainLayout()),
@@ -42,56 +46,48 @@ class _LoginPageState extends State<LoginPage> {
       final directUserInfo = await GoogleAuthService.signInWithGoogleDirect();
 
       if (directUserInfo != null) {
-        // Access Token으로 사용자 정보 가져오기
+        // Access Token으로 백엔드 API 호출
         final accessToken = directUserInfo['access_token'];
-        final userInfo = await GoogleAuthService.getUserInfoWithAccessToken(
+        final backendResponse = await GoogleAuthService.callBackendAuthAPI(
           accessToken,
         );
 
-        if (userInfo != null) {
-          // Clerk JWT 토큰 요청 (Access Token 사용)
-          final jwtToken = await GoogleAuthService.getClerkJWTWithAccessToken(
-            accessToken,
+        if (backendResponse != null && backendResponse['success'] == true) {
+          // 백엔드에서 받은 사용자 정보로 CurrentUser 설정
+          final userData = backendResponse['user'];
+          CurrentUser.setUser(
+            userData['id'].toString(),
+            userData['name'] ?? userData['email'],
+            userData['email'] ?? '',
+            userData['provider'] ?? 'google',
           );
 
-          if (jwtToken != null) {
-            // 로그인 성공 - 메인 화면으로 이동
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Google 로그인 성공: ${userInfo['email']}'),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+          // 로그인 성공 - 메인 화면으로 이동
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Google 로그인 성공: ${userData['email']}'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
 
-              // 잠시 후 메인 화면으로 이동
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MainLayout()),
-                  );
-                }
-              });
-            }
-          } else {
-            // JWT 토큰 요청 실패
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('서버 인증에 실패했습니다. 다시 시도해주세요.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+            // 잠시 후 메인 화면으로 이동
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainLayout()),
+                );
+              }
+            });
           }
         } else {
-          // 사용자 정보 가져오기 실패
+          // 백엔드 API 호출 실패
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('사용자 정보를 가져올 수 없습니다.'),
+                content: Text('서버 인증에 실패했습니다. 다시 시도해주세요.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -137,28 +133,55 @@ class _LoginPageState extends State<LoginPage> {
       print('카카오 로그인 시작...');
 
       // 카카오 로그인 시도
-      final userInfo = await KakaoAuthService.signInWithKakao();
+      final tokenInfo = await KakaoAuthService.signInWithKakao();
 
-      if (userInfo != null) {
-        // 로그인 성공 - 메인 화면으로 이동
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('카카오 로그인 성공: ${userInfo['user']['name']}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
+      if (tokenInfo != null) {
+        // Access Token으로 백엔드 API 호출
+        final accessToken = tokenInfo['access_token'];
+        final backendResponse = await KakaoAuthService.callBackendAuthAPI(
+          accessToken,
+        );
+
+        if (backendResponse != null && backendResponse['success'] == true) {
+          // 백엔드에서 받은 사용자 정보로 CurrentUser 설정
+          final userData = backendResponse['user'];
+          CurrentUser.setUser(
+            userData['id'].toString(),
+            userData['name'] ?? userData['email'],
+            userData['email'] ?? '',
+            userData['provider'] ?? 'kakao',
           );
 
-          // 잠시 후 메인 화면으로 이동
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const MainLayout()),
-              );
-            }
-          });
+          // 로그인 성공 - 메인 화면으로 이동
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('카카오 로그인 성공: ${userData['name']}'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+
+            // 잠시 후 메인 화면으로 이동
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainLayout()),
+                );
+              }
+            });
+          }
+        } else {
+          // 백엔드 API 호출 실패
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('서버 인증에 실패했습니다. 다시 시도해주세요.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } else {
         // 카카오 로그인 실패

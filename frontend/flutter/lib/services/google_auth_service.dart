@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GoogleAuthService {
   // Clerk를 통한 OAuth 처리 - 다른 URL 패턴 시도
@@ -37,7 +38,7 @@ class GoogleAuthService {
 
       // 모바일에서는 기존 Google Sign-In 사용
       final GoogleSignIn _googleSignIn = GoogleSignIn(
-        clientId: 'YOUR_GOOGLE_CLIENT_ID_HERE',
+        clientId: dotenv.env['GOOGLE_CLIENT_ID'] ?? 'default_google_client_id',
         scopes: ['email', 'profile'],
       );
 
@@ -83,6 +84,7 @@ class GoogleAuthService {
     try {
       // 웹에서는 직접 Google Sign-In 사용 (deprecated 경고 무시)
       final GoogleSignIn _googleSignIn = GoogleSignIn(
+        clientId: dotenv.env['GOOGLE_CLIENT_ID'] ?? 'default_google_client_id',
         scopes: ['email', 'profile'],
       );
 
@@ -139,7 +141,9 @@ class GoogleAuthService {
   /// Google 로그아웃
   static Future<void> signOut() async {
     try {
-      final GoogleSignIn _googleSignIn = GoogleSignIn();
+      final GoogleSignIn _googleSignIn = GoogleSignIn(
+        clientId: dotenv.env['GOOGLE_CLIENT_ID'] ?? 'default_google_client_id',
+      );
       await _googleSignIn.signOut();
       print('Google 로그아웃 완료');
     } catch (error) {
@@ -149,7 +153,9 @@ class GoogleAuthService {
 
   /// 현재 로그인된 Google 사용자 확인
   static Future<GoogleSignInAccount?> getCurrentUser() async {
-    final GoogleSignIn _googleSignIn = GoogleSignIn();
+    final GoogleSignIn _googleSignIn = GoogleSignIn(
+      clientId: dotenv.env['GOOGLE_CLIENT_ID'] ?? 'default_google_client_id',
+    );
     return await _googleSignIn.signInSilently();
   }
 
@@ -203,7 +209,7 @@ class GoogleAuthService {
   static Future<String?> getClerkJWTWithAccessToken(String accessToken) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/auth/google/callback'),
+        Uri.parse('http://10.0.2.2:8000/auth/google/callback'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'access_token': accessToken}),
       );
@@ -218,6 +224,37 @@ class GoogleAuthService {
       }
     } catch (error) {
       print('Clerk JWT 토큰 요청 오류: $error');
+      return null;
+    }
+  }
+
+  /// 백엔드 API에 Google Access Token을 전송하여 사용자 정보 및 JWT를 받아옵니다.
+  static Future<Map<String, dynamic>?> callBackendAuthAPI(
+    String accessToken,
+  ) async {
+    try {
+      const String backendUrl = 'http://10.0.2.2:8000'; // 백엔드 URL
+
+      final response = await http.post(
+        Uri.parse('$backendUrl/auth/google/callback'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'access_token': accessToken}),
+      );
+
+      print('백엔드 API 응답 상태: ${response.statusCode}');
+      print('백엔드 API 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data;
+        }
+      }
+
+      print('백엔드 API 호출 실패');
+      return null;
+    } catch (e) {
+      print('백엔드 API 호출 중 오류: $e');
       return null;
     }
   }
