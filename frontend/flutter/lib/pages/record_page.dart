@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/song.dart';
 import '../services/s3_service.dart';
+import '../services/api_config_service.dart';
 import 'score_page.dart';
 import 'package:SingSang/services/tensor_dsp_service.dart';
 
@@ -639,6 +640,7 @@ class _RecordPageState extends State<RecordPage> {
   late AudioRecorder _audioRecorder;
   String? _recordingPath;
   bool _isRecordingStarted = false;
+  bool _isTensorDspAnalyzing = false; // TensorDSP 분석 상태 추적
 
   // 퍼펙트스코어 멜로디 바 데이터 (임시 하드코딩) - MIDI 로드 실패 시 사용
   final List<_MelodyBar> melodyBars = [
@@ -984,6 +986,7 @@ class _RecordPageState extends State<RecordPage> {
     // TensorDSP 중지
     print('🔧 TensorDSP 중지 중...');
     await TensorDspService.stopRealTimeAnalysis();
+    _isTensorDspAnalyzing = false; // 분석 상태 해제
     print('✅ TensorDSP 중지 완료');
 
     // 실제 오디오 녹음 중지 및 파일 저장
@@ -1005,7 +1008,7 @@ class _RecordPageState extends State<RecordPage> {
 
           setState(() {
             _hasRecording = true;
-            _recordingPath = recordedPath;
+            // _recordingPath는 S3 업로드 후 S3 URL로 업데이트됨
             isRecording = false; // 녹음 상태 업데이트
           });
 
@@ -1051,6 +1054,9 @@ class _RecordPageState extends State<RecordPage> {
     }
 
     print('✅ 녹음 자동 중지 완료');
+
+    // 점수 계산 및 점수 페이지로 이동
+    await _calculateAndNavigateToScorePage();
   }
 
   // S3에 녹음 파일 업로드
@@ -1069,11 +1075,18 @@ class _RecordPageState extends State<RecordPage> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'recording_${timestamp}.wav';
 
-      // S3에 업로드
-      final uploadedUrl = await S3Service.uploadUserVocalFile(
-        file: recordingFile,
-        fileName: fileName,
-      );
+      // S3에 업로드 (타임아웃 설정)
+      final uploadedUrl =
+          await S3Service.uploadUserVocalFile(
+            file: recordingFile,
+            fileName: fileName,
+          ).timeout(
+            Duration(seconds: 30),
+            onTimeout: () {
+              print('❌ S3 업로드 타임아웃');
+              return null;
+            },
+          );
 
       if (uploadedUrl != null) {
         print('✅ S3 업로드 성공: $uploadedUrl');
@@ -1149,13 +1162,33 @@ class _RecordPageState extends State<RecordPage> {
     }
 
     try {
-      // TensorDSP에서 최종 점수 데이터 가져오기
-      final scoreData = await TensorDspService.getCurrentPitchScore();
+      // TensorDSP에서 최종 점수 데이터 가져오기 (타임아웃 설정)
+      final scoreData = await TensorDspService.getCurrentPitchScore().timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          print('❌ TensorDSP 점수 가져오기 타임아웃');
+          return <String, double>{
+            'score': 50.0,
+            'timingScore': 50.0,
+            'pitch': 0.0,
+            'audioLevel': 0.0,
+          };
+        },
+      );
       print('📊 TensorDSP 점수 데이터: $scoreData');
 
-      // 점수 계산
-      final pitchScore = scoreData['score']?.toInt() ?? 0;
-      final timingScore = scoreData['timingScore']?.toInt() ?? 0;
+      // 점수 계산 (안전한 형변환)
+      int pitchScore = 0;
+      int timingScore = 0;
+
+      try {
+        pitchScore = scoreData['score']?.toInt() ?? 0;
+        timingScore = scoreData['timingScore']?.toInt() ?? 0;
+      } catch (e) {
+        print('❌ 점수 형변환 오류: $e');
+        pitchScore = 50;
+        timingScore = 50;
+      }
 
       // 총점 계산 (피치와 타이밍의 평균)
       final totalScore = ((pitchScore + timingScore) / 2).round();
@@ -1165,36 +1198,40 @@ class _RecordPageState extends State<RecordPage> {
 
       print('📊 계산된 점수: 피치=$pitchScore, 타이밍=$timingScore, 총점=$totalScore');
 
-      // 점수 페이지로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ScorePage(
-            song: song,
-            pitchScore: pitchScore,
-            rhythmScore: timingScore,
-            totalScore: totalScore,
-            recommendedSongs: recommendedSongs,
-            hasRecording: _hasRecording,
-            recordingPath: _recordingPath,
+      // 점수 페이지로 이동 (안전한 네비게이션)
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: pitchScore,
+              rhythmScore: timingScore,
+              totalScore: totalScore,
+              recommendedSongs: recommendedSongs,
+              hasRecording: _hasRecording,
+              recordingPath: _recordingPath,
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
       print('❌ 점수 계산 실패: $e');
       // 오류 발생 시 기본값으로 점수 페이지 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ScorePage(
-            song: song,
-            pitchScore: 0,
-            rhythmScore: 0,
-            totalScore: 0,
-            recommendedSongs: [],
-            hasRecording: _hasRecording,
-            recordingPath: _recordingPath,
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ScorePage(
+              song: song,
+              pitchScore: 0,
+              rhythmScore: 0,
+              totalScore: 0,
+              recommendedSongs: [],
+              hasRecording: _hasRecording,
+              recordingPath: _recordingPath,
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -1315,18 +1352,24 @@ class _RecordPageState extends State<RecordPage> {
 
       // TensorDSP 실시간 분석 시작 (한 번만)
       await TensorDspService.startRealTimeAnalysis();
+      _isTensorDspAnalyzing = true; // 분석 상태 설정
       print('✅ TensorDSP 시작 완료');
 
       // === 실시간 점수 업데이트 타이머 시작 ===
       _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
-        if (!mounted || !isRecording) return;
+        if (!mounted || !_isRecordingStarted || !_isTensorDspAnalyzing)
+          return; // 실제 녹음 및 분석 상태 확인
 
         try {
           final data = await TensorDspService.getCurrentPitchScore();
-          print('[TensorDSP] 실시간 데이터: $data');
-          print(
-            '[TensorDSP] 실시간 점수: 피치=${data['score']}, 박자=${data['timingScore']}, 오디오레벨=${data['audioLevel']}, 피치값=${data['pitch']}',
-          );
+
+          // 데이터가 유효한지 확인 (오디오 레벨이 0이 아닌 경우에만 로그 출력)
+          if (data['audioLevel'] != null && (data['audioLevel'] ?? 0.0) > 0.0) {
+            print('[TensorDSP] 실시간 데이터: $data');
+            print(
+              '[TensorDSP] 실시간 점수: 피치=${data['score']}, 박자=${data['timingScore']}, 오디오레벨=${data['audioLevel']}, 피치값=${data['pitch']}',
+            );
+          }
 
           setState(() {
             currentScore = data['score'] ?? 0.0;
@@ -2258,7 +2301,7 @@ Future<String> fetchAlbumCoverUrl(String artist, String title) async {
   try {
     // 백엔드 API를 통해 presigned URL 생성
     final apiUrl =
-        'http://10.0.2.2:8000/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
+        '${ApiConfigService.baseUrl}/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
     print('앨범커버 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));
@@ -2345,7 +2388,7 @@ Future<List<_LyricLine>> fetchLyrics(String artist, {String? songTitle}) async {
     // 백엔드 API를 통해 가사 데이터 가져오기
     final songName = songTitle ?? 'Never Ending Story';
     final apiUrl =
-        'http://10.0.2.2:8000/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
+        '${ApiConfigService.baseUrl}/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
     print('가사 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));
