@@ -738,16 +738,29 @@ class _RecordPageState extends State<RecordPage> {
 
         // 사용자에게 녹음 계속 여부 확인
         if (isRecording && _isRecordingStarted) {
-          print('📹 녹음 진행 중 - 사용자 선택 대기');
+          print('📹 녹음 진행 중 - 사용자가 수동으로 중지할 때까지 계속');
 
-          // 3초 후 자동으로 녹음 중지 (사용자가 수동으로 중지할 수 있음)
-          Timer(Duration(seconds: 3), () async {
-            if (mounted && isRecording && _isRecordingStarted) {
-              print('⏰ 3초 후 자동 녹음 중지');
-              await _stopRecordingAndSave();
-              await _calculateAndNavigateToScorePage();
-            }
-          });
+          // 사용자에게 안내 메시지 표시
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🎵 Inst 재생이 끝났습니다. 녹음 버튼을 눌러 중지하세요!'),
+                backgroundColor: Colors.blue,
+                duration: Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: '중지',
+                  textColor: Colors.white,
+                  onPressed: () async {
+                    if (isRecording && _isRecordingStarted) {
+                      print('👤 사용자가 수동으로 녹음 중지');
+                      await _stopRecordingAndSave();
+                      await _calculateAndNavigateToScorePage();
+                    }
+                  },
+                ),
+              ),
+            );
+          }
         }
 
         print('✅ inst 재생 완료 처리 완료');
@@ -1044,7 +1057,7 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _uploadRecordingToS3(File recordingFile) async {
     try {
       print('☁️ S3 업로드 시작...');
-      
+
       // Song 객체 가져오기
       final song = ModalRoute.of(context)?.settings.arguments as Song?;
       if (song == null) {
@@ -1064,7 +1077,7 @@ class _RecordPageState extends State<RecordPage> {
 
       if (uploadedUrl != null) {
         print('✅ S3 업로드 성공: $uploadedUrl');
-        
+
         // 업로드된 URL을 _recordingPath에 저장 (S3 URL로 변경)
         setState(() {
           _recordingPath = uploadedUrl;
@@ -1300,23 +1313,30 @@ class _RecordPageState extends State<RecordPage> {
         print('✅ MIDI 노트 데이터 설정: $midiNotesSet');
       }
 
+      // TensorDSP 실시간 분석 시작 (한 번만)
       await TensorDspService.startRealTimeAnalysis();
       print('✅ TensorDSP 시작 완료');
 
-      // === 여기서 타이머 시작 ===
+      // === 실시간 점수 업데이트 타이머 시작 ===
       _tensorDspTimer = Timer.periodic(Duration(milliseconds: 100), (_) async {
-        final data = await TensorDspService.getCurrentPitchScore();
-        if (!mounted) return;
-        print('[TensorDSP] Flutter에서 받은 데이터: $data');
-        print(
-          '[TensorDSP] 실시간 점수: 피치=${data['score']}, 박자=${data['timingScore']}, 오디오레벨=${data['audioLevel']}, 피치값=${data['pitch']}',
-        );
-        setState(() {
-          currentScore = data['score'] ?? 0.0;
-          currentPitch = data['pitch'] ?? 0.0;
-          currentTimingScore = data['timingScore'] ?? 0.0;
-          currentAudioLevel = data['audioLevel'] ?? 0.0;
-        });
+        if (!mounted || !isRecording) return;
+
+        try {
+          final data = await TensorDspService.getCurrentPitchScore();
+          print('[TensorDSP] 실시간 데이터: $data');
+          print(
+            '[TensorDSP] 실시간 점수: 피치=${data['score']}, 박자=${data['timingScore']}, 오디오레벨=${data['audioLevel']}, 피치값=${data['pitch']}',
+          );
+
+          setState(() {
+            currentScore = data['score'] ?? 0.0;
+            currentPitch = data['pitch'] ?? 0.0;
+            currentTimingScore = data['timingScore'] ?? 0.0;
+            currentAudioLevel = data['audioLevel'] ?? 0.0;
+          });
+        } catch (e) {
+          print('❌ TensorDSP 데이터 가져오기 실패: $e');
+        }
       });
       // 실제 오디오 녹음 시작
       try {
@@ -1372,9 +1392,7 @@ class _RecordPageState extends State<RecordPage> {
         );
         print('✅ MIDI 노트 데이터 설정: $midiNotesSet');
       }
-      // TensorDSP 실시간 분석 시작
-      await TensorDspService.startRealTimeAnalysis();
-      print('✅ TensorDSP 시작 완료');
+      // TensorDSP는 이미 위에서 시작됨 (중복 제거)
       setState(() {
         isRecording = true;
         isPlaying = true;
