@@ -4,6 +4,7 @@ import '../models/song.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/s3_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class AiVocalPlayPage extends StatefulWidget {
   @override
@@ -37,7 +38,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
   Future<void> _loadAlbumCover() async {
     try {
       final song = ModalRoute.of(context)!.settings.arguments as Song;
-      
+
       // Song 객체의 albumCover 필드가 이미 S3 URL인지 확인
       if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
         print('Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
@@ -50,7 +51,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
       } else {
         // 기존 방식으로 URL 생성
         final coverUrl = await _fetchAlbumCoverUrl(song.artist, song.title);
-        
+
         if (mounted) {
           setState(() {
             _albumCoverUrl = coverUrl;
@@ -170,12 +171,12 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
       // S3Service를 사용하여 앨범 커버 URL 생성
       String albumCoverUrl = S3Service.getAlbumCoverUrl(artist, title);
       print('앨범커버 S3 URL 생성: $albumCoverUrl');
-      
+
       // URL 유효성 검사
       try {
         final response = await http.head(Uri.parse(albumCoverUrl));
         print('앨범커버 S3 응답 코드: ${response.statusCode}');
-        
+
         if (response.statusCode == 200) {
           print('앨범커버 S3 성공: $albumCoverUrl');
           return albumCoverUrl;
@@ -183,7 +184,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
       } catch (e) {
         print('앨범커버 S3 요청 실패: $e');
       }
-      
+
       print('앨범커버 로드 실패, 기본 이미지 사용');
       return 'https://via.placeholder.com/150x150?text=앨범커버';
     } catch (e) {
@@ -194,15 +195,17 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
 
   Widget _buildAlbumCoverWidget() {
     final song = ModalRoute.of(context)!.settings.arguments as Song;
-    
+
     print('=== _buildAlbumCoverWidget 디버깅 (Play) ===');
     print('Song 객체 정보:');
     print('  - title: ${song.title}');
     print('  - artist: ${song.artist}');
     print('  - albumCover: "${song.albumCover}"');
     print('  - albumCover.isEmpty: ${song.albumCover.isEmpty}');
-    print('  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}');
-    
+    print(
+      '  - albumCover.startsWith("http"): ${song.albumCover.startsWith('http')}',
+    );
+
     // Song 객체의 albumCover가 있으면 사용
     if (song.albumCover.isNotEmpty && song.albumCover.startsWith('http')) {
       print('✅ Song 객체에서 앨범커버 URL 사용: ${song.albumCover}');
@@ -216,9 +219,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
           height: 200,
           color: Colors.grey[200],
           child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
+            child: CircularProgressIndicator(color: Colors.deepPurple),
           ),
         ),
         errorWidget: (context, url, error) {
@@ -227,18 +228,14 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
             width: 200,
             height: 200,
             color: Colors.grey[200],
-            child: Icon(
-              Icons.music_note,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            child: Icon(Icons.music_note, size: 80, color: Colors.grey[400]),
           );
         },
       );
     }
-    
+
     print('❌ Song 객체에 URL이 없음');
-    
+
     // Song 객체에 URL이 없으면 로딩 상태 표시
     if (_isLoadingCover) {
       return Container(
@@ -246,13 +243,11 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
         height: 200,
         color: Colors.grey[200],
         child: Center(
-          child: CircularProgressIndicator(
-            color: Colors.deepPurple,
-          ),
+          child: CircularProgressIndicator(color: Colors.deepPurple),
         ),
       );
     }
-    
+
     // 생성된 URL이 있으면 사용
     if (_albumCoverUrl != null) {
       return CachedNetworkImage(
@@ -265,34 +260,24 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
           height: 200,
           color: Colors.grey[200],
           child: Center(
-            child: CircularProgressIndicator(
-              color: Colors.deepPurple,
-            ),
+            child: CircularProgressIndicator(color: Colors.deepPurple),
           ),
         ),
         errorWidget: (context, url, error) => Container(
           width: 200,
           height: 200,
           color: Colors.grey[200],
-          child: Icon(
-            Icons.music_note,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          child: Icon(Icons.music_note, size: 80, color: Colors.grey[400]),
         ),
       );
     }
-    
+
     // 기본 아이콘 표시
     return Container(
       width: 200,
       height: 200,
       color: Colors.grey[200],
-      child: Icon(
-        Icons.music_note,
-        size: 80,
-        color: Colors.grey[400],
-      ),
+      child: Icon(Icons.music_note, size: 80, color: Colors.grey[400]),
     );
   }
 
@@ -303,7 +288,10 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('AI Vocal 합성', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          'AI Vocal 합성',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -414,7 +402,10 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.deepPurple[50],
                         borderRadius: BorderRadius.circular(20),
@@ -430,7 +421,10 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                     ),
                     SizedBox(width: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.purple[50],
                         borderRadius: BorderRadius.circular(20),
@@ -639,10 +633,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                     SizedBox(width: 8),
                     Text(
                       'AI 보컬 합성 완료',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 ),

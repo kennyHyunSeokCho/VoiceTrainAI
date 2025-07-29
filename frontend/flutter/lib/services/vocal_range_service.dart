@@ -1,124 +1,103 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'api_config_service.dart';
+import '../services/api_config_service.dart';
 
 class VocalRangeAnalysis {
-  final String songTitle;
-  final String artist;
-  final String totalRange;
-  final String comfortableRange;
-  final String coreRange;
-  final String difficulty;
-  final String analysisStatus;
+  final String? lowestNote;
+  final String? highestNote;
+  final String? rangeSpan;
+  final List<String>? topNotes;
+  final Map<String, int>? noteFrequencies;
 
   VocalRangeAnalysis({
-    required this.songTitle,
-    required this.artist,
-    required this.totalRange,
-    required this.comfortableRange,
-    required this.coreRange,
-    required this.difficulty,
-    required this.analysisStatus,
+    this.lowestNote,
+    this.highestNote,
+    this.rangeSpan,
+    this.topNotes,
+    this.noteFrequencies,
   });
 
   factory VocalRangeAnalysis.fromJson(Map<String, dynamic> json) {
+    final vocalRange = json['vocal_range'] as Map<String, dynamic>?;
+    if (vocalRange == null) return VocalRangeAnalysis();
+
     return VocalRangeAnalysis(
-      songTitle: json['song_title'] ?? '',
-      artist: json['artist'] ?? '',
-      totalRange: json['total_range'] ?? '',
-      comfortableRange: json['comfortable_range'] ?? '',
-      coreRange: json['core_range'] ?? '',
-      difficulty: json['difficulty'] ?? '',
-      analysisStatus: json['analysis_status'] ?? '',
+      lowestNote: vocalRange['lowest_note'] as String?,
+      highestNote: vocalRange['highest_note'] as String?,
+      rangeSpan: vocalRange['range_span'] as String?,
+      topNotes: (vocalRange['top_notes'] as List<dynamic>?)?.cast<String>(),
+      noteFrequencies: vocalRange['note_frequencies'] != null
+          ? Map<String, int>.from(vocalRange['note_frequencies'])
+          : null,
     );
   }
 }
 
 class VocalRangeService {
-  // 백엔드 서버 URL 설정
-  static String get baseUrl => ApiConfigService.baseUrl;
-
-  /// 노래의 음역대를 분석합니다.
-  static Future<VocalRangeAnalysis> analyzeVocalRange(
+  /// 안전한 음역대 분석 (기존 메서드)
+  static Future<VocalRangeAnalysis?> analyzeVocalRangeSafe(
     String title,
     String artist,
   ) async {
     try {
-      print('HTTP 요청 시작: $baseUrl/api/vocal-range/$title/$artist'); // 디버깅용
+      final String backendUrl = await ApiConfigService.baseUrl;
+
+      final response = await http
+          .get(Uri.parse('$backendUrl/api/vocal-range/$artist/$title'))
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return VocalRangeAnalysis.fromJson(data);
+        }
+      }
+    } catch (e) {
+      print('음역대 분석 오류: $e');
+    }
+    return null;
+  }
+
+  /// 원곡 기반 음역대 분석 (새로운 메서드)
+  static Future<VocalRangeAnalysis?> analyzeOriginalSongVocalRange(
+    String title,
+    String artist,
+  ) async {
+    try {
+      print('🎵 원곡 음역대 분석 시작: $artist - $title');
+
+      final String backendUrl = await ApiConfigService.baseUrl;
 
       final response = await http
           .get(
-            Uri.parse('$baseUrl/api/vocal-range/$title/$artist'),
-            headers: {'Content-Type': 'application/json'},
+            Uri.parse(
+              '$backendUrl/api/vocal-range/${Uri.encodeComponent(artist)}/${Uri.encodeComponent(title)}',
+            ),
           )
-          .timeout(
-            const Duration(seconds: 10), // 10초 타임아웃 설정
-            onTimeout: () {
-              print('HTTP 요청 타임아웃'); // 디버깅용
-              throw Exception('Request timeout');
-            },
-          );
+          .timeout(const Duration(seconds: 60)); // 분석 시간이 오래 걸릴 수 있으므로 60초로 설정
 
-      print('HTTP 응답 상태 코드: ${response.statusCode}'); // 디버깅용
-      print('HTTP 응답 본문: ${response.body}'); // 디버깅용
+      print('📊 응답 상태 코드: ${response.statusCode}');
+      print('📊 응답 내용: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        return VocalRangeAnalysis.fromJson(data);
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          final analysis = VocalRangeAnalysis.fromJson(data);
+          print('✅ 음역대 분석 성공:');
+          print('  - 최저음: ${analysis.lowestNote}');
+          print('  - 최고음: ${analysis.highestNote}');
+          print('  - 음역대: ${analysis.rangeSpan}');
+          print('  - 주요 음들: ${analysis.topNotes}');
+          return analysis;
+        }
+      } else if (response.statusCode == 404) {
+        print('❌ 원곡 파일을 찾을 수 없습니다: $artist - $title');
       } else {
-        print('API 호출 실패: ${response.statusCode}'); // 디버깅용
-        // API 호출 실패 시 기본값 반환
-        return VocalRangeAnalysis(
-          songTitle: title,
-          artist: artist,
-          totalRange: '분석 실패',
-          comfortableRange: '분석 실패',
-          coreRange: '분석 실패',
-          difficulty: '분석 실패',
-          analysisStatus: 'failed',
-        );
+        print('❌ 음역대 분석 실패: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('HTTP 요청 오류: $e'); // 디버깅용
-      // 네트워크 오류 등 예외 발생 시 기본값 반환
-      return VocalRangeAnalysis(
-        songTitle: title,
-        artist: artist,
-        totalRange: '연결 오류',
-        comfortableRange: '연결 오류',
-        coreRange: '연결 오류',
-        difficulty: '연결 오류',
-        analysisStatus: 'error',
-      );
+      print('❌ 음역대 분석 오류: $e');
     }
-  }
-
-  /// URL 인코딩을 처리하여 안전한 API 호출을 합니다.
-  static Future<VocalRangeAnalysis> analyzeVocalRangeSafe(
-    String title,
-    String artist,
-  ) async {
-    try {
-      // URL 인코딩 처리
-      final encodedTitle = Uri.encodeComponent(title);
-      final encodedArtist = Uri.encodeComponent(artist);
-
-      print(
-        'API 호출: $baseUrl/api/vocal-range/$encodedTitle/$encodedArtist',
-      ); // 디버깅용
-
-      return await analyzeVocalRange(encodedTitle, encodedArtist);
-    } catch (e) {
-      print('음역대 분석 오류: $e'); // 디버깅용
-      return VocalRangeAnalysis(
-        songTitle: title,
-        artist: artist,
-        totalRange: '인코딩 오류',
-        comfortableRange: '인코딩 오류',
-        coreRange: '인코딩 오류',
-        difficulty: '인코딩 오류',
-        analysisStatus: 'error',
-      );
-    }
+    return null;
   }
 }

@@ -1,12 +1,21 @@
-from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
 import boto3
 import os
 import urllib.parse
+from src.auth.clerk_auth import ClerkAuth
+from src.auth.oauth_handlers import OAuthHandler
+from src.DB.database import get_db
+from sqlalchemy.orm import Session
+import urllib.parse
+import boto3
 from botocore.exceptions import ClientError
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import os
 import json
 from typing import List, Optional
 import librosa
@@ -17,12 +26,16 @@ import tempfile
 from datetime import datetime, timedelta
 from collections import defaultdict
 import asyncio
-from src.auth.clerk_auth import ClerkAuth
-from src.auth.oauth_handlers import OAuthHandler
-from src.DB.database import get_db
-from sqlalchemy.orm import Session
-from src.api.recommend import router as recommend_router
-from src.api.feedback import router as feedback_router
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
+
+# AWS 환경변수 설정
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.getenv('AWS_REGION', 'ap-northeast-2')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'ai-vocal-training-user')
 
 app = FastAPI(title="Voice Training AI API", version="1.0.0")
 
@@ -34,10 +47,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 라우터 등록
-app.include_router(recommend_router)
-app.include_router(feedback_router)
 
 # Clerk 인증 인스턴스 (테스트 모드로 초기화)
 try:
@@ -94,9 +103,9 @@ async def monitor_user_files(user_id: str):
     """사용자의 S3 파일 변경을 모니터링"""
     s3_client = boto3.client(
         's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        region_name=os.getenv('AWS_REGION', 'ap-northeast-2')
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
     )
     
     last_files = set()
@@ -106,7 +115,7 @@ async def monitor_user_files(user_id: str):
             # 사용자의 vocal 폴더에서 파일 목록 조회
             prefix = f"{user_id}/vocal/"
             response = s3_client.list_objects_v2(
-                Bucket=os.getenv('S3_BUCKET_NAME'),
+                Bucket=S3_BUCKET_NAME,
                 Prefix=prefix
             )
             
@@ -193,6 +202,26 @@ class PresignedUrlRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "Voice Training AI API"}
+
+@app.get("/api/ip-info")
+async def get_ip_info():
+    """서버의 로컬 IP 주소를 반환합니다."""
+    import socket
+    try:
+        # 로컬 IP 주소 가져오기
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return {
+            "success": True,
+            "ip": local_ip,
+            "hostname": hostname
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "ip": "192.168.0.31"  # 기본값
+        }
 
 @app.post("/auth/google/callback")
 async def google_oauth_callback(token_request: GoogleTokenRequest, db: Session = Depends(get_db)):
@@ -397,30 +426,6 @@ async def get_current_user_info():
         }
     }
 
-@app.get("/api/vocal-range/{title}/{artist}")
-async def get_vocal_range(title: str, artist: str):
-    """노래별 보컬 범위 정보 조회 (임시 더미 데이터)"""
-    # URL 디코딩
-    import urllib.parse
-    decoded_title = urllib.parse.unquote(title)
-    decoded_artist = urllib.parse.unquote(artist)
-    
-    # 임시 더미 데이터 반환
-    return {
-        "success": True,
-        "song": {
-            "title": decoded_title,
-            "artist": decoded_artist,
-            "vocal_range": {
-                "min_note": "C3",
-                "max_note": "G5",
-                "key": "C Major",
-                "bpm": 120,
-                "difficulty": "Medium"
-            }
-        }
-    }
-
 @app.post("/upload/presigned-url")
 async def get_presigned_url(request: PresignedUrlRequest):
     """S3 업로드를 위한 presigned URL 생성"""
@@ -428,9 +433,9 @@ async def get_presigned_url(request: PresignedUrlRequest):
         # S3 클라이언트 생성
         s3_client = boto3.client(
             's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-            region_name=os.getenv('AWS_REGION', 'ap-northeast-2')
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
         )
         
         # PUT용 presigned URL 생성 (업로드용)
@@ -456,12 +461,8 @@ async def get_presigned_url(request: PresignedUrlRequest):
 
 @app.get("/api/user-uploads/{user_id}")
 async def get_user_uploads(user_id: str):
-    """사용자가 업로드한 파일 목록 조회"""
+    """사용자가 업로드한 파일 목록을 가져옵니다."""
     try:
-        # config.py에서 AWS 설정 가져오기
-        from src.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME
-        
-        # S3 클라이언트 생성
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -469,8 +470,9 @@ async def get_user_uploads(user_id: str):
             region_name=AWS_REGION
         )
         
-        # 사용자의 vocal 폴더에서 파일 목록 조회
-        prefix = f"{user_id}/vocal/"
+        # 사용자의 vocal 폴더에서 파일 목록 가져오기
+        prefix = f'{user_id}/vocal/'
+        
         response = s3_client.list_objects_v2(
             Bucket=S3_BUCKET_NAME,
             Prefix=prefix
@@ -540,16 +542,49 @@ async def get_user_uploads(user_id: str):
         }
         
     except Exception as e:
+        print(f"❌ 사용자 업로드 목록 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"사용자 업로드 파일 조회 실패: {str(e)}")
+
+@app.delete("/api/user-uploads/{user_id}/{filename}")
+async def delete_user_upload(user_id: str, filename: str):
+    """사용자가 업로드한 파일을 삭제합니다."""
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        
+        # S3에서 파일 삭제
+        s3_key = f'{user_id}/vocal/{filename}'
+        
+        # 파일이 존재하는지 확인
+        try:
+            s3_client.head_object(Bucket=S3_BUCKET_NAME, Key=s3_key)
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+            else:
+                raise
+        
+        # 파일 삭제
+        s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=s3_key)
+        
+        print(f"🗑️ 파일 삭제 완료: {s3_key}")
+        
+        return {"message": "파일이 성공적으로 삭제되었습니다.", "deleted_file": filename}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ 파일 삭제 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"파일 삭제 중 오류가 발생했습니다: {str(e)}")
 
 @app.get("/api/s3/presigned-url")
 async def get_s3_presigned_url(bucket: str, key: str):
     """S3 파일 다운로드를 위한 presigned URL 생성"""
     try:
-        # config.py에서 AWS 설정 가져오기
-        from src.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
-        
-        # S3 클라이언트 생성
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -598,7 +633,6 @@ async def get_album_cover_url(artist: str, title: str):
         clean_title = clean_filename(decoded_title)
         
         # S3 앨범 커버 URL 생성
-        from src.config import AWS_REGION
         album_cover_url = f"https://ai-vocal-training.s3.{AWS_REGION}.amazonaws.com/album_cover/{clean_artist}_{clean_title}.jpg"
         
         return {
@@ -618,10 +652,6 @@ async def get_album_cover_by_title(title: str):
         # URL 디코딩
         decoded_title = urllib.parse.unquote(title)
         
-        # config.py에서 AWS 설정 가져오기
-        from src.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
-        
-        # S3 클라이언트 생성
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -681,14 +711,10 @@ async def get_album_cover_by_title(title: str):
 async def get_audio_presigned_url(user_id: str, filename: str):
     """오디오 파일 재생을 위한 presigned URL 생성"""
     try:
-        # config.py에서 AWS 설정 가져오기
-        from src.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME
-        
         # URL 디코딩
         decoded_user_id = urllib.parse.unquote(user_id)
         decoded_filename = urllib.parse.unquote(filename)
         
-        # S3 클라이언트 생성
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -765,18 +791,16 @@ async def get_ai_vocal_presigned_url(artist: str, title: str):
     AI 보컬 파일의 presigned URL을 생성합니다.
     """
     try:
-        from src.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME
-        
-        # AI 보컬 파일 경로 (ai-vocal-training-user 버킷 사용)
-        ai_vocal_key = f"MusicFile/{artist}/vocal/{artist}_{title}_vocal.wav"
-        bucket_name = S3_BUCKET_NAME  # user 버킷 사용
-        
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
             region_name=AWS_REGION
         )
+        
+        # AI 보컬 파일 경로 (ai-vocal-training-user 버킷 사용)
+        ai_vocal_key = f"MusicFile/{artist}/vocal/{artist}_{title}_vocal.wav"
+        bucket_name = S3_BUCKET_NAME  # user 버킷 사용
         
         try:
             # S3에서 파일 존재 여부 확인

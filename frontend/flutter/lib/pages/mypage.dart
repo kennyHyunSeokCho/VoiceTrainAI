@@ -6,6 +6,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../services/s3_service.dart';
 import '../main.dart'; // CurrentUser 사용을 위해
 import 'user_recording_play_page.dart'; // 재생 페이지 import 추가
+import '../services/api_config_service.dart'; // ApiConfigService 추가
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -70,11 +71,13 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
   }
 
   // WebSocket 연결
-  void _connectWebSocket() {
+  void _connectWebSocket() async {
     if (currentUserId == null) return;
 
     try {
-      final wsUrl = 'ws://192.168.0.47:8000/ws/$currentUserId';
+      final baseUrl = await ApiConfigService.baseUrl;
+      final wsUrl =
+          'ws://${baseUrl.replaceFirst('http://', '')}/ws/$currentUserId';
       print('🔗 WebSocket 연결 시도: $wsUrl');
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
@@ -555,38 +558,15 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
     children: [
       ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey.shade300,
-                    child: const Icon(Icons.music_note, color: Colors.grey),
-                  );
-                },
-              )
-            : Container(
-                width: 100,
-                height: 100,
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.music_note, color: Colors.grey),
-              ),
-      ),
-      const SizedBox(height: 4),
-      SizedBox(
-        width: 100,
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 12),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 2,
+        child: Image.asset(
+          'assets/images/cat.webp',
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
         ),
       ),
+      const SizedBox(height: 4),
+      Text(title, style: const TextStyle(fontSize: 12)),
     ],
   );
 

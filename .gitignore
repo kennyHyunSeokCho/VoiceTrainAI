@@ -26,6 +26,7 @@ node_modules/
 
 # API keys and sensitive configuration
 .cursor/mcp.json
+backend/src/config.py
 
 # 보컬 분리 테스트 폴더들 (용량이 클 수 있어서 제외)
 backend/src/vocal/test_data/
@@ -44,6 +45,10 @@ ENV/
 data/music_file/
 data/music_png/
 data/info/
+
+# requirements 디코딩 오류 수정 python 파일
+requirements_cleaned.txt
+fix_encoding.py
 
 # AWS/민감정보
 config.py
