@@ -14,9 +14,9 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/song.dart';
 import '../services/s3_service.dart';
-import '../services/api_config_service.dart';
 import 'score_page.dart';
 import 'package:SingSang/services/tensor_dsp_service.dart';
+import 'package:SingSang/services/api_config_service.dart';
 
 // MIDI 노트 데이터 클래스
 class _MidiNote {
@@ -424,6 +424,8 @@ class _MidiNoteWidget extends StatefulWidget {
   final double barAreaHeight;
   final double centerLineX;
   final double currentTime;
+  final double currentScore; // TensorDSP 피치 점수
+  final double currentTimingScore; // TensorDSP 타이밍 점수
   final Function(_Accuracy) onPassed;
 
   const _MidiNoteWidget({
@@ -434,6 +436,8 @@ class _MidiNoteWidget extends StatefulWidget {
     required this.barAreaHeight,
     required this.centerLineX,
     required this.currentTime,
+    required this.currentScore,
+    required this.currentTimingScore,
     required this.onPassed,
   });
 
@@ -491,7 +495,7 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
   }
 
   double _calculateLeft() {
-    // 노트의 시작 시간에 따른 X 위치 계산 (오른쪽에서 왼쪽으로)
+    // 노래방 스타일 실시간 노트 흐름 시각화
     double width = _calculateWidth();
     double totalMove = widget.barAreaWidth - width - 24; // 24: left padding 보정
 
@@ -516,15 +520,17 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
     double progress = (lookAheadTime - timeFromAppear) / lookAheadTime;
     progress = progress.clamp(0.0, 1.0);
 
-    // 오른쪽에서 왼쪽으로 이동
+    // 오른쪽에서 왼쪽으로 이동 (노래방 스타일)
     return widget.barAreaWidth - (progress * totalMove);
   }
 
   double _calculateWidth() {
-    // 노트 길이에 따른 너비 계산
-    return (widget.note.duration / widget.totalDuration) *
-        widget.barAreaWidth *
-        1.2;
+    // 노래방 스타일 노트 너비 계산
+    double baseWidth = 8.0; // 기본 노트 너비
+    double durationRatio = widget.note.duration / widget.totalDuration;
+    double calculatedWidth =
+        baseWidth + (durationRatio * widget.barAreaWidth * 0.1);
+    return calculatedWidth.clamp(6.0, 30.0); // 최소 6px, 최대 30px
   }
 
   bool _isPassingCenter() {
@@ -534,24 +540,39 @@ class _MidiNoteWidgetState extends State<_MidiNoteWidget> {
   }
 
   Color _getNoteColor() {
-    // 기준선을 지나기 전에는 기본 색상, 지난 후에는 정확도에 따른 색상
-    if (lastAccuracy == null) {
-      return const Color(0xFF7F8CAA); // 기본 색상 (사용자 요구사항)
+    // TensorDSP 실시간 점수 기반 색상 로직
+    double timeDiff = widget.note.startTime - widget.currentTime;
+
+    // 기준선을 지나기 전 (아직 도달하지 않은 노트)
+    if (timeDiff > 0.1) {
+      return const Color(0xFF7F8CAA); // 기본 색상 (회색)
     }
 
-    // 정확도에 따른 색상 (사용자 요구사항)
-    switch (lastAccuracy!) {
-      case _Accuracy.Perfect:
-        return const Color(0xFF91C8E4); // Perfect: 91C8E4
-      case _Accuracy.Great:
-        return const Color(0xFF97B067); // Great: 97B067
-      case _Accuracy.Good:
-        return const Color(0xFFFFCC00); // Good: FFCC00
-      case _Accuracy.Normal:
-        return const Color(0xFFFF6F3C); // Normal: FF6F3C
-      case _Accuracy.Bad:
-        return const Color(0xFFB22222); // Bad: B22222
+    // 기준선을 지난 후 (이미 지나간 노트) - TensorDSP 점수 기반
+    if (timeDiff < -0.1) {
+      // TensorDSP에서 받아온 실시간 점수 사용
+      double pitchScore = widget.currentScore; // TensorDSP 피치 점수
+      double timingScore = widget.currentTimingScore; // TensorDSP 타이밍 점수
+
+      // 피치와 타이밍 점수의 평균으로 정확도 판단
+      double averageScore = (pitchScore + timingScore) / 2.0;
+
+      // 점수에 따른 색상 결정 (노래방 스타일)
+      if (averageScore >= 85.0) {
+        return const Color(0xFF91C8E4); // Perfect: 파란색
+      } else if (averageScore >= 70.0) {
+        return const Color(0xFF97B067); // Great: 초록색
+      } else if (averageScore >= 50.0) {
+        return const Color(0xFFFFCC00); // Good: 노란색
+      } else if (averageScore >= 30.0) {
+        return const Color(0xFFFF6F3C); // Normal: 주황색
+      } else {
+        return const Color(0xFFB22222); // Bad: 빨간색
+      }
     }
+
+    // 기준선 근처 (현재 노트) - 하이라이트 색상
+    return const Color(0xFFFFD700); // 골드 색상으로 하이라이트
   }
 
   _Accuracy _randomAccuracy() {
@@ -619,11 +640,11 @@ class _RecordPageState extends State<RecordPage> {
   String? albumCoverUrl;
   bool loading = true;
 
-  // 원곡 파일 재생 관련 변수들
+  // Inst 파일 재생 관련 변수들
   AudioPlayer? _instPlayer;
   bool _isInstPlaying = false;
   bool _isInstLoading = false;
-  double _instDuration = 0.0; // 원곡 파일의 실제 재생시간
+  double _instDuration = 0.0; // inst 파일의 실제 재생시간
 
   // MIDI 노트 데이터 (실제 MIDI 파일에서 파싱됨)
   List<_MidiNote> midiNotes = [];
@@ -705,7 +726,7 @@ class _RecordPageState extends State<RecordPage> {
       if (mounted) {
         setState(() {
           _instDuration = duration.inMilliseconds / 1000.0;
-          totalDuration = _instDuration; // 실제 원곡 파일 길이로 업데이트
+          totalDuration = _instDuration; // 실제 inst 파일 길이로 업데이트
         });
       }
     });
@@ -727,9 +748,9 @@ class _RecordPageState extends State<RecordPage> {
     // 노래 종료 시 자동 처리 (사용자가 수동으로 중지할 수 있도록 변경)
     _instPlayer!.onPlayerComplete.listen((_) async {
       if (mounted) {
-        print('🎵 원곡 재생 완료 - 자동 처리 시작');
+        print('🎵 inst 재생 완료 - 자동 처리 시작');
 
-        // 원곡 재생만 중지하고 녹음은 계속 진행
+        // Inst 재생만 중지하고 녹음은 계속 진행
         if (_isInstPlaying) {
           setState(() {
             _isInstPlaying = false;
@@ -745,7 +766,7 @@ class _RecordPageState extends State<RecordPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('🎵 원곡 재생이 끝났습니다. 녹음 버튼을 눌러 중지하세요!'),
+                content: Text('🎵 Inst 재생이 끝났습니다. 녹음 버튼을 눌러 중지하세요!'),
                 backgroundColor: Colors.blue,
                 duration: Duration(seconds: 5),
                 action: SnackBarAction(
@@ -764,7 +785,7 @@ class _RecordPageState extends State<RecordPage> {
           }
         }
 
-        print('✅ 원곡 재생 완료 처리 완료');
+        print('✅ inst 재생 완료 처리 완료');
       }
     });
   }
@@ -791,9 +812,9 @@ class _RecordPageState extends State<RecordPage> {
         print('S3에서 불러온 앨범커버: $coverUrl');
         print('S3에서 불러온 가사 개수: ${lyrics.length}');
 
-        // 원곡 파일과 MIDI 파일 동시 로드
+        // Inst 파일과 MIDI 파일 동시 로드
         await Future.wait([
-          _loadOriginalFile(song.artist, song.title),
+          _loadInstFile(song.artist, song.title),
           _loadMidiFile(song.artist, song.title),
         ]);
 
@@ -817,24 +838,24 @@ class _RecordPageState extends State<RecordPage> {
     }
   }
 
-  Future<void> _loadOriginalFile(String artist, String title) async {
+  Future<void> _loadInstFile(String artist, String title) async {
     try {
-      final originalUrl = S3Service.getOriginalSongUrl(artist, title);
-      print('원곡 파일 URL: $originalUrl');
+      final instUrl = S3Service.getInstSongUrl(artist, title);
+      print('Inst 파일 URL: $instUrl');
 
       setState(() {
         _isInstLoading = true;
       });
 
-      await _instPlayer!.setSourceUrl(originalUrl);
+      await _instPlayer!.setSourceUrl(instUrl);
 
       setState(() {
         _isInstLoading = false;
       });
 
-      print('원곡 파일 로드 완료 (자동 재생 안함)');
+      print('Inst 파일 로드 완료 (자동 재생 안함)');
     } catch (e) {
-      print('원곡 파일 로드 실패: $e');
+      print('Inst 파일 로드 실패: $e');
       setState(() {
         _isInstLoading = false;
       });
@@ -874,10 +895,10 @@ class _RecordPageState extends State<RecordPage> {
 
         print('MIDI 파싱 완료, 노트 개수: ${notes.length}');
 
-        // MIDI 노트 샘플 출력 (처음 5개)
+        // MIDI 노트 샘플 출력 (처음 10개)
         if (notes.isNotEmpty) {
-          print('=== MIDI 노트 샘플 (처음 5개) ===');
-          for (int i = 0; i < notes.length.clamp(0, 5); i++) {
+          print('=== MIDI 노트 샘플 (처음 10개) ===');
+          for (int i = 0; i < notes.length.clamp(0, 10); i++) {
             final note = notes[i];
             print(
               '노트 ${i + 1}: 시작=${note.startTime.toStringAsFixed(2)}s, '
@@ -886,6 +907,18 @@ class _RecordPageState extends State<RecordPage> {
               '높이=${note.visualPitch.toStringAsFixed(1)}px',
             );
           }
+
+          // 전체 노트 통계
+          double minTime = notes.map((n) => n.startTime).reduce(min);
+          double maxTime = notes
+              .map((n) => n.startTime + n.duration)
+              .reduce(max);
+          print(
+            '전체 시간 범위: ${minTime.toStringAsFixed(2)}s ~ ${maxTime.toStringAsFixed(2)}s',
+          );
+          print(
+            '총 ${notes.length}개 노트 중 ${notes.where((n) => n.startTime >= 0 && n.startTime <= 60).length}개가 0-60초 구간에 있음',
+          );
           print('===============================');
         }
 
@@ -1052,13 +1085,6 @@ class _RecordPageState extends State<RecordPage> {
     }
 
     print('✅ 녹음 자동 중지 완료');
-
-    // 위젯이 여전히 마운트되어 있는지 확인 후 네비게이션
-    if (mounted) {
-      await _calculateAndNavigateToScorePage();
-    } else {
-      print('⚠️ 녹음 완료 후 위젯이 dispose되었습니다. 네비게이션을 건너뜁니다.');
-    }
   }
 
   // S3에 녹음 파일 업로드
@@ -1073,14 +1099,11 @@ class _RecordPageState extends State<RecordPage> {
         return;
       }
 
-      // 파일명 생성 (타임스탬프 포함)
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'recording_${timestamp}.wav';
-
-      // S3에 업로드
-      final uploadedUrl = await S3Service.uploadUserVocalFile(
+      // 실시간 녹음 파일 업로드 (가수명_노래제목_record.wav 형식)
+      final uploadedUrl = await S3Service.uploadRealtimeRecordingFile(
         file: recordingFile,
-        fileName: fileName,
+        songTitle: song.title,
+        songArtist: song.artist,
       );
 
       if (uploadedUrl != null) {
@@ -1094,7 +1117,7 @@ class _RecordPageState extends State<RecordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('☁️ S3 업로드 완료!'),
+              content: Text('☁️ 실시간 녹음 파일이 S3에 업로드되었습니다!'),
               backgroundColor: Colors.blue,
               duration: Duration(seconds: 2),
             ),
@@ -1130,12 +1153,6 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _calculateAndNavigateToScorePage() async {
     print('📊 점수 계산 시작...');
 
-    // 위젯이 여전히 마운트되어 있는지 확인
-    if (!mounted) {
-      print('⚠️ 위젯이 이미 dispose되었습니다. 네비게이션을 건너뜁니다.');
-      return;
-    }
-
     // Song 객체 안전하게 가져오기
     final song = ModalRoute.of(context)?.settings.arguments as Song?;
     if (song == null) {
@@ -1146,28 +1163,19 @@ class _RecordPageState extends State<RecordPage> {
     if (!_hasRecording) {
       print('❌ 녹음 데이터가 없습니다. 점수 계산을 건너뜁니다.');
       // 녹음이 없어도 점수 페이지로 이동 (점수는 0으로 표시)
-      if (mounted) {
-        try {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ScorePage(
-                song: song,
-                pitchScore: 0,
-                rhythmScore: 0,
-                totalScore: 0,
-                recommendedSongs: [],
-                hasRecording: false,
-                recordingPath: null,
-              ),
-            ),
-          );
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-          }
-        } catch (e) {
-          print('❌ 점수 페이지 네비게이션 실패: $e');
-        }
-      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ScorePage(
+            song: song,
+            pitchScore: 0,
+            rhythmScore: 0,
+            totalScore: 0,
+            recommendedSongs: [],
+            hasRecording: false,
+            recordingPath: null,
+          ),
+        ),
+      );
       return;
     }
 
@@ -1175,12 +1183,6 @@ class _RecordPageState extends State<RecordPage> {
       // TensorDSP에서 최종 점수 데이터 가져오기
       final scoreData = await TensorDspService.getCurrentPitchScore();
       print('📊 TensorDSP 점수 데이터: $scoreData');
-
-      // 위젯이 여전히 마운트되어 있는지 다시 확인
-      if (!mounted) {
-        print('⚠️ 점수 계산 중 위젯이 dispose되었습니다. 네비게이션을 건너뜁니다.');
-        return;
-      }
 
       // 점수 계산
       final pitchScore = scoreData['score']?.toInt() ?? 0;
@@ -1194,56 +1196,36 @@ class _RecordPageState extends State<RecordPage> {
 
       print('📊 계산된 점수: 피치=$pitchScore, 타이밍=$timingScore, 총점=$totalScore');
 
-      // 점수 페이지로 이동 (mounted 체크 포함)
-      if (mounted) {
-        try {
-          // pushReplacement 대신 push 사용하여 더 안전한 네비게이션
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ScorePage(
-                song: song,
-                pitchScore: pitchScore,
-                rhythmScore: timingScore,
-                totalScore: totalScore,
-                recommendedSongs: recommendedSongs,
-                hasRecording: _hasRecording,
-                recordingPath: _recordingPath,
-              ),
-            ),
-          );
-          // 점수 페이지로 이동 후 현재 페이지 제거
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-          }
-        } catch (e) {
-          print('❌ 점수 페이지 네비게이션 실패: $e');
-        }
-      }
+      // 점수 페이지로 이동
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ScorePage(
+            song: song,
+            pitchScore: pitchScore,
+            rhythmScore: timingScore,
+            totalScore: totalScore,
+            recommendedSongs: recommendedSongs,
+            hasRecording: _hasRecording,
+            recordingPath: _recordingPath,
+          ),
+        ),
+      );
     } catch (e) {
       print('❌ 점수 계산 실패: $e');
       // 오류 발생 시 기본값으로 점수 페이지 이동
-      if (mounted) {
-        try {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ScorePage(
-                song: song,
-                pitchScore: 0,
-                rhythmScore: 0,
-                totalScore: 0,
-                recommendedSongs: [],
-                hasRecording: _hasRecording,
-                recordingPath: _recordingPath,
-              ),
-            ),
-          );
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-          }
-        } catch (e) {
-          print('❌ 점수 페이지 네비게이션 실패: $e');
-        }
-      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ScorePage(
+            song: song,
+            pitchScore: 0,
+            rhythmScore: 0,
+            totalScore: 0,
+            recommendedSongs: [],
+            hasRecording: _hasRecording,
+            recordingPath: _recordingPath,
+          ),
+        ),
+      );
     }
   }
 
@@ -1340,7 +1322,7 @@ class _RecordPageState extends State<RecordPage> {
         return;
       }
 
-      // 녹음 시작 - 원곡 파일을 처음부터 다시 재생
+      // 녹음 시작 - inst 파일을 처음부터 다시 재생
       List<double> originalPitch = [440.0, 442.0, 445.0];
       List<double> originalOnsets = [0.0, 1.0, 2.0];
 
@@ -1414,7 +1396,7 @@ class _RecordPageState extends State<RecordPage> {
         }
         return;
       }
-      // 원곡 파일을 처음부터 다시 재생
+      // inst 파일을 처음부터 다시 재생
       if (_instPlayer != null) {
         await _instPlayer!.seek(Duration.zero); // 처음으로 이동
         await _instPlayer!.resume();
@@ -1464,34 +1446,16 @@ class _RecordPageState extends State<RecordPage> {
 
   @override
   void dispose() {
-    print('🔄 RecordPage dispose() 호출됨');
-
-    // 타이머 정리
     _stopMainTimer();
     mainTimer = null;
-    _tensorDspTimer?.cancel();
-    _onsetSub?.cancel();
-
-    // 오디오 플레이어 정리
     _instPlayer?.dispose();
-
+    _onsetSub?.cancel();
+    _tensorDspTimer?.cancel();
     // 녹음 관련 정리
     if (_isRecordingStarted) {
-      try {
-        _audioRecorder.stop();
-      } catch (e) {
-        print('⚠️ 녹음 중지 중 오류: $e');
-      }
+      _audioRecorder.stop();
     }
     _audioRecorder.dispose();
-
-    // TensorDSP 정리
-    try {
-      TensorDspService.stopRealTimeAnalysis();
-    } catch (e) {
-      print('⚠️ TensorDSP 정리 중 오류: $e');
-    }
-
     super.dispose();
   }
 
@@ -1736,31 +1700,33 @@ class _RecordPageState extends State<RecordPage> {
                         barAreaHeight: barAreaHeight,
                         centerLineX: centerLineX,
                         currentTime: currentTime,
+                        currentScore: currentScore,
+                        currentTimingScore: currentTimingScore,
                         onPassed: (accuracy) {
-                          // 실시간 노래 입력이 없으므로 점수 변화 비활성화
-                          // if (!mounted) return;
-                          // setState(() {
-                          //   int delta = 0;
-                          //   switch (accuracy) {
-                          //     case _Accuracy.Perfect:
-                          //       delta = 5;
-                          //       break;
-                          //     case _Accuracy.Great:
-                          //       delta = 3;
-                          //       break;
-                          //     case _Accuracy.Good:
-                          //       delta = 0;
-                          //       break;
-                          //     case _Accuracy.Normal:
-                          //       delta = -3;
-                          //       break;
-                          //     case _Accuracy.Bad:
-                          //       delta = -5;
-                          //       break;
-                          //   }
-                          //   score = max(0, score + delta);
-                          //   pointDelta = delta;
-                          // });
+                          // 실시간 노래 입력 점수 계산 활성화
+                          if (!mounted) return;
+                          setState(() {
+                            int delta = 0;
+                            switch (accuracy) {
+                              case _Accuracy.Perfect:
+                                delta = 5;
+                                break;
+                              case _Accuracy.Great:
+                                delta = 3;
+                                break;
+                              case _Accuracy.Good:
+                                delta = 0;
+                                break;
+                              case _Accuracy.Normal:
+                                delta = -3;
+                                break;
+                              case _Accuracy.Bad:
+                                delta = -5;
+                                break;
+                            }
+                            _totalScore = max(0, _totalScore + delta);
+                            pointDelta = delta;
+                          });
                         },
                       ),
                     ),
@@ -1774,33 +1740,35 @@ class _RecordPageState extends State<RecordPage> {
                         barAreaWidth: barAreaWidth,
                         barAreaHeight: barAreaHeight,
                         centerLineX: centerLineX,
-                        onPassed: (accuracy) {
-                          // 실시간 노래 입력이 없으므로 점수 변화 비활성화
-                          // if (!mounted) return;
-                          // setState(() {
-                          //   int delta = 0;
-                          //   switch (accuracy) {
-                          //     case _Accuracy.Perfect:
-                          //       delta = 5;
-                          //       break;
-                          //     case _Accuracy.Great:
-                          //       delta = 3;
-                          //       break;
-                          //     case _Accuracy.Good:
-                          //       delta = 0;
-                          //       break;
-                          //     case _Accuracy.Normal:
-                          //       delta = -3;
-                          //       break;
-                          //     case _Accuracy.Bad:
-                          //       delta = -5;
-                          //       break;
-                          //   }
-                          //   score = max(0, score + delta);
-                          //   pointDelta = delta;
-                          // });
-                        },
                         currentTime: currentTime,
+                        currentScore: currentScore,
+                        currentTimingScore: currentTimingScore,
+                        onPassed: (accuracy) {
+                          // 실시간 노래 입력 점수 계산 활성화
+                          if (!mounted) return;
+                          setState(() {
+                            int delta = 0;
+                            switch (accuracy) {
+                              case _Accuracy.Perfect:
+                                delta = 5;
+                                break;
+                              case _Accuracy.Great:
+                                delta = 3;
+                                break;
+                              case _Accuracy.Good:
+                                delta = 0;
+                                break;
+                              case _Accuracy.Normal:
+                                delta = -3;
+                                break;
+                              case _Accuracy.Bad:
+                                delta = -5;
+                                break;
+                            }
+                            _totalScore = max(0, _totalScore + delta);
+                            pointDelta = delta;
+                          });
+                        },
                         enableGradient: false,
                       ),
                     ),
@@ -2119,6 +2087,8 @@ class _MelodyBarWidget extends StatefulWidget {
   final double barMaxY;
   final Function(_Accuracy) onPassed;
   final double currentTime;
+  final double currentScore; // TensorDSP 피치 점수
+  final double currentTimingScore; // TensorDSP 타이밍 점수
   final bool enableGradient;
 
   _MelodyBarWidget({
@@ -2130,6 +2100,8 @@ class _MelodyBarWidget extends StatefulWidget {
     required this.centerLineX,
     required this.onPassed,
     required this.currentTime,
+    required this.currentScore,
+    required this.currentTimingScore,
     this.barHeight = 12,
     this.barThickness = 8,
     this.barSpacing = 12,
@@ -2203,18 +2175,24 @@ class _MelodyBarWidgetState extends State<_MelodyBarWidget> {
   }
 
   Color _barColor() {
-    if (lastAccuracy == null) return const Color(0xFFE0E7FF);
-    switch (lastAccuracy!) {
-      case _Accuracy.Perfect:
-        return const Color(0xFF10B981);
-      case _Accuracy.Great:
-        return const Color(0xFF22C55E);
-      case _Accuracy.Good:
-        return const Color(0xFFF59E0B);
-      case _Accuracy.Normal:
-        return const Color(0xFF8B5CF6);
-      case _Accuracy.Bad:
-        return const Color(0xFFEF4444);
+    // TensorDSP 실시간 점수 기반 색상 로직
+    double pitchScore = widget.currentScore; // TensorDSP 피치 점수
+    double timingScore = widget.currentTimingScore; // TensorDSP 타이밍 점수
+
+    // 피치와 타이밍 점수의 평균으로 정확도 판단
+    double averageScore = (pitchScore + timingScore) / 2.0;
+
+    // 점수에 따른 색상 결정 (노래방 스타일)
+    if (averageScore >= 85.0) {
+      return const Color(0xFF91C8E4); // Perfect: 파란색
+    } else if (averageScore >= 70.0) {
+      return const Color(0xFF97B067); // Great: 초록색
+    } else if (averageScore >= 50.0) {
+      return const Color(0xFFFFCC00); // Good: 노란색
+    } else if (averageScore >= 30.0) {
+      return const Color(0xFFFF6F3C); // Normal: 주황색
+    } else {
+      return const Color(0xFFB22222); // Bad: 빨간색
     }
   }
 
@@ -2324,8 +2302,9 @@ class _LyricSliderN extends StatelessWidget {
 Future<String> fetchAlbumCoverUrl(String artist, String title) async {
   try {
     // 백엔드 API를 통해 presigned URL 생성
+    final baseUrl = await ApiConfigService.baseUrl;
     final apiUrl =
-        '${ApiConfigService.baseUrl}/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
+        '$baseUrl/api/s3/album_cover?artist=${Uri.encodeComponent(artist)}&title=${Uri.encodeComponent(title)}';
     print('앨범커버 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));
@@ -2411,8 +2390,9 @@ Future<List<_LyricLine>> fetchLyrics(String artist, {String? songTitle}) async {
   try {
     // 백엔드 API를 통해 가사 데이터 가져오기
     final songName = songTitle ?? 'Never Ending Story';
+    final baseUrl = await ApiConfigService.baseUrl;
     final apiUrl =
-        '${ApiConfigService.baseUrl}/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
+        '$baseUrl/api/s3/lyrics?artist=${Uri.encodeComponent(artist)}&song=${Uri.encodeComponent(songName)}';
     print('가사 API 요청: $apiUrl');
 
     final response = await http.get(Uri.parse(apiUrl));

@@ -68,7 +68,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
     });
 
     try {
-      final analysis = await VocalRangeService.analyzeVocalRangeSafe(
+      // 원곡 기반 음역대 분석 사용
+      final analysis = await VocalRangeService.analyzeOriginalSongVocalRange(
         title,
         artist,
       );
@@ -284,18 +285,20 @@ class _SongDetailPageState extends State<SongDetailPage> {
                           children: [
                             if (_isAnalyzingVocalRange)
                               _buildTag('음역대 분석 중...', const Color(0xFFE0E7FF))
-                            else if (_vocalRangeAnalysis != null)
+                            else if (_vocalRangeAnalysis != null &&
+                                _vocalRangeAnalysis!.rangeSpan != null)
                               _buildTag(
-                                _vocalRangeAnalysis!.totalRange,
+                                _vocalRangeAnalysis!.rangeSpan!,
                                 const Color(0xFFE0E7FF),
                               )
                             else
                               _buildTag('음역대 분석 실패', const Color(0xFFFEE2E2)),
                             if (_isAnalyzingVocalRange)
                               _buildDifficultyTag('분석 중')
-                            else if (_vocalRangeAnalysis != null)
+                            else if (_vocalRangeAnalysis != null &&
+                                _vocalRangeAnalysis!.topNotes != null)
                               _buildDifficultyTag(
-                                _vocalRangeAnalysis!.difficulty,
+                                '주요 음: ${_vocalRangeAnalysis!.topNotes!.take(3).join(', ')}',
                               )
                             else
                               _buildDifficultyTag('분석 실패'),
@@ -591,8 +594,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
                       // 음역대 분석 결과 섹션
                       if (_vocalRangeAnalysis != null &&
-                          _vocalRangeAnalysis!.analysisStatus ==
-                              'completed') ...[
+                          _vocalRangeAnalysis!.rangeSpan != null) ...[
                         _buildSectionTitle('음역대 분석'),
                         const SizedBox(height: 20),
 
@@ -638,59 +640,62 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               // 전체 음역대
                               _buildRangeInfo(
                                 '전체 음역대',
-                                _vocalRangeAnalysis!.totalRange,
+                                _vocalRangeAnalysis!.rangeSpan!,
                                 Icons.music_note_rounded,
                               ),
                               const SizedBox(height: 12),
 
-                              // 편안한 음역대
-                              _buildRangeInfo(
-                                '편안한 음역대',
-                                _vocalRangeAnalysis!.comfortableRange,
-                                Icons.favorite_rounded,
-                              ),
-                              const SizedBox(height: 12),
-
-                              // 핵심 음역대
-                              _buildRangeInfo(
-                                '핵심 음역대',
-                                _vocalRangeAnalysis!.coreRange,
-                                Icons.star_rounded,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // 난이도
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                              // 최저음
+                              if (_vocalRangeAnalysis!.lowestNote != null)
+                                _buildRangeInfo(
+                                  '최저음',
+                                  _vocalRangeAnalysis!.lowestNote!,
+                                  Icons.keyboard_arrow_down_rounded,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: _getDifficultyColor(
-                                    _vocalRangeAnalysis!.difficulty,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _getDifficultyColor(
-                                      _vocalRangeAnalysis!.difficulty,
-                                    ).withOpacity(0.3),
+                              if (_vocalRangeAnalysis!.lowestNote != null)
+                                const SizedBox(height: 12),
+
+                              // 최고음
+                              if (_vocalRangeAnalysis!.highestNote != null)
+                                _buildRangeInfo(
+                                  '최고음',
+                                  _vocalRangeAnalysis!.highestNote!,
+                                  Icons.keyboard_arrow_up_rounded,
+                                ),
+                              if (_vocalRangeAnalysis!.highestNote != null)
+                                const SizedBox(height: 16),
+
+                              // 주요 음들
+                              if (_vocalRangeAnalysis!.topNotes != null &&
+                                  _vocalRangeAnalysis!.topNotes!.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                ),
-                                child: Text(
-                                  '난이도: ${_vocalRangeAnalysis!.difficulty}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getDifficultyColor(
-                                      _vocalRangeAnalysis!.difficulty,
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF8B5CF6,
+                                    ).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF8B5CF6,
+                                      ).withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '주요 음들: ${_vocalRangeAnalysis!.topNotes!.join(', ')}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF8B5CF6),
                                     ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 40),
                       ],
 
                       // 사용자 보컬 업로드 섹션
@@ -1027,7 +1032,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
           // 하단 녹음 버튼 (연보라색 테마)
           Positioned(
-            bottom: 24,
+            bottom: 56, // 홈버튼과 겹치지 않게 여유를 둠
             left: 20,
             right: 20,
             child: Container(
@@ -1351,11 +1356,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
       }
 
       // S3에 사용자 보컬 파일 업로드 (ai-vocal-training-user 버킷)
-      String fileName =
-          '${widget.songData['title'] ?? 'unknown'}_${widget.songData['artist'] ?? 'unknown'}_vocal_${DateTime.now().millisecondsSinceEpoch}.wav';
       final uploadedUrl = await S3Service.uploadUserVocalFile(
         file: audioFile,
-        fileName: fileName,
+        songTitle: widget.songData['title'] ?? 'unknown',
+        songArtist: widget.songData['artist'] ?? 'unknown',
       );
 
       if (uploadedUrl != null) {

@@ -1,11 +1,10 @@
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_storage_s3/amplify_storage_s3.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/song.dart';
 import '../main.dart'; // CurrentUser 사용을 위해
-import 'api_config_service.dart';
+import '../services/api_config_service.dart'; // ApiConfigService 추가
 
 class S3Service {
   // 기존 getSongsFromS3 메서드는 일시적으로 주석 처리
@@ -18,10 +17,11 @@ class S3Service {
   */
 
   /// 사용자 보컬 파일을 ai-vocal-training-user 버킷에 업로드합니다.
-  /// 업로드 위치: {사용자ID}/vocal/{파일명}
+  /// 업로드 위치: {사용자ID}/vocal/{사용자ID}_{노래제목}_record.wav
   static Future<String?> uploadUserVocalFile({
     required File file,
-    required String fileName,
+    required String songTitle,
+    required String songArtist,
   }) async {
     try {
       // 현재 로그인된 사용자 ID 가져오기
@@ -31,13 +31,20 @@ class S3Service {
         return null;
       }
 
-      // 사용자 ID 정리 (특수문자 제거)
+      // 사용자 ID와 노래 정보 정리 (특수문자 제거)
       String cleanUserId = _cleanFileName(userId);
+      String cleanSongTitle = _cleanFileName(songTitle);
+      String cleanSongArtist = _cleanFileName(songArtist);
 
-      // S3 키 생성: {사용자ID}/vocal/{파일명}
+      // 파일 확장자 가져오기
+      String extension = file.path.split('.').last.toLowerCase();
+      if (extension.isEmpty) extension = 'wav'; // 기본값
+
+      // S3 키 생성: {사용자ID}/vocal/{사용자ID}_{노래제목}_record.{확장자}
+      String fileName = '${cleanUserId}_${cleanSongTitle}_record.$extension';
       String s3Key = '$cleanUserId/vocal/$fileName';
       String bucket = 'ai-vocal-training-user';
-      String contentType = 'audio/wav';
+      String contentType = 'audio/$extension';
 
       print('🎵 사용자 보컬 파일 업로드 시작: $s3Key');
 
@@ -70,6 +77,67 @@ class S3Service {
     }
   }
 
+  /// 실시간 녹음 파일을 ai-vocal-training-user 버킷에 업로드합니다.
+  /// 업로드 위치: {사용자ID}/vocal/{가수명}_{노래제목}_record.wav
+  static Future<String?> uploadRealtimeRecordingFile({
+    required File file,
+    required String songTitle,
+    required String songArtist,
+  }) async {
+    try {
+      // 현재 로그인된 사용자 ID 가져오기
+      String? userId = CurrentUser.getUserNickname();
+      if (userId == null) {
+        print('❌ 로그인된 사용자 정보가 없습니다.');
+        return null;
+      }
+
+      // 노래 정보 정리 (특수문자 제거)
+      String cleanSongTitle = _cleanFileName(songTitle);
+      String cleanSongArtist = _cleanFileName(songArtist);
+
+      // 파일 확장자 가져오기
+      String extension = file.path.split('.').last.toLowerCase();
+      if (extension.isEmpty) extension = 'wav'; // 기본값
+
+      // S3 키 생성: {사용자ID}/vocal/{가수명}_{노래제목}_record.{확장자}
+      String fileName =
+          '${cleanSongArtist}_${cleanSongTitle}_record.$extension';
+      String s3Key = '$userId/vocal/$fileName';
+      String bucket = 'ai-vocal-training-user';
+      String contentType = 'audio/$extension';
+
+      print('🎵 실시간 녹음 파일 업로드 시작: $s3Key');
+
+      // 백엔드에서 presigned URL 요청
+      String? presignedUrl = await _getPresignedUrl(bucket, s3Key, contentType);
+      if (presignedUrl == null) {
+        print('❌ Presigned URL 생성 실패');
+        return null;
+      }
+
+      // Presigned URL로 파일 업로드
+      bool uploadSuccess = await _uploadToPresignedUrl(
+        presignedUrl,
+        file,
+        contentType,
+      );
+      if (!uploadSuccess) {
+        print('❌ 파일 업로드 실패');
+        return null;
+      }
+
+      // 업로드 성공 시 S3 URL 반환
+      String uploadedUrl =
+          'https://$bucket.s3.ap-northeast-2.amazonaws.com/$s3Key';
+      print('✅ 실시간 녹음 파일 업로드 성공: $uploadedUrl');
+      return uploadedUrl;
+    } catch (e) {
+      print('❌ 실시간 녹음 파일 업로드 실패: $e');
+      return null;
+    }
+  }
+
   /// 백엔드에서 presigned URL 요청
   static Future<String?> _getPresignedUrl(
     String bucket,
@@ -77,23 +145,36 @@ class S3Service {
     String contentType,
   ) async {
     try {
-      final String backendUrl = ApiConfigService.baseUrl;
+      final backendUrl = await ApiConfigService.baseUrl;
 
-      final response = await http.post(
-        Uri.parse('$backendUrl/upload/presigned-url'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'bucket': bucket,
-          's3_key': s3Key,
-          'content_type': contentType,
-        }),
+      print('🔗 백엔드 요청 시작: $backendUrl/upload/presigned-url');
+      print(
+        '📦 요청 데이터: bucket=$bucket, s3_key=$s3Key, content_type=$contentType',
       );
+
+      final response = await http
+          .post(
+            Uri.parse('$backendUrl/upload/presigned-url'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'bucket': bucket,
+              's3_key': s3Key,
+              'content_type': contentType,
+            }),
+          )
+          .timeout(const Duration(seconds: 30)); // 30초 타임아웃
+
+      print('📡 백엔드 응답 상태: ${response.statusCode}');
+      print('📄 백엔드 응답 내용: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['presigned_url'];
+        final presignedUrl = data['presigned_url'];
+        print('✅ Presigned URL 생성 성공: ${presignedUrl?.substring(0, 50)}...');
+        return presignedUrl;
       } else {
         print('❌ Presigned URL 요청 실패: ${response.statusCode}');
+        print('❌ 응답 내용: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -109,17 +190,34 @@ class S3Service {
     String contentType,
   ) async {
     try {
+      print('📁 파일 업로드 시작...');
+      print('📏 파일 크기: ${await file.length()} bytes');
+
       final fileBytes = await file.readAsBytes();
+      print('📦 파일 바이트 읽기 완료: ${fileBytes.length} bytes');
 
-      final response = await http.put(
-        Uri.parse(presignedUrl),
-        headers: {'Content-Type': contentType},
-        body: fileBytes,
-      );
+      print('🚀 S3 업로드 요청 시작...');
+      final response = await http
+          .put(
+            Uri.parse(presignedUrl),
+            headers: {'Content-Type': contentType},
+            body: fileBytes,
+          )
+          .timeout(const Duration(minutes: 5)); // 5분 타임아웃
 
-      return response.statusCode == 200;
+      print('📡 S3 응답 상태: ${response.statusCode}');
+      print('📄 S3 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('✅ S3 업로드 성공!');
+        return true;
+      } else {
+        print('❌ S3 업로드 실패: ${response.statusCode}');
+        print('❌ S3 응답 내용: ${response.body}');
+        return false;
+      }
     } catch (e) {
-      print('❌ Presigned URL 업로드 중 오류: $e');
+      print('❌ S3 업로드 중 오류: $e');
       return false;
     }
   }
@@ -217,6 +315,83 @@ class S3Service {
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/${cleanArtist}_$cleanTitle.jpg';
   }
 
+  /// 백엔드에서 앨범 커버 URL을 가져옵니다.
+  static Future<String?> getAlbumCoverUrlFromBackend(
+    String artist,
+    String title,
+  ) async {
+    try {
+      print('🎵 앨범 커버 URL 조회 시작: $artist - $title');
+
+      final backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .get(
+            Uri.parse(
+              '$backendUrl/api/album-cover/${Uri.encodeComponent(artist)}/${Uri.encodeComponent(title)}',
+            ),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final albumCoverUrl = data['album_cover_url'];
+          print('✅ 앨범 커버 URL 조회 성공: $albumCoverUrl');
+          return albumCoverUrl;
+        } else {
+          print('❌ 앨범 커버 URL 조회 실패: ${data['detail']}');
+          return null;
+        }
+      } else {
+        print('❌ 앨범 커버 URL 조회 실패: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ 앨범 커버 URL 조회 오류: $e');
+      return null;
+    }
+  }
+
+  /// 노래 제목만으로 앨범 커버 URL을 가져옵니다.
+  static Future<String?> getAlbumCoverUrlByTitle(String title) async {
+    try {
+      print('🎵 앨범 커버 URL 조회 (제목만): $title');
+
+      final backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .get(
+            Uri.parse(
+              '$backendUrl/api/album-cover-by-title/${Uri.encodeComponent(title)}',
+            ),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final albumCoverUrl = data['album_cover_url'];
+          print('✅ 앨범 커버 URL 조회 성공: $albumCoverUrl');
+          return albumCoverUrl;
+        } else {
+          print('❌ 앨범 커버 URL 조회 실패: ${data['detail']}');
+          return null;
+        }
+      } else {
+        print('❌ 앨범 커버 URL 조회 실패: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ 앨범 커버 URL 조회 오류: $e');
+      return null;
+    }
+  }
+
+  /// 노래 제목만으로 앨범 커버 URL을 생성합니다.
+  static String getAlbumCoverUrlByTitleOnly(String title) {
+    String cleanTitle = _cleanFileName(title);
+    return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/album_cover/$cleanTitle.jpg';
+  }
+
   /// MIDI 파일의 S3 URL을 생성합니다.
   /// 경로: https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/가수명/midi/가수명_노래제목_midi.mid
   static String getMidiFileUrl(String artist, String title) {
@@ -238,12 +413,164 @@ class S3Service {
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/recordings/${cleanArtist}_${cleanTitle}_$cleanFileName';
   }
 
+  /// 오디오 파일 재생을 위한 presigned URL을 가져옵니다.
+  static Future<String?> getAudioPresignedUrl(
+    String userId,
+    String filename,
+  ) async {
+    try {
+      print('🎵 오디오 presigned URL 요청: $userId/$filename');
+      final backendUrl = await ApiConfigService.baseUrl;
+
+      final response = await http
+          .get(
+            Uri.parse(
+              '$backendUrl/api/audio-presigned-url/${Uri.encodeComponent(userId)}/${Uri.encodeComponent(filename)}',
+            ),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final presignedUrl = data['presigned_url'];
+          print('✅ 오디오 presigned URL 생성 성공: $presignedUrl');
+          return presignedUrl;
+        }
+      }
+
+      print('❌ 오디오 presigned URL 생성 실패: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      print('❌ 오디오 presigned URL 요청 실패: $e');
+      return null;
+    }
+  }
+
+  /// AI 보컬 파일의 presigned URL을 가져옵니다.
+  static Future<String?> getAiVocalPresignedUrl(
+    String artist,
+    String title,
+  ) async {
+    try {
+      final String backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .get(
+            Uri.parse(
+              '$backendUrl/api/ai-vocal-presigned-url/${Uri.encodeComponent(artist)}/${Uri.encodeComponent(title)}',
+            ),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      print('📊 AI 보컬 응답 상태 코드: ${response.statusCode}');
+      print('📊 AI 보컬 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          final presignedUrl = data['presigned_url'] as String;
+          print('✅ AI 보컬 presigned URL 성공: $presignedUrl');
+          return presignedUrl;
+        }
+      } else if (response.statusCode == 404) {
+        print('❌ AI 보컬 파일을 찾을 수 없습니다: $artist - $title');
+      } else {
+        print(
+          '❌ AI 보컬 presigned URL 실패: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      print('❌ AI 보컬 presigned URL 오류: $e');
+    }
+    return null;
+  }
+
   /// 파일명에서 사용할 수 없는 특수문자를 제거하고 공백을 언더스코어로 변경합니다.
   static String _cleanFileName(String fileName) {
     return fileName
         .replaceAll(RegExp(r'[^\w\s가-힣]'), '') // 특수문자 제거 (한글, 영문, 숫자, 공백만 허용)
         .replaceAll(RegExp(r'\s+'), '_') // 공백을 언더스코어로 변경
         .trim();
+  }
+
+  /// 사용자가 업로드한 파일 목록을 가져옵니다.
+  static Future<List<Map<String, dynamic>>> getUserUploads(
+    String userId,
+  ) async {
+    try {
+      print('🎵 사용자 업로드 파일 목록 조회 시작: $userId');
+
+      final backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .get(Uri.parse('$backendUrl/api/user-uploads/$userId'))
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final uploads = List<Map<String, dynamic>>.from(data['uploads']);
+          print('✅ 사용자 업로드 파일 목록 조회 성공: ${uploads.length}개 파일');
+          return uploads;
+        } else {
+          print('❌ 사용자 업로드 파일 목록 조회 실패: ${data['detail']}');
+          return [];
+        }
+      } else {
+        print('❌ 사용자 업로드 파일 목록 조회 실패: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('❌ 사용자 업로드 파일 목록 조회 오류: $e');
+      return [];
+    }
+  }
+
+  /// 사용자가 업로드한 파일을 삭제합니다.
+  static Future<bool> deleteUserUpload(String userId, String filename) async {
+    try {
+      print('🗑️ 사용자 업로드 파일 삭제 시작: $userId/$filename');
+
+      final backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .delete(Uri.parse('$backendUrl/api/user-uploads/$userId/$filename'))
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('✅ 사용자 업로드 파일 삭제 성공: ${data['message']}');
+        return true;
+      } else {
+        print('❌ 사용자 업로드 파일 삭제 실패: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ 사용자 업로드 파일 삭제 오류: $e');
+      return false;
+    }
+  }
+
+  static Future<String?> getPresignedUrlForRead({
+    required String bucket,
+    required String s3Key,
+  }) async {
+    final String backendUrl = await ApiConfigService.baseUrl;
+    final response = await http.post(
+      Uri.parse('$backendUrl/s3/presigned-url'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'bucket': bucket,
+        's3_key': s3Key,
+        'operation': 'get_object',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['presigned_url'];
+    } else {
+      print('❌ Presigned URL 요청 실패: ${response.statusCode}');
+      return null;
+    }
   }
 }
 

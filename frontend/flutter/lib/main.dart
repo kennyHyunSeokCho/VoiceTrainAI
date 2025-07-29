@@ -60,7 +60,7 @@ void main() async {
   }
 
   // API 환경 설정 로그 출력
-  ApiConfigService.logCurrentEnvironment();
+  await ApiConfigService.logCurrentEnvironment();
 
   runApp(MyApp());
 }
