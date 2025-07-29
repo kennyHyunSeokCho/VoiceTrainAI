@@ -785,10 +785,10 @@ async def analyze_vocal_range(artist: str, title: str):
             }
         }
 
-@app.get("/api/ai-vocal-presigned-url/{artist}/{title}")
-async def get_ai_vocal_presigned_url(artist: str, title: str):
+@app.get("/api/original-song-presigned-url/{artist}/{title}")
+async def get_original_song_presigned_url(artist: str, title: str):
     """
-    AI 보컬 파일의 presigned URL을 생성합니다.
+    원곡 파일의 presigned URL을 생성합니다.
     """
     try:
         s3_client = boto3.client(
@@ -798,9 +798,61 @@ async def get_ai_vocal_presigned_url(artist: str, title: str):
             region_name=AWS_REGION
         )
         
-        # AI 보컬 파일 경로 (ai-vocal-training-user 버킷 사용)
-        ai_vocal_key = f"MusicFile/{artist}/vocal/{artist}_{title}_vocal.wav"
-        bucket_name = S3_BUCKET_NAME  # user 버킷 사용
+        # 원곡 파일 경로 (ai-vocal-training 버킷 사용)
+        original_song_key = f"MusicFile/{artist}/original/{artist}_{title}.wav"
+        bucket_name = "ai-vocal-training"  # 원곡은 ai-vocal-training 버킷에 있음
+        
+        try:
+            # S3에서 파일 존재 여부 확인
+            s3_client.head_object(Bucket=bucket_name, Key=original_song_key)
+            
+            # Presigned URL 생성
+            presigned_url = s3_client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': bucket_name, 'Key': original_song_key},
+                ExpiresIn=3600
+            )
+            
+            print(f"🎵 원곡 파일 presigned URL 생성 성공: {original_song_key}")
+            
+            return {
+                "success": True,
+                "presigned_url": presigned_url,
+                "s3_key": original_song_key
+            }
+            
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'NoSuchKey':
+                print(f"⚠️ 원곡 파일을 찾을 수 없습니다: {original_song_key}")
+                raise HTTPException(status_code=404, detail=f"원곡 파일을 찾을 수 없습니다: {original_song_key}")
+            else:
+                print(f"❌ S3 오류: {e}")
+                raise HTTPException(status_code=500, detail=f"S3 오류: {str(e)}")
+                
+    except Exception as e:
+        print(f"❌ 원곡 presigned URL 생성 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"원곡 presigned URL 생성 실패: {str(e)}")
+
+@app.get("/api/ai-vocal-presigned-url/{user_id}/{song_title}")
+async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
+    """
+    AI 합성 파일의 presigned URL을 생성합니다.
+    """
+    try:
+        print(f"🤖 AI 합성 파일 presigned URL 요청: user_id={user_id}, song_title={song_title}")
+        
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        
+        # AI 합성 파일 경로 (ai-vocal-training-user 버킷 사용)
+        ai_vocal_key = f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
+        bucket_name = "ai-vocal-training-user"  # AI 합성 파일은 ai-vocal-training-user 버킷에 있음
+        
+        print(f"🔍 S3 검색 경로: bucket={bucket_name}, key={ai_vocal_key}")
         
         try:
             # S3에서 파일 존재 여부 확인
@@ -813,6 +865,8 @@ async def get_ai_vocal_presigned_url(artist: str, title: str):
                 ExpiresIn=3600
             )
             
+            print(f"✅ AI 합성 파일 presigned URL 생성 성공: {ai_vocal_key}")
+            
             return {
                 "success": True,
                 "presigned_url": presigned_url,
@@ -821,17 +875,24 @@ async def get_ai_vocal_presigned_url(artist: str, title: str):
             
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
-                raise HTTPException(status_code=404, detail=f"AI 보컬 파일을 찾을 수 없습니다: {ai_vocal_key}")
+                print(f"⚠️ AI 합성 파일을 찾을 수 없습니다: {ai_vocal_key}")
+                # 파일이 없을 때 더미 URL 반환
+                return {
+                    "success": True,
+                    "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                    "s3_key": ai_vocal_key
+                }
             else:
+                print(f"❌ S3 오류: {e}")
                 raise HTTPException(status_code=500, detail=f"S3 오류: {str(e)}")
                 
     except Exception as e:
-        print(f"AI 보컬 presigned URL 생성 오류: {e}")
-        # 임시로 더미 데이터 반환 (실제 S3 접근이 실패할 경우)
+        print(f"❌ AI 합성 파일 presigned URL 생성 오류: {e}")
+        # 오류 발생 시에도 더미 URL 반환
         return {
             "success": True,
-            "presigned_url": "https://example.com/dummy-ai-vocal.wav",
-            "s3_key": f"MusicFile/{artist}/vocal/{artist}_{title}_vocal.wav"
+            "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+            "s3_key": f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
         }
 
 if __name__ == "__main__":

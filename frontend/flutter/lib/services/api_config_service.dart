@@ -41,22 +41,46 @@ class ApiConfigService {
       }
     }
 
-    try {
-      // 백엔드에서 IP 정보 가져오기 시도
-      final ipInfo = await _fetchIpInfo();
-      if (ipInfo != null) {
-        final deviceUrl = 'http://${ipInfo['local_ip']}:8000';
-        _cachedDeviceUrl = deviceUrl;
-        _lastIpCheck = DateTime.now();
-        print('📱 자동 감지된 IP 사용: $deviceUrl');
-        return deviceUrl;
+    // 여러 IP 주소를 시도
+    final List<String> possibleIps = [
+      '192.168.0.31',
+      '192.168.0.32',
+      '192.168.0.33',
+      '192.168.0.34',
+      '192.168.0.35',
+      '192.168.0.36',
+      '192.168.0.37',
+      '192.168.0.38',
+      '192.168.0.39',
+      '192.168.0.40',
+    ];
+
+    for (String ip in possibleIps) {
+      try {
+        print('🔍 IP 시도 중: $ip');
+        final response = await http
+            .get(
+              Uri.parse('http://$ip:8000/api/ip-info'),
+              headers: {'Content-Type': 'application/json'},
+            )
+            .timeout(Duration(seconds: 2));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final deviceUrl = 'http://$ip:8000';
+          _cachedDeviceUrl = deviceUrl;
+          _lastIpCheck = DateTime.now();
+          print('✅ IP 감지 성공: $deviceUrl');
+          return deviceUrl;
+        }
+      } catch (e) {
+        print('❌ IP $ip 시도 실패: $e');
+        continue;
       }
-    } catch (e) {
-      print('⚠️ IP 자동 감지 실패: $e');
     }
 
-    // 자동 감지 실패 시 fallback IP 사용
-    print('📱 Fallback IP 사용: $_fallbackDeviceUrl');
+    // 모든 IP 시도 실패 시 fallback IP 사용
+    print('📱 모든 IP 시도 실패, Fallback IP 사용: $_fallbackDeviceUrl');
     return _fallbackDeviceUrl;
   }
 

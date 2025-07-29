@@ -286,13 +286,40 @@ class S3Service {
   }
 
   /// 원곡 파일의 S3 URL을 생성합니다.
-  /// 경로: https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/가수명/original/가수명_노래제목.wav
   static String getOriginalSongUrl(String artist, String title) {
     // 파일명에서 특수문자 제거 및 공백 처리
     String cleanArtist = _cleanFileName(artist);
     String cleanTitle = _cleanFileName(title);
 
     return 'https://ai-vocal-training.s3.ap-northeast-2.amazonaws.com/MusicFile/$cleanArtist/original/${cleanArtist}_$cleanTitle.wav';
+  }
+
+  /// AI 합성 파일의 presigned URL을 백엔드에서 가져옵니다.
+  static Future<String?> getAiVocalPresignedUrl(
+    String userId,
+    String songTitle,
+  ) async {
+    try {
+      final backendUrl = await ApiConfigService.baseUrl;
+      final response = await http
+          .get(
+            Uri.parse(
+              '$backendUrl/api/ai-vocal-presigned-url/$userId/$songTitle',
+            ),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['presigned_url'];
+      } else {
+        print('❌ AI 합성 파일 presigned URL 요청 실패: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ AI 합성 파일 presigned URL 요청 오류: $e');
+      return null;
+    }
   }
 
   /// Inst 파일의 S3 URL을 생성합니다.
@@ -445,44 +472,6 @@ class S3Service {
       print('❌ 오디오 presigned URL 요청 실패: $e');
       return null;
     }
-  }
-
-  /// AI 보컬 파일의 presigned URL을 가져옵니다.
-  static Future<String?> getAiVocalPresignedUrl(
-    String artist,
-    String title,
-  ) async {
-    try {
-      final String backendUrl = await ApiConfigService.baseUrl;
-      final response = await http
-          .get(
-            Uri.parse(
-              '$backendUrl/api/ai-vocal-presigned-url/${Uri.encodeComponent(artist)}/${Uri.encodeComponent(title)}',
-            ),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      print('📊 AI 보컬 응답 상태 코드: ${response.statusCode}');
-      print('📊 AI 보컬 응답 내용: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          final presignedUrl = data['presigned_url'] as String;
-          print('✅ AI 보컬 presigned URL 성공: $presignedUrl');
-          return presignedUrl;
-        }
-      } else if (response.statusCode == 404) {
-        print('❌ AI 보컬 파일을 찾을 수 없습니다: $artist - $title');
-      } else {
-        print(
-          '❌ AI 보컬 presigned URL 실패: ${response.statusCode} - ${response.body}',
-        );
-      }
-    } catch (e) {
-      print('❌ AI 보컬 presigned URL 오류: $e');
-    }
-    return null;
   }
 
   /// 파일명에서 사용할 수 없는 특수문자를 제거하고 공백을 언더스코어로 변경합니다.
