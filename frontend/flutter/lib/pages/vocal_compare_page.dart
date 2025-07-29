@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../services/api_config_service.dart'; // ApiConfigService 추가
+import '../services/s3_service.dart'; // S3Service 추가
 
 class VocalComparePage extends StatefulWidget {
   final String userId;
@@ -51,6 +52,46 @@ class _VocalComparePageState extends State<VocalComparePage> {
     _singerPlayer = AudioPlayer();
     _aiPlayer = AudioPlayer();
 
+    // 오디오 플레이어 이벤트 리스너 설정
+    _initPlayer(
+      _userPlayer,
+      (duration) {
+        if (mounted) setState(() => _userDuration = duration);
+      },
+      (position) {
+        if (mounted) setState(() => _userPosition = position);
+      },
+      (playing) {
+        if (mounted) setState(() => _userPlaying = playing);
+      },
+    );
+
+    _initPlayer(
+      _singerPlayer,
+      (duration) {
+        if (mounted) setState(() => _singerDuration = duration);
+      },
+      (position) {
+        if (mounted) setState(() => _singerPosition = position);
+      },
+      (playing) {
+        if (mounted) setState(() => _singerPlaying = playing);
+      },
+    );
+
+    _initPlayer(
+      _aiPlayer,
+      (duration) {
+        if (mounted) setState(() => _aiDuration = duration);
+      },
+      (position) {
+        if (mounted) setState(() => _aiPosition = position);
+      },
+      (playing) {
+        if (mounted) setState(() => _aiPlaying = playing);
+      },
+    );
+
     // 녹음 파일이 있으면 S3 URL 또는 로컬 파일 사용, 없으면 더미 URL 사용
     if (widget.recordingPath != null) {
       if (widget.recordingPath!.startsWith('http')) {
@@ -68,50 +109,59 @@ class _VocalComparePageState extends State<VocalComparePage> {
       print('⚠️ 녹음 파일이 없어서 더미 파일을 사용합니다.');
     }
 
-    // 더미 오디오 URL로 바로 세팅 (실제 오디오 파일 URL로 교체 가능)
-    singerVocalUrl =
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3';
-    aiVocalUrl =
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
-    loading = false;
-    // _fetchVocalUrls(); // 주석 처리
+    // 원곡과 AI 보컬 URL 설정
+    _loadVocalUrls();
   }
 
   Future<void> _loadVocalUrls() async {
     setState(() => loading = true);
     try {
-      final baseUrl = await ApiConfigService.baseUrl;
+      // 원곡 URL 설정 (노래 상세 페이지와 동일한 방식)
+      singerVocalUrl = S3Service.getOriginalSongUrl(
+        widget.artist,
+        widget.songTitle,
+      );
+      print('🎵 원곡 URL 설정: $singerVocalUrl');
 
-      // 실제 API 엔드포인트에 맞게 URL을 수정하세요!
-      final userRes = await http.get(
-        Uri.parse(
-          '$baseUrl/api/s3/user_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
-        ),
+      // AI 합성 파일 presigned URL 가져오기
+      print('🔍 AI 합성 파일 presigned URL 요청 중...');
+      print('   - 사용자 ID: ${widget.userId}');
+      print('   - 노래 제목: ${widget.songTitle}');
+
+      final presignedUrl = await S3Service.getAiVocalPresignedUrl(
+        widget.userId,
+        widget.songTitle,
       );
-      final singerRes = await http.get(
-        Uri.parse(
-          '$baseUrl/api/s3/singer_vocal?artist=${Uri.encodeComponent(widget.artist)}&title=${Uri.encodeComponent(widget.songTitle)}',
-        ),
-      );
-      final aiRes = await http.get(
-        Uri.parse(
-          '$baseUrl/api/s3/ai_vocal?user_id=${Uri.encodeComponent(widget.userId)}&song=${Uri.encodeComponent(widget.songTitle)}',
-        ),
-      );
+
+      if (presignedUrl != null) {
+        aiVocalUrl = presignedUrl;
+        print('✅ AI 합성 파일 presigned URL 성공: $aiVocalUrl');
+      } else {
+        print('⚠️ AI 합성 파일 presigned URL 실패. 더미 파일을 사용합니다.');
+        aiVocalUrl =
+            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
+      }
 
       setState(() {
-        userVocalUrl = json.decode(userRes.body)['url'];
-        singerVocalUrl = json.decode(singerRes.body)['url'];
-        aiVocalUrl = json.decode(aiRes.body)['url'];
         loading = false;
       });
     } catch (e) {
+      print('❌ 보컬 URL 로드 중 오류: $e');
+      // 오류 시 더미 URL 사용
+      singerVocalUrl =
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3';
+      aiVocalUrl =
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3';
       setState(() => loading = false);
-      // 에러 처리
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('보컬 파일을 불러오지 못했습니다: $e')));
     }
+  }
+
+  /// 파일명에서 특수문자를 제거하고 안전한 파일명으로 변환합니다.
+  String _cleanFileName(String fileName) {
+    return fileName
+        .replaceAll(RegExp(r'[^\w\s-]'), '') // 특수문자 제거
+        .replaceAll(RegExp(r'\s+'), '_') // 공백을 언더스코어로 변경
+        .toLowerCase(); // 소문자로 변환
   }
 
   void _initPlayer(
@@ -193,7 +243,15 @@ class _VocalComparePageState extends State<VocalComparePage> {
                   ? duration.inSeconds.toDouble()
                   : 1,
               onChanged: (v) {
-                player.seek(Duration(seconds: v.toInt()));
+                try {
+                  player.seek(Duration(seconds: v.toInt()));
+                } catch (e) {
+                  print('❌ 오디오 시크 오류: $e');
+                }
+              },
+              onChangeEnd: (v) {
+                // 시크 완료 후 상태 업데이트
+                setState(() {});
               },
             ),
             Row(
@@ -208,18 +266,35 @@ class _VocalComparePageState extends State<VocalComparePage> {
                 IconButton(
                   icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                   onPressed: () async {
-                    if (isPlaying) {
-                      await player.pause();
-                    } else {
-                      await player.setSourceUrl(url);
-                      await player.resume();
+                    try {
+                      if (isPlaying) {
+                        await player.pause();
+                      } else {
+                        // 다른 플레이어들 중지
+                        if (player != _userPlayer) await _userPlayer.stop();
+                        if (player != _singerPlayer) await _singerPlayer.stop();
+                        if (player != _aiPlayer) await _aiPlayer.stop();
+
+                        // 현재 플레이어에 소스 설정 및 재생
+                        await player.setSourceUrl(url);
+                        await player.resume();
+                      }
+                    } catch (e) {
+                      print('❌ 오디오 재생 오류: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('오디오 재생 중 오류가 발생했습니다: $e')),
+                      );
                     }
                   },
                 ),
                 IconButton(
                   icon: const Icon(Icons.stop),
                   onPressed: () async {
-                    await player.stop();
+                    try {
+                      await player.stop();
+                    } catch (e) {
+                      print('❌ 오디오 정지 오류: $e');
+                    }
                   },
                 ),
               ],

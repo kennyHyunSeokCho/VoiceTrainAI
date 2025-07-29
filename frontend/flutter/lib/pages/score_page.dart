@@ -2,6 +2,7 @@ import 'package:SingSang/pages/vocal_compare_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../models/song.dart';
+import '../main.dart'; // CurrentUser 사용을 위해
 
 class ScorePage extends StatefulWidget {
   final Song song;
@@ -662,7 +663,9 @@ class _ScorePageState extends State<ScorePage> with TickerProviderStateMixin {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => VocalComparePage(
-                      userId: '사용자ID', // 실제 사용자 ID로 교체 필요
+                      userId:
+                          CurrentUser.getUserNickname() ??
+                          '테스트사용자', // 실제 사용자 ID 사용
                       songTitle: widget.song.title,
                       artist: widget.song.artist,
                       recordingPath: widget.recordingPath, // 녹음 파일 경로 전달
