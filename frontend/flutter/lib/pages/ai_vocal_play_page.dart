@@ -4,6 +4,7 @@ import '../models/song.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/s3_service.dart';
+import '../services/api_config_service.dart'; // ApiConfigService 추가
 import 'package:audioplayers/audioplayers.dart';
 
 class AiVocalPlayPage extends StatefulWidget {
@@ -79,10 +80,11 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
 
       print('🎵 AI 보컬 오디오 로드 시작: ${song.artist} - ${song.title}');
 
-      // AI 보컬 presigned URL 가져오기
+      // vocal_compare_page.dart와 동일한 방식으로 AI 보컬 presigned URL 가져오기
+      // 사용자 ID는 "테스트사용자"로 고정 (실제로는 동적 사용자 ID를 사용해야 함)
       final aiVocalUrl = await S3Service.getAiVocalPresignedUrl(
-        song.artist,
-        song.title,
+        "테스트사용자", // 사용자 ID
+        song.title, // 노래 제목
       );
 
       if (aiVocalUrl != null) {
@@ -116,7 +118,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
           }
         });
 
-        print('✅ AI 보컬 오디오 로드 성공');
+        print('✅ AI 보컬 오디오 로드 성공: $aiVocalUrl');
       } else {
         setState(() {
           _isLoadingAudio = false;
