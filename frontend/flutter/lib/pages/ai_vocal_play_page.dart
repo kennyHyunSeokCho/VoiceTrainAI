@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/s3_service.dart';
 import '../services/api_config_service.dart'; // ApiConfigService 추가
+import '../main.dart'; // CurrentUser 사용을 위해
 import 'package:audioplayers/audioplayers.dart';
 
 class AiVocalPlayPage extends StatefulWidget {
@@ -80,10 +81,18 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
 
       print('🎵 AI 보컬 오디오 로드 시작: ${song.artist} - ${song.title}');
 
+      // 현재 로그인된 사용자 ID 가져오기 (s3_service.dart와 동일한 방식)
+      String? userId = CurrentUser.getUserNickname();
+      if (userId == null) {
+        userId = "테스트사용자"; // 기본값으로 테스트사용자 사용
+        print('⚠️ 로그인된 사용자 정보가 없어서 기본값 사용: $userId');
+      } else {
+        print('👤 현재 사용자 ID: $userId');
+      }
+
       // vocal_compare_page.dart와 동일한 방식으로 AI 보컬 presigned URL 가져오기
-      // 사용자 ID는 "테스트사용자"로 고정 (실제로는 동적 사용자 ID를 사용해야 함)
       final aiVocalUrl = await S3Service.getAiVocalPresignedUrl(
-        "테스트사용자", // 사용자 ID
+        userId, // 현재 로그인된 사용자 ID 사용
         song.title, // 노래 제목
       );
 

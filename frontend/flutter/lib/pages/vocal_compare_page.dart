@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../services/api_config_service.dart'; // ApiConfigService 추가
 import '../services/s3_service.dart'; // S3Service 추가
+import '../main.dart'; // CurrentUser 사용을 위해
 
 class VocalComparePage extends StatefulWidget {
   final String userId;
@@ -128,8 +129,15 @@ class _VocalComparePageState extends State<VocalComparePage> {
       print('   - 사용자 ID: ${widget.userId}');
       print('   - 노래 제목: ${widget.songTitle}');
 
+      // 현재 로그인된 사용자 ID 가져오기 (widget.userId가 있으면 사용, 없으면 현재 로그인된 사용자 ID 사용)
+      String userId = widget.userId;
+      if (userId.isEmpty) {
+        userId = CurrentUser.getUserNickname() ?? "테스트사용자";
+        print('👤 현재 로그인된 사용자 ID 사용: $userId');
+      }
+
       final presignedUrl = await S3Service.getAiVocalPresignedUrl(
-        widget.userId,
+        userId,
         widget.songTitle,
       );
 
