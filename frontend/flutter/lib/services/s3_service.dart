@@ -490,26 +490,48 @@ class S3Service {
       print('🎵 사용자 업로드 파일 목록 조회 시작: $userId');
 
       final backendUrl = await ApiConfigService.baseUrl;
+      final apiUrl = '$backendUrl/api/user-uploads/$userId';
+      
+      print('🔗 API 호출 URL: $apiUrl');
+
       final response = await http
-          .get(Uri.parse('$backendUrl/api/user-uploads/$userId'))
+          .get(Uri.parse(apiUrl))
           .timeout(const Duration(seconds: 30));
+
+      print('📡 API 응답 상태 코드: ${response.statusCode}');
+      print('📡 API 응답 헤더: ${response.headers}');
+      print('📡 API 응답 바디: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           final uploads = List<Map<String, dynamic>>.from(data['uploads']);
           print('✅ 사용자 업로드 파일 목록 조회 성공: ${uploads.length}개 파일');
+          
+          // 각 파일 정보 로그
+          for (var upload in uploads) {
+            print('  📁 파일: ${upload['filename']}');
+            print('     - 아티스트: ${upload['artist']}');
+            print('     - 제목: ${upload['song_title']}');
+            print('     - 타입: ${upload['type']}');
+            print('     - 크기: ${upload['size']} bytes');
+            print('     - S3 키: ${upload['key']}');
+          }
+          
           return uploads;
         } else {
           print('❌ 사용자 업로드 파일 목록 조회 실패: ${data['detail']}');
+          print('❌ 응답 데이터: $data');
           return [];
         }
       } else {
         print('❌ 사용자 업로드 파일 목록 조회 실패: ${response.statusCode}');
+        print('❌ 응답 바디: ${response.body}');
         return [];
       }
     } catch (e) {
       print('❌ 사용자 업로드 파일 목록 조회 오류: $e');
+      print('❌ 오류 타입: ${e.runtimeType}');
       return [];
     }
   }

@@ -4,7 +4,6 @@ import '../models/song.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/s3_service.dart';
-import '../services/api_config_service.dart'; // ApiConfigService 추가
 import 'package:audioplayers/audioplayers.dart';
 
 class AiVocalPlayPage extends StatefulWidget {
@@ -12,7 +11,8 @@ class AiVocalPlayPage extends StatefulWidget {
   _AiVocalPlayPageState createState() => _AiVocalPlayPageState();
 }
 
-class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
+class _AiVocalPlayPageState extends State<AiVocalPlayPage>
+    with TickerProviderStateMixin {
   String? _albumCoverUrl;
   bool _isLoadingCover = true;
   AudioPlayer? _audioPlayer;
@@ -22,10 +22,34 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
+  // 애니메이션 컨트롤러
+  late AnimationController _rotationController;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+
+    // 애니메이션 컨트롤러 초기화
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // 펄스 애니메이션 반복
+    _pulseController.repeat(reverse: true);
+
     _loadAlbumCover();
     _loadAiVocalAudio();
   }
@@ -33,6 +57,8 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
   @override
   void dispose() {
     _audioPlayer?.dispose();
+    _rotationController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -80,11 +106,16 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
 
       print('🎵 AI 보컬 오디오 로드 시작: ${song.artist} - ${song.title}');
 
+      // 노래 제목에서 특수문자 제거 (S3 파일명과 일치시키기 위해)
+      String cleanTitle = _cleanFileName(song.title);
+
+      print('🔍 정리된 제목: "${song.title}" -> "$cleanTitle"');
+
       // vocal_compare_page.dart와 동일한 방식으로 AI 보컬 presigned URL 가져오기
       // 사용자 ID는 "테스트사용자"로 고정 (실제로는 동적 사용자 ID를 사용해야 함)
       final aiVocalUrl = await S3Service.getAiVocalPresignedUrl(
         "테스트사용자", // 사용자 ID
-        song.title, // 노래 제목
+        cleanTitle, // 정리된 노래 제목
       );
 
       if (aiVocalUrl != null) {
@@ -115,6 +146,13 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
             setState(() {
               _isPlaying = state == PlayerState.playing;
             });
+
+            // 재생 상태에 따라 애니메이션 제어
+            if (state == PlayerState.playing) {
+              _rotationController.repeat();
+            } else {
+              _rotationController.stop();
+            }
           }
         });
 
@@ -166,6 +204,14 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
+  /// 파일명에서 사용할 수 없는 특수문자를 제거하고 공백을 언더스코어로 변경합니다.
+  String _cleanFileName(String fileName) {
+    return fileName
+        .replaceAll(RegExp(r'[^\w\s가-힣]'), '') // 특수문자 제거 (한글, 영문, 숫자, 공백만 허용)
+        .replaceAll(RegExp(r'\s+'), '_') // 공백을 언더스코어로 변경
+        .trim();
   }
 
   Future<String> _fetchAlbumCoverUrl(String artist, String title) async {
@@ -305,26 +351,44 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
       ),
       body: Stack(
         children: [
-          // 배경 SVG 요소들
-          Positioned(
-            top: 100,
-            right: -40,
-            child: SvgPicture.asset(
-              'assets/images/rectangle4.svg',
-              width: 150,
-              height: 150,
-              color: Colors.deepPurple.withOpacity(0.05),
-            ),
+          // 배경 SVG 요소들 (애니메이션 추가)
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Positioned(
+                top: 100,
+                right: -40,
+                child: Transform.scale(
+                  scale: _isPlaying ? _pulseAnimation.value * 0.1 + 0.95 : 1.0,
+                  child: SvgPicture.asset(
+                    'assets/images/rectangle4.svg',
+                    width: 150,
+                    height: 150,
+                    color: Colors.deepPurple.withOpacity(
+                      _isPlaying ? 0.08 : 0.05,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-          Positioned(
-            bottom: 200,
-            left: -30,
-            child: SvgPicture.asset(
-              'assets/images/rectangle7.svg',
-              width: 100,
-              height: 100,
-              color: Colors.purple.withOpacity(0.03),
-            ),
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Positioned(
+                bottom: 200,
+                left: -30,
+                child: Transform.scale(
+                  scale: _isPlaying ? _pulseAnimation.value * 0.08 + 0.96 : 1.0,
+                  child: SvgPicture.asset(
+                    'assets/images/rectangle7.svg',
+                    width: 100,
+                    height: 100,
+                    color: Colors.purple.withOpacity(_isPlaying ? 0.06 : 0.03),
+                  ),
+                ),
+              );
+            },
           ),
           // 메인 콘텐츠
           Padding(
@@ -345,10 +409,28 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                           borderRadius: BorderRadius.circular(120),
                         ),
                       ),
-                      // 앨범커버 이미지
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: _buildAlbumCoverWidget(),
+                      // 애니메이션 앨범커버 이미지
+                      AnimatedBuilder(
+                        animation: _rotationController,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: _rotationController.value * 2 * 3.14159,
+                            child: AnimatedBuilder(
+                              animation: _pulseAnimation,
+                              builder: (context, child) {
+                                return Transform.scale(
+                                  scale: _isPlaying
+                                      ? _pulseAnimation.value
+                                      : 1.0,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(100),
+                                    child: _buildAlbumCoverWidget(),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
                       ),
                       // 재생 중 표시
                       if (_isPlaying)
@@ -522,23 +604,41 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                             ),
                           ),
                           Expanded(
-                            child: Slider(
-                              value: _duration.inMilliseconds > 0
-                                  ? _position.inMilliseconds.toDouble()
-                                  : 0.0,
-                              min: 0.0,
-                              max: _duration.inMilliseconds > 0
-                                  ? _duration.inMilliseconds.toDouble()
-                                  : 1.0,
-                              onChanged: (value) {
-                                final newPosition = Duration(
-                                  milliseconds: value.toInt(),
-                                );
-                                _audioPlayer?.seek(newPosition);
-                              },
-                              activeColor: Colors.deepPurple,
-                              inactiveColor: Colors.grey[300],
-                              thumbColor: Colors.deepPurple,
+                            child: SliderTheme(
+                              data: SliderThemeData(
+                                trackHeight: _isPlaying ? 6.0 : 4.0,
+                                thumbShape: RoundSliderThumbShape(
+                                  enabledThumbRadius: _isPlaying ? 8.0 : 6.0,
+                                ),
+                                overlayShape: RoundSliderOverlayShape(
+                                  overlayRadius: _isPlaying ? 20.0 : 16.0,
+                                ),
+                                activeTrackColor: _isPlaying
+                                    ? Colors.deepPurple[600]
+                                    : Colors.deepPurple,
+                                inactiveTrackColor: Colors.grey[300],
+                                thumbColor: _isPlaying
+                                    ? Colors.deepPurple[700]
+                                    : Colors.deepPurple,
+                                overlayColor: Colors.deepPurple.withOpacity(
+                                  0.2,
+                                ),
+                              ),
+                              child: Slider(
+                                value: _duration.inMilliseconds > 0
+                                    ? _position.inMilliseconds.toDouble()
+                                    : 0.0,
+                                min: 0.0,
+                                max: _duration.inMilliseconds > 0
+                                    ? _duration.inMilliseconds.toDouble()
+                                    : 1.0,
+                                onChanged: (value) {
+                                  final newPosition = Duration(
+                                    milliseconds: value.toInt(),
+                                  );
+                                  _audioPlayer?.seek(newPosition);
+                                },
+                              ),
                             ),
                           ),
                           Text(
@@ -564,28 +664,46 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
                       onPressed: () {},
                       color: Colors.grey[600],
                     ),
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: Colors.deepPurple,
-                        borderRadius: BorderRadius.circular(35),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.deepPurple.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: Offset(0, 6),
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _isPlaying ? 1.05 : 1.0,
+                          child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: _isPlaying
+                                  ? Colors.deepPurple[700]
+                                  : Colors.deepPurple,
+                              borderRadius: BorderRadius.circular(35),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.deepPurple.withOpacity(
+                                    _isPlaying ? 0.5 : 0.3,
+                                  ),
+                                  blurRadius: _isPlaying ? 20 : 15,
+                                  offset: Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: AnimatedSwitcher(
+                                duration: Duration(milliseconds: 200),
+                                child: Icon(
+                                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                                  key: ValueKey(_isPlaying),
+                                  size: 36,
+                                ),
+                              ),
+                              onPressed: _isLoadingAudio
+                                  ? null
+                                  : _togglePlayPause,
+                              color: Colors.white,
+                            ),
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          _isPlaying ? Icons.pause : Icons.play_arrow,
-                          size: 36,
-                        ),
-                        onPressed: _isLoadingAudio ? null : _togglePlayPause,
-                        color: Colors.white,
-                      ),
+                        );
+                      },
                     ),
                     IconButton(
                       icon: Icon(Icons.skip_next, size: 32),

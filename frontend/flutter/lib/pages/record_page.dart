@@ -17,6 +17,7 @@ import '../services/s3_service.dart';
 import 'score_page.dart';
 import 'package:SingSang/services/tensor_dsp_service.dart';
 import 'package:SingSang/services/api_config_service.dart';
+import '../services/score_service.dart';
 
 // MIDI 노트 데이터 클래스
 class _MidiNote {
@@ -1153,10 +1154,19 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _calculateAndNavigateToScorePage() async {
     print('📊 점수 계산 시작...');
 
+    // 디버깅 로그 추가
+    print('🔍 점수 계산 디버깅:');
+    print('  - 현재 녹음 상태: isRecording=$isRecording, _isRecordingStarted=$_isRecordingStarted');
+    print('  - 녹음 데이터 존재: _hasRecording=$_hasRecording');
+    print('  - 위젯 마운트 상태: mounted=$mounted');
+    print('  - 녹음 파일 경로: _recordingPath=$_recordingPath');
+
     // Song 객체 안전하게 가져오기
     final song = ModalRoute.of(context)?.settings.arguments as Song?;
+    print('  - Song 객체: ${song != null ? '${song.title} by ${song.artist}' : 'null'}');
+    
     if (song == null) {
-      print('Song 객체가 null입니다. 점수 페이지 이동을 건너뜁니다.');
+      print('❌ Song 객체가 null입니다. 점수 페이지 이동을 건너뜁니다.');
       return;
     }
 
@@ -1166,7 +1176,7 @@ class _RecordPageState extends State<RecordPage> {
     }
 
     if (!_hasRecording) {
-      print('❌ 녹음 데이터가 없습니다. 점수 계산을 건너뜁니다.');
+      print('⚠️ 녹음 데이터가 없습니다. 점수 0으로 점수 페이지로 이동합니다.');
       // 녹음이 없어도 점수 페이지로 이동 (점수는 0으로 표시)
       if (mounted) {
         Navigator.of(context).push(
@@ -1182,6 +1192,7 @@ class _RecordPageState extends State<RecordPage> {
             ),
           ),
         );
+        print('✅ 점수 페이지로 이동 완료 (점수 0)');
       }
       return;
     }
@@ -1202,6 +1213,37 @@ class _RecordPageState extends State<RecordPage> {
       final recommendedSongs = _generateRecommendedSongs(totalScore);
 
       print('📊 계산된 점수: 피치=$pitchScore, 타이밍=$timingScore, 총점=$totalScore');
+
+      // 점수를 서버에 저장 (테스트용)
+      try {
+        final saveResult = await ScoreService.saveScoreTest(
+          userId: '테스트사용자', // 현재 테스트 환경에서 사용하는 사용자 ID
+          songId: 1, // 임시 ID, 나중에 Song 모델에 id 추가 후 수정
+          pitchScore: pitchScore.toDouble(),
+          rhythmScore: timingScore.toDouble(),
+          totalScore: totalScore,
+          recordingPath: _recordingPath,
+        );
+
+        if (saveResult['success']) {
+          print('✅ 점수 저장 성공: ${saveResult['data']['message']}');
+        } else {
+          print('❌ 점수 저장 실패: ${saveResult['error']}');
+          // 저장 실패 알림 (선택사항)
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('점수 저장에 실패했습니다'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (saveError) {
+        print('❌ 점수 저장 중 예외 발생: $saveError');
+        // 점수 저장 실패해도 점수 페이지는 표시
+      }
 
       // 점수 페이지로 이동 (pushReplacement 대신 push 사용)
       if (mounted) {
@@ -1320,6 +1362,70 @@ class _RecordPageState extends State<RecordPage> {
     final cleanFileName = fileName.replaceAll(RegExp(r'[^\w\s-.]'), '_');
 
     return '${directory.path}/$cleanFileName';
+  }
+
+  // 녹음 종료 버튼 클릭 시 실행되는 메서드
+  void _onFinishRecordingPressed() async {
+    print('🛑 녹음 종료 버튼 클릭 시작');
+    print('🔍 현재 상태: isRecording=$isRecording, _isRecordingStarted=$_isRecordingStarted');
+    
+    if (!isRecording || !_isRecordingStarted) {
+      print('❌ 녹음 상태가 올바르지 않아 종료합니다.');
+      return;
+    }
+
+    print('🛑 사용자가 녹음 종료 버튼 클릭 - 처리 시작');
+
+    try {
+      print('1️⃣ 녹음 중지 및 저장 시작...');
+      // 녹음 중지 및 저장
+      await _stopRecordingAndSave();
+      print('✅ 녹음 중지 및 저장 완료');
+
+      print('2️⃣ TensorDSP 분석 중지 시작...');
+      // TensorDSP 분석 중지
+      await TensorDspService.stopRealTimeAnalysis();
+      print('✅ TensorDSP 분석 중지 완료');
+
+      print('3️⃣ inst 파일 중지 시작...');
+      // inst 파일 중지
+      if (_instPlayer != null && _isInstPlaying) {
+        await _instPlayer!.pause();
+        _stopMainTimer();
+        print('✅ inst 파일 중지 완료');
+      } else {
+        print('ℹ️ inst 파일이 이미 중지되어 있음');
+      }
+
+      print('4️⃣ 타이머 정리 시작...');
+      // 타이머 정리
+      _tensorDspTimer?.cancel();
+      print('✅ 타이머 정리 완료');
+
+      print('5️⃣ 상태 업데이트 시작...');
+      // 상태 업데이트
+      setState(() {
+        isRecording = false;
+        isPlaying = false;
+        _isInstPlaying = false;
+      });
+      print('✅ 상태 업데이트 완료');
+
+      print('6️⃣ 점수 계산 및 페이지 이동 시작...');
+      // 점수 계산 및 페이지 이동
+      await _calculateAndNavigateToScorePage();
+      print('✅ 점수 계산 및 페이지 이동 완료');
+    } catch (e) {
+      print('❌ 녹음 종료 중 오류 발생: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('녹음 종료 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _onRecordButtonPressed() async {
@@ -1787,11 +1893,15 @@ class _RecordPageState extends State<RecordPage> {
               ),
             ),
             SizedBox(height: 18),
-            // 중앙 가사 영역 - 상자로 감싸고 긴 문장 처리
+            // 중앙 가사 영역 - 상자로 감싸고 긴 문장 처리 (고정 높이로 안정성 확보)
             Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(16),
+                constraints: BoxConstraints(
+                  minHeight: 200, // 최소 높이 보장
+                  maxHeight: 400, // 최대 높이 제한
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -1807,7 +1917,7 @@ class _RecordPageState extends State<RecordPage> {
                   child: _LyricSliderN(
                     lyricLines: lyricLines,
                     currentIndex: currentLyricIndex,
-                    visibleCount: 9, // 상자 안에 맞게 줄 수 조정
+                    visibleCount: isRecording ? 7 : 9, // 녹음 중일 때 줄 수 조정
                     onTap: (idx) {
                       if (!mounted) return;
                       setState(() {
@@ -1918,7 +2028,54 @@ class _RecordPageState extends State<RecordPage> {
                   ),
                   SizedBox(height: 16),
 
-                  if (isRecording) SizedBox(height: 16),
+                  // 녹음 종료 버튼 (녹음 중일 때만 표시, 컴팩트한 디자인)
+                  if (isRecording && _isRecordingStarted)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        height: 40, // 더 작은 높이
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFEF4444).withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: _onFinishRecordingPressed,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.stop_circle_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  '녹음 종료하고 점수 보기',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(height: 8), // 녹음 여부와 관계없이 일정한 간격 유지
                   // --- 실시간 점수 텍스트 제거 (하단)
                   // Text(
                   //   '실시간 점수: {currentScore.toStringAsFixed(1)}',

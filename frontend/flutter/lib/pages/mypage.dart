@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:async';
-import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../services/s3_service.dart';
 import '../main.dart'; // CurrentUser 사용을 위해
 import 'user_recording_play_page.dart'; // 재생 페이지 import 추가
 import '../services/api_config_service.dart'; // ApiConfigService 추가
+import '../services/score_service.dart'; // ScoreService 추가
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -26,17 +26,29 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
   WebSocketChannel? _channel;
   bool _isWebSocketConnected = false;
 
+  // 점수 그래프 관련 변수
+  List<Map<String, dynamic>> scoreGraphData = [];
+  bool isScoreLoading = false;
+  double? avgScore;
+  double? maxScore;
+  double? minScore;
+
+  // 위젯 dispose 상태 추적
+  bool _isDisposed = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadUserUploads();
+    _loadScoreGraphData(); // 점수 그래프 데이터 로드 추가
     _startAutoRefresh();
     _connectWebSocket();
   }
 
   @override
   void dispose() {
+    _isDisposed = true; // dispose 상태 추적
     WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
     _disconnectWebSocket();
@@ -46,9 +58,11 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    setState(() {
-      _isPageActive = state == AppLifecycleState.resumed;
-    });
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _isPageActive = state == AppLifecycleState.resumed;
+      });
+    }
 
     if (state == AppLifecycleState.resumed) {
       // 앱이 포커스를 받으면 즉시 새로고침
@@ -132,7 +146,7 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
         print('🆕 새로운 파일 업데이트 알림: $fileInfo');
 
         // UI 업데이트
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           setState(() {
             // 새 파일을 목록 맨 앞에 추가
             userUploads.insert(0, {
@@ -166,28 +180,46 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
   }
 
   Future<void> _loadUserUploads() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    if (mounted && !_isDisposed) {
+      setState(() {
+        isLoading = true;
+      });
+    }
 
     try {
       // 현재 로그인된 사용자 ID 가져오기
       currentUserId = CurrentUser.getUserNickname();
+
+      // 디버깅을 위한 상세 로그
+      print('🔍 마이페이지 Cover Song 로드 디버깅:');
+      print('  - 현재 사용자 ID: $currentUserId');
+      print('  - 사용자 ID가 null인가? ${currentUserId == null}');
+
       if (currentUserId == null) {
-        print('❌ 로그인된 사용자 정보가 없습니다.');
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-        return;
+        // 테스트용으로 '테스트사용자' ID 사용
+        currentUserId = '테스트사용자';
+        print('  - 테스트 사용자로 설정: $currentUserId');
       }
 
       // 사용자의 업로드된 파일 목록 가져오기
+      print('  - API 호출 시작: S3Service.getUserUploads($currentUserId)');
       final uploads = await S3Service.getUserUploads(currentUserId!);
-      if (mounted) {
+
+      print('  - API 응답 받음: ${uploads.length}개 파일');
+      if (uploads.isNotEmpty) {
+        print('  - 파일 목록:');
+        for (var upload in uploads) {
+          print(
+            '    * ${upload['artist']} - ${upload['song_title']} (${upload['type']})',
+          );
+        }
+      } else {
+        print('  - 업로드된 파일이 없습니다.');
+      }
+
+      if (mounted && !_isDisposed) {
         setState(() {
           userUploads = uploads;
           isLoading = false;
@@ -196,11 +228,14 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
         // 새로고침 완료 알림 (새 파일이 있는 경우)
         if (uploads.isNotEmpty) {
           print('✅ Cover Song 목록 업데이트 완료: ${uploads.length}개 파일');
+        } else {
+          print('⚠️ Cover Song 목록이 비어있습니다. S3 버킷과 파일 경로를 확인해주세요.');
         }
       }
     } catch (e) {
       print('❌ 사용자 업로드 파일 로드 실패: $e');
-      if (mounted) {
+      print('❌ 오류 상세 정보: ${e.runtimeType}');
+      if (mounted && !_isDisposed) {
         setState(() {
           isLoading = false;
         });
@@ -212,15 +247,93 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
   Future<void> _refreshData() async {
     print('🔄 수동 새로고침 시작...');
     await _loadUserUploads();
+    await _loadScoreGraphData(); // 점수 데이터도 새로고침
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cover Song 목록이 새로고침되었습니다.'),
+          content: Text('데이터가 새로고침되었습니다.'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );
+    }
+  }
+
+  // 점수 그래프 데이터 로드
+  Future<void> _loadScoreGraphData() async {
+    if (!mounted) return;
+
+    // 안전한 setState 호출을 위한 헬퍼 함수
+    void safeSetState(VoidCallback fn) {
+      if (mounted && !_isDisposed) {
+        setState(fn);
+      }
+    }
+
+    safeSetState(() {
+      isScoreLoading = true;
+    });
+
+    try {
+      // 현재 사용자 ID가 없으면 테스트 사용자로 시도
+      final userId = currentUserId ?? '테스트사용자';
+
+      print('📈 점수 그래프 데이터 로드 시작: $userId');
+
+      // 테스트용 API 호출 (최근 10개 곡만 가져오기)
+      final result = await ScoreService.getTestScoreGraphData(
+        userId: userId,
+        days: 30,
+        limit: 10,
+      );
+
+      // 비동기 작업 후 위젯 상태 재확인
+      if (!mounted || _isDisposed) return;
+
+      if (result['success']) {
+        final data = result['data'];
+        final dataPoints = data['data'] ?? [];
+
+        safeSetState(() {
+          scoreGraphData = List<Map<String, dynamic>>.from(dataPoints);
+
+          if (scoreGraphData.isNotEmpty) {
+            final scores = scoreGraphData
+                .map((point) => point['score'] as double)
+                .toList();
+            avgScore = scores.reduce((a, b) => a + b) / scores.length;
+            maxScore = scores.reduce((a, b) => a > b ? a : b);
+            minScore = scores.reduce((a, b) => a < b ? a : b);
+          } else {
+            avgScore = null;
+            maxScore = null;
+            minScore = null;
+          }
+
+          isScoreLoading = false;
+        });
+
+        print('✅ 점수 그래프 데이터 로드 성공: ${scoreGraphData.length}개 데이터');
+      } else {
+        safeSetState(() {
+          scoreGraphData = [];
+          avgScore = null;
+          maxScore = null;
+          minScore = null;
+          isScoreLoading = false;
+        });
+        print('❌ 점수 그래프 데이터 로드 실패: ${result['error']}');
+      }
+    } catch (e) {
+      print('❌ 점수 그래프 데이터 로드 중 오류: $e');
+      safeSetState(() {
+        scoreGraphData = [];
+        avgScore = null;
+        maxScore = null;
+        minScore = null;
+        isScoreLoading = false;
+      });
     }
   }
 
@@ -342,6 +455,11 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
                     ),
                   ],
                 ),
+
+                const SizedBox(height: 24),
+
+                // 점수 통계 섹션
+                _buildScoreStatsSection(),
 
                 const SizedBox(height: 24),
                 // Cover Song 섹션
@@ -491,27 +609,6 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
                   ),
 
                 const SizedBox(height: 24),
-                // 점수 변화 그래프
-                const Text(
-                  '점수 변화 그래프',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '점수 변화 그래프가 여기에 표시됩니다.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
                 // 설정 섹션
                 const Text(
                   '설정',
@@ -552,23 +649,6 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
       ),
     );
   }
-
-  Widget _songTile(String title, String imageUrl) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.asset(
-          'assets/images/cat.webp',
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-        ),
-      ),
-      const SizedBox(height: 4),
-      Text(title, style: const TextStyle(fontSize: 12)),
-    ],
-  );
 
   Widget _songTileWithAlbumCover(String title, String artist) {
     return FutureBuilder<String?>(
@@ -629,4 +709,285 @@ class _MyPageState extends State<MyPage> with WidgetsBindingObserver {
       },
     );
   }
+
+  // 점수 통계 섹션 빌드
+  Widget _buildScoreStatsSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '나의 점수 변화',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              if (isScoreLoading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 점수 통계 카드들
+          if (scoreGraphData.isNotEmpty) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _buildScoreCard(
+                    '평균 점수',
+                    avgScore?.toStringAsFixed(1) ?? '0',
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildScoreCard(
+                    '최고 점수',
+                    maxScore?.toStringAsFixed(1) ?? '0',
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildScoreCard(
+                    '최저 점수',
+                    minScore?.toStringAsFixed(1) ?? '0',
+                    Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 간단한 점수 변화 그래프 (선 그래프 형태)
+            _buildSimpleScoreChart(),
+
+            const SizedBox(height: 12),
+            Text(
+              '최근 ${scoreGraphData.take(10).length}회 연습 기록 (최대 10회)',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ] else ...[
+            Container(
+              height: 100,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.analytics_outlined,
+                    size: 40,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '아직 연습 기록이 없습니다',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '노래를 연습하고 점수를 확인해보세요!',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 점수 카드 위젯
+  Widget _buildScoreCard(String title, String score, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Color.lerp(color, Colors.black, 0.3),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            score,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color.lerp(color, Colors.black, 0.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 선 그래프 (점을 잇는 형태)
+  Widget _buildSimpleScoreChart() {
+    if (scoreGraphData.isEmpty) return const SizedBox.shrink();
+
+    // 최근 10개 데이터만 사용 (역순으로 정렬하여 최신 순서대로)
+    final chartData = scoreGraphData.take(10).toList().reversed.toList();
+
+    return Container(
+      height: 120,
+      padding: const EdgeInsets.all(16),
+      child: CustomPaint(
+        size: const Size(double.infinity, 80),
+        painter: LineChartPainter(
+          data: chartData.map((item) => item['score'] as double).toList(),
+          maxScore: 100,
+          minScore: 0,
+        ),
+      ),
+    );
+  }
+}
+
+// 선 그래프를 그리는 CustomPainter
+class LineChartPainter extends CustomPainter {
+  final List<double> data;
+  final double maxScore;
+  final double minScore;
+
+  LineChartPainter({
+    required this.data,
+    required this.maxScore,
+    required this.minScore,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
+
+    final paint = Paint()
+      ..color = const Color(0xFF8B5CF6)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final gridPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    // 격자선 그리기 (수평선)
+    for (int i = 0; i <= 4; i++) {
+      final y = size.height * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // 데이터 포인트 계산
+    final points = <Offset>[];
+    final stepX = size.width / (data.length - 1).clamp(1, double.infinity);
+
+    for (int i = 0; i < data.length; i++) {
+      final x = i * stepX;
+      final normalizedValue = (data[i] - minScore) / (maxScore - minScore);
+      final y = size.height * (1 - normalizedValue);
+      points.add(Offset(x, y));
+    }
+
+    // 선 그리기
+    if (points.length > 1) {
+      final path = Path();
+      path.moveTo(points[0].dx, points[0].dy);
+
+      for (int i = 1; i < points.length; i++) {
+        path.lineTo(points[i].dx, points[i].dy);
+      }
+
+      canvas.drawPath(path, paint);
+    }
+
+    // 점 그리기
+    for (int i = 0; i < points.length; i++) {
+      final point = points[i];
+
+      // 배경 원 (흰색)
+      canvas.drawCircle(
+        point,
+        4.0,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
+
+      // 테두리 원
+      canvas.drawCircle(
+        point,
+        4.0,
+        Paint()
+          ..color = const Color(0xFF8B5CF6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+
+      // 점수 표시 (점 위에)
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '${data[i].toInt()}',
+          style: const TextStyle(
+            color: Color(0xFF8B5CF6),
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          point.dx - textPainter.width / 2,
+          point.dy - textPainter.height - 8,
+        ),
+      );
+
+      // X축 라벨 (연습 순서)
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: '${i + 1}회',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 9),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      labelPainter.layout();
+      labelPainter.paint(
+        canvas,
+        Offset(point.dx - labelPainter.width / 2, size.height + 8),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

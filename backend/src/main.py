@@ -9,6 +9,7 @@ from src.auth.clerk_auth import ClerkAuth
 from src.auth.oauth_handlers import OAuthHandler
 from src.DB.database import get_db
 from sqlalchemy.orm import Session
+from src.api import feedback, recommend
 import urllib.parse
 import boto3
 from botocore.exceptions import ClientError
@@ -28,8 +29,15 @@ from collections import defaultdict
 import asyncio
 from dotenv import load_dotenv
 
-# .env 파일 로드
-load_dotenv()
+# .env 파일 로드 (상위 디렉토리에서 찾기)
+from pathlib import Path
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+print(f"🔍 .env 파일 경로: {env_path}")
+print(f"🔍 .env 파일 존재: {env_path.exists()}")
+print(f"🔍 AWS_ACCESS_KEY_ID 설정됨: {bool(os.getenv('AWS_ACCESS_KEY_ID'))}")
+print(f"🔍 S3_BUCKET_NAME: {os.getenv('S3_BUCKET_NAME', 'not_set')}")
 
 # AWS 환경변수 설정
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -47,6 +55,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API 라우터 등록
+app.include_router(feedback.router, prefix="/api/feedback", tags=["feedback"])
+app.include_router(recommend.router, prefix="/api/recommend", tags=["recommend"])
 
 # Clerk 인증 인스턴스 (테스트 모드로 초기화)
 try:
@@ -463,6 +475,10 @@ async def get_presigned_url(request: PresignedUrlRequest):
 async def get_user_uploads(user_id: str):
     """사용자가 업로드한 파일 목록을 가져옵니다."""
     try:
+        print(f"🔍 사용자 업로드 파일 조회 요청: {user_id}")
+        print(f"🔍 S3 버킷: {S3_BUCKET_NAME}")
+        print(f"🔍 AWS 리전: {AWS_REGION}")
+        
         s3_client = boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -470,63 +486,94 @@ async def get_user_uploads(user_id: str):
             region_name=AWS_REGION
         )
         
-        # 사용자의 vocal 폴더에서 파일 목록 가져오기
-        prefix = f'{user_id}/vocal/'
+        # 여러 경로 패턴 시도
+        possible_prefixes = [
+            f'{user_id}/vocal/',      # {사용자ID}/vocal/ 
+            'vocal/',                 # vocal/ (이미지에서 보인 실제 경로)
+            f'{user_id}/',            # {사용자ID}/
+            '',                       # 루트 (모든 파일)
+        ]
         
-        response = s3_client.list_objects_v2(
-            Bucket=S3_BUCKET_NAME,
-            Prefix=prefix
-        )
+        all_uploads = []
+        
+        for prefix in possible_prefixes:
+            print(f"🔍 S3 조회 경로 시도: '{prefix}'")
+            
+            try:
+                response = s3_client.list_objects_v2(
+                    Bucket=S3_BUCKET_NAME,
+                    Prefix=prefix
+                )
+                
+                if 'Contents' in response:
+                    print(f"  - '{prefix}' 경로에서 {len(response['Contents'])}개 객체 발견:")
+                    for obj in response['Contents']:
+                        print(f"    * {obj['Key']} (크기: {obj['Size']} bytes)")
+                        
+                        # vocal 관련 파일만 필터링
+                        key = obj['Key']
+                        if 'vocal' in key.lower() or '_record.' in key:
+                            all_uploads.append(obj)
+                else:
+                    print(f"  - '{prefix}' 경로에서 객체 없음")
+                    
+            except Exception as e:
+                print(f"  - '{prefix}' 경로 조회 실패: {e}")
+        
+        print(f"🔍 필터링된 파일들 ({len(all_uploads)}개):")
+        for obj in all_uploads:
+            print(f"  - {obj['Key']}")
         
         uploads = []
-        if 'Contents' in response:
-            for obj in response['Contents']:
-                key = obj['Key']
-                # vocal 폴더의 파일만 필터링
-                if key.startswith(prefix) and key != prefix:
-                    # 파일명에서 노래 정보 추출
-                    filename = key.split('/')[-1]  # 예: "사용자ID_노래제목_record.wav" 또는 "가수명_노래제목_record.wav"
-                    if filename.endswith('_record.wav') or filename.endswith('_record.mp3'):
-                        # 파일명에서 _record.확장자 부분 제거
-                        base_name = filename.replace("_record.wav", "").replace("_record.mp3", "")
-                        
-                        # 파일명 패턴 분석
-                        # 1. 사용자 업로드 파일: "사용자ID_노래제목" -> "노래제목"
-                        # 2. 실시간 녹음 파일: "가수명_노래제목" -> "가수명", "노래제목"
-                        
-                        artist = "Unknown Artist"
-                        title = base_name
-                        
-                        # 사용자 ID로 시작하는지 확인 (사용자 업로드 파일)
-                        if base_name.startswith(f"{user_id}_"):
-                            # 사용자 업로드 파일: "사용자ID_노래제목" -> "노래제목"
-                            title = base_name.replace(f"{user_id}_", "")
-                            title = title.replace("_", " ")
-                            artist = "Unknown Artist"
-                        else:
-                            # 실시간 녹음 파일: "가수명_노래제목" -> "가수명", "노래제목"
-                            if "_" in base_name:
-                                parts = base_name.split("_", 1)  # 첫 번째 언더스코어만 분리
-                                if len(parts) == 2:
-                                    artist = parts[0].replace("_", " ")
-                                    title = parts[1].replace("_", " ")
-                        
-                        # 디버그 로그 추가
-                        print(f"🔍 파일명 파싱: {filename}")
-                        print(f"  - 파일 타입: {'실시간 녹음' if not base_name.startswith(f'{user_id}_') else '사용자 업로드'}")
-                        print(f"  - 추출된 아티스트: {artist}")
-                        print(f"  - 추출된 제목: {title}")
-                        
-                        uploads.append({
-                            'key': key,
-                            'filename': filename,
-                            'song_title': title,
-                            'artist': artist,
-                            'size': obj['Size'],
-                            'last_modified': obj['LastModified'].isoformat(),
-                            'url': f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{key}",
-                            'type': 'realtime_recording' if not base_name.startswith(f'{user_id}_') else 'user_upload'
-                        })
+        for obj in all_uploads:
+            key = obj['Key']
+            # 파일명에서 노래 정보 추출
+            filename = key.split('/')[-1]  # 예: "사용자ID_노래제목_record.wav" 또는 "가수명_노래제목_record.wav"
+            
+            print(f"🔍 파일 처리 중: {filename}")
+            
+            if filename.endswith('_record.wav') or filename.endswith('_record.mp3') or filename.endswith('.wav') or filename.endswith('.mp3'):
+                # 파일명에서 확장자와 _record 부분 제거
+                base_name = filename.replace("_record.wav", "").replace("_record.mp3", "").replace(".wav", "").replace(".mp3", "")
+                
+                # 파일명 패턴 분석
+                # 1. 사용자 업로드 파일: "사용자ID_노래제목" -> "노래제목"
+                # 2. 실시간 녹음 파일: "가수명_노래제목" -> "가수명", "노래제목"
+                
+                artist = "Unknown Artist"
+                title = base_name
+                
+                # 사용자 ID로 시작하는지 확인 (사용자 업로드 파일)
+                if base_name.startswith(f"{user_id}_"):
+                    # 사용자 업로드 파일: "사용자ID_노래제목" -> "노래제목"
+                    title = base_name.replace(f"{user_id}_", "")
+                    title = title.replace("_", " ")
+                    artist = "My Recording"
+                    file_type = 'user_upload'
+                else:
+                    # 실시간 녹음 파일: "가수명_노래제목" -> "가수명", "노래제목"
+                    if "_" in base_name:
+                        parts = base_name.split("_", 1)  # 첫 번째 언더스코어만 분리
+                        if len(parts) == 2:
+                            artist = parts[0].replace("_", " ")
+                            title = parts[1].replace("_", " ")
+                    file_type = 'realtime_recording'
+                
+                # 디버그 로그 추가
+                print(f"  - 파일 타입: {file_type}")
+                print(f"  - 추출된 아티스트: {artist}")
+                print(f"  - 추출된 제목: {title}")
+                
+                uploads.append({
+                    'key': key,
+                    'filename': filename,
+                    'song_title': title,
+                    'artist': artist,
+                    'size': obj['Size'],
+                    'last_modified': obj['LastModified'].isoformat(),
+                    'url': f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{key}",
+                    'type': file_type
+                })
         
         # 최신 파일 순으로 정렬
         uploads.sort(key=lambda x: x['last_modified'], reverse=True)
@@ -848,51 +895,72 @@ async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
             region_name=AWS_REGION
         )
         
-        # AI 합성 파일 경로 (ai-vocal-training-user 버킷 사용)
-        ai_vocal_key = f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
         bucket_name = "ai-vocal-training-user"  # AI 합성 파일은 ai-vocal-training-user 버킷에 있음
         
-        print(f"🔍 S3 검색 경로: bucket={bucket_name}, key={ai_vocal_key}")
+        # 여러 가능한 AI 보컬 파일 경로 패턴을 시도
+        possible_patterns = [
+            f"테스트사용자/result/{user_id}_{song_title}_ai.wav",
+            f"테스트사용자/result/테스트사용자_{song_title}_ai.wav", 
+            f"{user_id}/result/{user_id}_{song_title}_ai.wav",
+            f"{user_id}/result/테스트사용자_{song_title}_ai.wav",
+            f"result/{user_id}_{song_title}_ai.wav",
+        ]
         
-        try:
-            # S3에서 파일 존재 여부 확인
-            s3_client.head_object(Bucket=bucket_name, Key=ai_vocal_key)
-            
+        print(f"🔍 S3 AI 보컬 파일 검색 시작: bucket={bucket_name}")
+        
+        found_key = None
+        for pattern in possible_patterns:
+            try:
+                print(f"  시도: {pattern}")
+                # S3에서 파일 존재 여부 확인
+                s3_client.head_object(Bucket=bucket_name, Key=pattern)
+                found_key = pattern
+                print(f"  ✅ 파일 발견: {pattern}")
+                break
+            except ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    print(f"  ❌ 파일 없음: {pattern}")
+                    continue
+                else:
+                    print(f"  ⚠️ 오류: {pattern} - {e}")
+                    continue
+        
+        if found_key:
             # Presigned URL 생성
             presigned_url = s3_client.generate_presigned_url(
                 'get_object',
-                Params={'Bucket': bucket_name, 'Key': ai_vocal_key},
+                Params={'Bucket': bucket_name, 'Key': found_key},
                 ExpiresIn=3600
             )
             
-            print(f"✅ AI 합성 파일 presigned URL 생성 성공: {ai_vocal_key}")
+            print(f"✅ AI 합성 파일 presigned URL 생성 성공: {found_key}")
             
             return {
                 "success": True,
                 "presigned_url": presigned_url,
-                "s3_key": ai_vocal_key
+                "s3_key": found_key
             }
+        else:
+            # 모든 패턴에서 파일을 찾지 못했을 때 - 더미 오디오 반환
+            print(f"❌ 모든 경로에서 AI 합성 파일을 찾을 수 없습니다")
+            print(f"   시도한 패턴들: {possible_patterns}")
+            print(f"   더미 오디오 URL 반환으로 UI 테스트 가능")
             
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'NoSuchKey':
-                print(f"⚠️ AI 합성 파일을 찾을 수 없습니다: {ai_vocal_key}")
-                # 파일이 없을 때 더미 URL 반환
-                return {
-                    "success": True,
-                    "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-                    "s3_key": ai_vocal_key
-                }
-            else:
-                print(f"❌ S3 오류: {e}")
-                raise HTTPException(status_code=500, detail=f"S3 오류: {str(e)}")
+            return {
+                "success": True,
+                "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                "s3_key": "dummy_ai_vocal_file",
+                "note": "더미 오디오 파일 - 실제 AI 보컬 파일을 찾을 수 없음"
+            }
                 
     except Exception as e:
         print(f"❌ AI 합성 파일 presigned URL 생성 오류: {e}")
-        # 오류 발생 시에도 더미 URL 반환
+        # 오류 발생 시에도 더미 URL 반환하여 UI 테스트 가능
         return {
             "success": True,
             "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-            "s3_key": f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
+            "s3_key": "error_dummy_file",
+            "note": f"오류로 인한 더미 파일: {str(e)}"
         }
 
 if __name__ == "__main__":
