@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/song.dart';
 
 class SongDetailPage extends StatefulWidget {
@@ -12,6 +14,66 @@ class SongDetailPage extends StatefulWidget {
 }
 
 class _SongDetailPageState extends State<SongDetailPage> {
+  bool _isSynthesizing = false; // 합성 진행 상태
+
+  // 백엔드로 AI 합성 요청을 보내는 함수
+  Future<void> _startAISynthesis() async {
+    if (_isSynthesizing) return; // 이미 진행 중이면 중복 요청 방지
+
+    setState(() {
+      _isSynthesizing = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/ai-synthesis/synthesis/start'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': 'kakao_4358748397', // 하드코딩된 사용자 ID (테스트용)
+          'song_id': 469, // 하드코딩된 song_id (테스트용)
+          'singer_name': widget.songData['artist'] ?? '',
+          'song_name': widget.songData['title'] ?? '',
+          'model_name': 'test_model',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        final jobId = result['job_id'];
+
+        // 성공 시 사용자에게 알림
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AI 합성이 시작되었습니다! (Job ID: $jobId)'),
+            backgroundColor: const Color(0xFF8B5CF6),
+          ),
+        );
+
+        // TODO: 합성 상태 확인 페이지로 이동하거나 상태 모니터링
+        print('합성 시작됨 - Job ID: $jobId');
+      } else {
+        // 에러 처리
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AI 합성 시작 실패: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        print('합성 실패: ${response.body}');
+      }
+    } catch (e) {
+      // 네트워크 에러 등 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('네트워크 오류: $e'), backgroundColor: Colors.red),
+      );
+      print('네트워크 오류: $e');
+    } finally {
+      setState(() {
+        _isSynthesizing = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final songData = widget.songData;
@@ -156,25 +218,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
                               '피드백 히스토리',
                             ),
                             GestureDetector(
-                              onTap: () {
-                                final song = Song(
-                                  title: songData['title'] ?? '',
-                                  artist: songData['artist'] ?? '',
-                                  albumCover: songData['image'] ?? '',
-                                  difficulty: '분석 예정',
-                                  range: '분석 예정',
-                                  lyrics: songData['lyrics'] ?? '',
-                                  duration: '분석 예정',
-                                );
-                                Navigator.pushNamed(
-                                  context,
-                                  '/ai-vocal-loading',
-                                  arguments: song,
-                                );
-                              },
+                              onTap: _isSynthesizing ? null : _startAISynthesis,
                               child: _buildQuickAction(
-                                Icons.graphic_eq_rounded,
-                                'AI 보컬 합성',
+                                _isSynthesizing
+                                    ? Icons.hourglass_empty_rounded
+                                    : Icons.graphic_eq_rounded,
+                                _isSynthesizing ? '합성 중...' : 'AI 보컬 합성',
                               ),
                             ),
                           ],
