@@ -16,7 +16,7 @@ from src.DB.database import get_db
 from src.DB.models import ScoreHistory, Feedback, Result, UsersSync, Song, UserProfile
 from src.auth.dependencies import get_current_user
 
-router = APIRouter(prefix="/api/feedback", tags=["feedback"])
+router = APIRouter()
 
 # OpenAI 클라이언트 설정 (새로운 방식)
 openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -36,6 +36,21 @@ class FeedbackResponse(BaseModel):
     song_title: Optional[str] = None
     singer: Optional[str] = None
     analysis_summary: Optional[dict] = None
+
+class ScoreSubmissionRequest(BaseModel):
+    """점수 저장 요청 모델"""
+    song_id: int
+    pitch_score: float
+    rhythm_score: float
+    total_score: int
+    recording_path: Optional[str] = None
+
+class ScoreSubmissionResponse(BaseModel):
+    """점수 저장 응답 모델"""
+    success: bool
+    message: str
+    score_history_id: Optional[int] = None
+    result_id: Optional[int] = None
 
 def analyze_score_trends(score_histories: List[ScoreHistory]) -> dict:
     """점수 히스토리를 분석하여 트렌드를 파악합니다."""
@@ -1197,4 +1212,222 @@ async def get_song_analysis_test(
         }
         
     except Exception as e:
-        return {"error": f"곡 분석 중 오류가 발생했습니다: {str(e)}"} 
+        return {"error": f"곡 분석 중 오류가 발생했습니다: {str(e)}"}
+
+@router.post("/save-score", response_model=ScoreSubmissionResponse)
+async def save_score(
+    request: ScoreSubmissionRequest,
+    current_user: UsersSync = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """사용자의 연습 점수를 ScoreHistory와 Result 테이블에 저장합니다."""
+    
+    try:
+        # 곡 정보 확인
+        song = db.query(Song).filter(Song.song_id == request.song_id).first()
+        if not song:
+            raise HTTPException(status_code=404, detail="해당 곡을 찾을 수 없습니다.")
+        
+        # ScoreHistory에 저장
+        score_history = ScoreHistory(
+            user_id=current_user.id,
+            song_id=request.song_id,
+            pitch_score=request.pitch_score,
+            rhythm_score=request.rhythm_score
+        )
+        db.add(score_history)
+        db.flush()  # ID 생성을 위해 flush
+        
+        # Result에 저장 (상세한 연습 결과)
+        result = Result(
+            user_id=current_user.id,
+            song_id=request.song_id,
+            record_file=request.recording_path,
+            pitch_score=request.pitch_score,
+            rhythm_score=request.rhythm_score,
+            emotion_score=0.0,  # 현재는 0으로 설정, 향후 추가 가능
+            total_score=request.total_score,
+            is_public=True
+        )
+        db.add(result)
+        db.flush()  # ID 생성을 위해 flush
+        
+        # 커밋
+        db.commit()
+        
+        # 응답 데이터 새로고침
+        db.refresh(score_history)
+        db.refresh(result)
+        
+        return ScoreSubmissionResponse(
+            success=True,
+            message=f"점수가 성공적으로 저장되었습니다. (피치: {request.pitch_score}, 리듬: {request.rhythm_score}, 총점: {request.total_score})",
+            score_history_id=score_history.score_history_id,
+            result_id=result.result_id
+        )
+        
+    except HTTPException as e:
+        # HTTP 예외는 그대로 전달
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"점수 저장 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@router.post("/test/save-score", response_model=ScoreSubmissionResponse)
+async def save_score_test(
+    request: ScoreSubmissionRequest,
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+    """테스트용 점수 저장 API (인증 불필요)"""
+    
+    try:
+        # 곡 정보 확인 (없으면 테스트용 곡 생성)
+        song = db.query(Song).filter(Song.song_id == request.song_id).first()
+        if not song:
+            # 테스트용 곡 생성
+            song = Song(
+                song_id=request.song_id,
+                song_title="테스트 곡",
+                singer="테스트 가수", 
+                album_cover_image="",
+                voice_file="",
+                ai_mr_file="",
+                lyric_text="테스트 가사",
+                view=0,
+                only_training=False,
+                start_timing=0,
+                running_time="3:30",
+                vocal_range="중간"
+            )
+            db.add(song)
+            db.flush()
+        
+        # 사용자 확인 (없으면 생성)
+        user = db.query(UsersSync).filter(UsersSync.id == user_id).first()
+        if not user:
+            # 테스트 사용자 생성
+            user = UsersSync(
+                id=user_id,
+                name=user_id,
+                email=f"{user_id}@test.com"
+            )
+            db.add(user)
+            db.flush()
+        
+        # ScoreHistory에 저장
+        score_history = ScoreHistory(
+            user_id=user_id,
+            song_id=request.song_id,
+            pitch_score=request.pitch_score,
+            rhythm_score=request.rhythm_score
+        )
+        db.add(score_history)
+        db.flush()
+        
+        # Result에 저장 (상세한 연습 결과)
+        result = Result(
+            user_id=user_id,
+            song_id=request.song_id,
+            record_file=request.recording_path,
+            pitch_score=request.pitch_score,
+            rhythm_score=request.rhythm_score,
+            emotion_score=0.0,
+            total_score=request.total_score,
+            is_public=True
+        )
+        db.add(result)
+        db.flush()
+        
+        # 커밋
+        db.commit()
+        
+        # 응답 데이터 새로고침
+        db.refresh(score_history)
+        db.refresh(result)
+        
+        return ScoreSubmissionResponse(
+            success=True,
+            message=f"테스트 점수가 성공적으로 저장되었습니다. (사용자: {user_id}, 피치: {request.pitch_score}, 리듬: {request.rhythm_score}, 총점: {request.total_score})",
+            score_history_id=score_history.score_history_id,
+            result_id=result.result_id
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"테스트 점수 저장 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@router.get("/test/score-graph")
+async def get_score_graph_test(
+    user_id: str,
+    days: int = 30,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """테스트용 점수 그래프 데이터 조회 (인증 불필요)"""
+    
+    try:
+        print(f"📈 테스트 점수 그래프 데이터 조회 요청: 사용자={user_id}, 일자={days}, 제한={limit}")
+        
+        # 날짜 계산
+        from datetime import datetime, timedelta
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        # ScoreHistory에서 점수 데이터 조회
+        scores = db.query(ScoreHistory)\
+                  .filter(ScoreHistory.user_id == user_id)\
+                  .filter(ScoreHistory.created_at >= start_date)\
+                  .filter(ScoreHistory.created_at <= end_date)\
+                  .order_by(ScoreHistory.created_at.desc())\
+                  .limit(limit)\
+                  .all()
+        
+        print(f"📈 조회된 점수 데이터: {len(scores)}개")
+        
+        # 데이터 변환
+        graph_data = []
+        total_scores = []
+        
+        for score in scores:
+            # 총점 계산 (피치 + 리듬 점수의 평균을 100점 만점으로 변환)
+            total_score = int((score.pitch_score + score.rhythm_score) / 2 * 100)
+            total_scores.append(total_score)
+            
+            graph_data.append({
+                "date": score.created_at.strftime("%Y-%m-%d"),
+                "score": total_score,
+                "pitch_score": round(score.pitch_score * 100, 1),
+                "rhythm_score": round(score.rhythm_score * 100, 1)
+            })
+        
+        # 통계 계산
+        stats = {
+            "avg_score": round(sum(total_scores) / len(total_scores), 1) if total_scores else 0,
+            "max_score": max(total_scores) if total_scores else 0,
+            "min_score": min(total_scores) if total_scores else 0,
+            "total_practices": len(scores)
+        }
+        
+        print(f"📈 통계 정보: {stats}")
+        
+        return {
+            "success": True,
+            "data": graph_data,
+            "stats": stats
+        }
+        
+    except Exception as e:
+        print(f"❌ 테스트 점수 그래프 조회 오류: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"점수 그래프 조회 중 오류가 발생했습니다: {str(e)}"
+        ) 

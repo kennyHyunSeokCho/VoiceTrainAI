@@ -6,7 +6,7 @@ import 'dart:convert';
 class ApiConfigService {
   static const String _emulatorUrl = 'http://10.0.2.2:8000';
   static const String _fallbackDeviceUrl =
-      'http://192.168.0.31:8000'; // fallback IP
+      'http://192.168.0.47:8000'; // fallback IP (최신 서버)
   static const String _productionUrl = 'https://your-production-server.com';
 
   static String? _cachedDeviceUrl;
@@ -41,8 +41,9 @@ class ApiConfigService {
       }
     }
 
-    // 여러 IP 주소를 시도
+    // 여러 IP 주소를 시도 (최신 서버 IP 우선 순위로 정렬)
     final List<String> possibleIps = [
+      '192.168.0.47', // 새로운 서버 IP (최우선)
       '192.168.0.31',
       '192.168.0.32',
       '192.168.0.33',

@@ -8,9 +8,9 @@ import os
 from sqlalchemy.orm import Session
 from src.DB.database import get_db
 from src.DB.models import UsersSync, RecommendSongs
-from vocal.s3_config import AWS_ACCESS_KEY, AWS_SECRET_KEY, BUCKET_NAME, USER_BUCKET_NAME, REGION_NAME
+from src.vocal.s3_config import AWS_ACCESS_KEY, AWS_SECRET_KEY, BUCKET_NAME, USER_BUCKET_NAME, REGION_NAME
 
-router = APIRouter(prefix="/recommend", tags=["recommend"])
+router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
