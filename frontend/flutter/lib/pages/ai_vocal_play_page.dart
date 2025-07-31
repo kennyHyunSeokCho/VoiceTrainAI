@@ -51,7 +51,7 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage>
 
     // 펄스 애니메이션 반복
     _pulseController.repeat(reverse: true);
-    
+
     // initState에서는 context 사용을 피함
   }
 
