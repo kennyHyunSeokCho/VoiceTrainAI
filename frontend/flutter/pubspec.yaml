@@ -68,18 +68,18 @@ flutter_launcher_icons:
   android: true # 안드로이드 플랫폼에 런처 아이콘 적용 여부
   ios: true # iOS 플랫폼에 런처 아이콘 적용 여부
   image_path: "assets/images/AVTS_logo.png" # 런처 아이콘으로 사용할 이미지 경로
-  adaptive_icon_background: "#8917E3" # 안드로이드 적응형 아이콘의 배경색 (검정색)
+  adaptive_icon_background: "#FFFFFF" # 안드로이드 적응형 아이콘의 배경색 (흰색)
   adaptive_icon_foreground: "assets/images/AVTS_logo.png" # 안드로이드 적응형 아이콘의 전경 이미지 경로
   min_sdk_android: 21 # 안드로이드 최소 SDK 버전 (API 21(Android 5.0) 이상)
 
 flutter_native_splash:
   color: "#8917E3"       # 배경색
-  image: 'assets/images/AVTS_logo.png'  # 에셋 로고
+  image: 'assets/images/AVTS_splash.png'  # 에셋 로고
   android: true
   ios: true
   android_12: # Android 12 이상을 위한 추가 설정
     color: "#8917E3" # Android 12 이상 스플래시 화면의 배경색
-    image: "assets/images/AVTS_logo.png" # Android 12 이상 스플래시 화면에 표시될 이미지
+    image: "assets/images/AVTS_splash.png" # Android 12 이상 스플래시 화면에 표시될 이미지
 
 
   # The "flutter_lints" package below contains a set of recommended lints to

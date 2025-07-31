@@ -27,8 +27,17 @@ class _AiVocalPlayPageState extends State<AiVocalPlayPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _loadAlbumCover();
-    _loadAiVocalAudio();
+    // initState에서는 context 사용을 피함
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // didChangeDependencies에서 초기화
+    if (_albumCoverUrl == null) {
+      _loadAlbumCover();
+      _loadAiVocalAudio();
+    }
   }
 
   @override

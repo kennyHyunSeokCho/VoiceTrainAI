@@ -300,20 +300,30 @@ class S3Service {
     String songTitle,
   ) async {
     try {
+      print('🔍 AI 보컬 presigned URL 요청 시작');
+      print('   - 사용자 ID: $userId');
+      print('   - 노래 제목: $songTitle');
+
       final backendUrl = await ApiConfigService.baseUrl;
+      final requestUrl =
+          '$backendUrl/api/ai-vocal-presigned-url/$userId/$songTitle';
+      print('   - 요청 URL: $requestUrl');
+
       final response = await http
-          .get(
-            Uri.parse(
-              '$backendUrl/api/ai-vocal-presigned-url/$userId/$songTitle',
-            ),
-          )
+          .get(Uri.parse(requestUrl))
           .timeout(const Duration(seconds: 10));
+
+      print('   - 응답 상태 코드: ${response.statusCode}');
+      print('   - 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['presigned_url'];
+        final presignedUrl = data['presigned_url'];
+        print('✅ AI 보컬 presigned URL 성공: $presignedUrl');
+        return presignedUrl;
       } else {
         print('❌ AI 합성 파일 presigned URL 요청 실패: ${response.statusCode}');
+        print('   - 응답 본문: ${response.body}');
         return null;
       }
     } catch (e) {

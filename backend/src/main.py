@@ -840,6 +840,7 @@ async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
     """
     try:
         print(f"🤖 AI 합성 파일 presigned URL 요청: user_id={user_id}, song_title={song_title}")
+        print(f"🔍 URL 디코딩 확인: user_id='{user_id}', song_title='{song_title}'")
         
         s3_client = boto3.client(
             's3',
@@ -848,14 +849,28 @@ async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
             region_name=AWS_REGION
         )
         
+        # 파일명에서 특수문자 제거 및 공백 처리 (Flutter와 동일한 방식)
+        def clean_filename(filename):
+            # 간단한 문자열 치환으로 처리
+            cleaned = filename.replace(' ', '_').replace('/', '_').replace('\\', '_')
+            # 소문자로 변환
+            return cleaned.lower()
+        
+        clean_user_id = clean_filename(user_id)
+        clean_song_title = clean_filename(song_title)
+        
+        print(f"🔧 정리된 파일명: user_id='{user_id}' -> '{clean_user_id}', song_title='{song_title}' -> '{clean_song_title}'")
+        
         # AI 합성 파일 경로 (ai-vocal-training-user 버킷 사용)
-        ai_vocal_key = f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
+        # 실제 경로: 테스트사용자/result/테스트사용자_고민중독_ai.wav
+        ai_vocal_key = f"{clean_user_id}/result/{clean_user_id}_{clean_song_title}_ai.wav"
         bucket_name = "ai-vocal-training-user"  # AI 합성 파일은 ai-vocal-training-user 버킷에 있음
         
         print(f"🔍 S3 검색 경로: bucket={bucket_name}, key={ai_vocal_key}")
         
         try:
             # S3에서 파일 존재 여부 확인
+            print(f"🔍 S3 파일 존재 확인: bucket={bucket_name}, key={ai_vocal_key}")
             s3_client.head_object(Bucket=bucket_name, Key=ai_vocal_key)
             
             # Presigned URL 생성
@@ -876,6 +891,42 @@ async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
                 print(f"⚠️ AI 합성 파일을 찾을 수 없습니다: {ai_vocal_key}")
+                print(f"🔍 실제 S3 버킷의 파일 목록을 확인해보세요:")
+                print(f"   - 버킷: {bucket_name}")
+                print(f"   - 검색 경로: {clean_user_id}/result/")
+                
+                # 해당 사용자의 파일 목록을 확인해보기
+                try:
+                    print(f"🔍 S3 파일 목록 조회 시작...")
+                    response = s3_client.list_objects_v2(
+                        Bucket=bucket_name,
+                        Prefix=f"{clean_user_id}/result/"
+                    )
+                    print(f"📋 S3 응답: {response}")
+                    
+                    if 'Contents' in response:
+                        print(f"📋 {clean_user_id}/result/ 폴더의 파일들:")
+                        for obj in response['Contents']:
+                            print(f"   - {obj['Key']}")
+                    else:
+                        print(f"📋 {clean_user_id}/result/ 폴더가 비어있습니다.")
+                        
+                    # 전체 버킷의 파일 목록도 확인
+                    print(f"🔍 전체 버킷 파일 목록 확인...")
+                    all_objects = s3_client.list_objects_v2(Bucket=bucket_name)
+                    if 'Contents' in all_objects:
+                        print(f"📋 전체 버킷 파일들 (최대 10개):")
+                        for i, obj in enumerate(all_objects['Contents'][:10]):
+                            print(f"   {i+1}. {obj['Key']}")
+                    else:
+                        print(f"📋 버킷이 비어있습니다.")
+                        
+                except Exception as list_error:
+                    print(f"❌ 파일 목록 확인 실패: {list_error}")
+                    print(f"❌ 오류 타입: {type(list_error)}")
+                    import traceback
+                    print(f"❌ 상세 오류: {traceback.format_exc()}")
+                
                 # 파일이 없을 때 더미 URL 반환
                 return {
                     "success": True,
@@ -892,7 +943,67 @@ async def get_ai_vocal_presigned_url(user_id: str, song_title: str):
         return {
             "success": True,
             "presigned_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-            "s3_key": f"테스트사용자/result/{user_id}_{song_title}_ai.wav"
+            "s3_key": f"{clean_user_id}/result/{clean_user_id}_{clean_song_title}_ai.wav"
+        }
+
+@app.get("/api/debug/s3-files/{user_id}")
+async def debug_s3_files(user_id: str):
+    """
+    S3에서 특정 사용자의 파일 목록을 확인합니다 (디버깅용)
+    """
+    try:
+        print(f"🔍 S3 파일 목록 확인: user_id={user_id}")
+        
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        
+        # 파일명 정리
+        def clean_filename(filename):
+            # 간단한 문자열 치환으로 처리
+            cleaned = filename.replace(' ', '_').replace('/', '_').replace('\\', '_')
+            # 소문자로 변환
+            return cleaned.lower()
+        
+        clean_user_id = clean_filename(user_id)
+        bucket_name = "ai-vocal-training-user"
+        prefix = f"{clean_user_id}/result/"
+        
+        print(f"🔍 S3 검색: bucket={bucket_name}, prefix={prefix}")
+        
+        # S3에서 파일 목록 가져오기
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix
+        )
+        
+        files = []
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                files.append({
+                    'key': obj['Key'],
+                    'size': obj['Size'],
+                    'last_modified': obj['LastModified'].isoformat()
+                })
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "clean_user_id": clean_user_id,
+            "bucket": bucket_name,
+            "prefix": prefix,
+            "files": files,
+            "file_count": len(files)
+        }
+        
+    except Exception as e:
+        print(f"❌ S3 파일 목록 확인 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e)
         }
 
 if __name__ == "__main__":

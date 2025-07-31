@@ -129,11 +129,19 @@ class _VocalComparePageState extends State<VocalComparePage> {
       print('   - 사용자 ID: ${widget.userId}');
       print('   - 노래 제목: ${widget.songTitle}');
 
-      // 현재 로그인된 사용자 ID 가져오기 (widget.userId가 있으면 사용, 없으면 현재 로그인된 사용자 ID 사용)
-      String userId = widget.userId;
-      if (userId.isEmpty) {
-        userId = CurrentUser.getUserNickname() ?? "테스트사용자";
-        print('👤 현재 로그인된 사용자 ID 사용: $userId');
+      // 현재 로그인된 사용자 ID 가져오기 (record 페이지와 동일한 방식)
+      String? userId = CurrentUser.getUserNickname();
+      if (userId == null) {
+        userId = "테스트사용자"; // 기본값으로 테스트사용자 사용
+        print('⚠️ 로그인된 사용자 정보가 없어서 기본값 사용: $userId');
+      } else {
+        print('👤 현재 사용자 ID: $userId');
+      }
+
+      // widget.userId가 있으면 우선 사용
+      if (widget.userId.isNotEmpty) {
+        userId = widget.userId;
+        print('👤 widget에서 전달된 사용자 ID 사용: $userId');
       }
 
       final presignedUrl = await S3Service.getAiVocalPresignedUrl(
