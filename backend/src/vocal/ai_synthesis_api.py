@@ -1,219 +1,187 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any, Optional
-import os
-import json
+import uuid
 from datetime import datetime
-from pydantic import BaseModel
-
 from ..DB.database import get_db
-from ..DB.models import UserProfile, AiCover
-# from .runpod_client import runpod_client  # 더 이상 사용하지 않음 (직접 연결 방식 사용)
-from .cloud_gpu_client import init_cloud_gpu_client
-from .s3_utils import get_s3_client_from_env, list_s3_files
-from ..config import CLOUD_GPU_API_URL
+import requests
+import os
+from dotenv import load_dotenv
+import boto3
+from ..config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME
+# runpod_client import 제거 (Serverless Endpoint 사용 안함)
+from .pod_direct_client import PodDirectClient
+import urllib.parse
+import re
+
+# 환경변수 로드
+load_dotenv()
 
 router = APIRouter(prefix="/ai-synthesis", tags=["AI Voice Synthesis"])
 
-class AISynthesisRequest(BaseModel):
-    """AI 음성 합성 요청 모델"""
-    user_id: str
-    singer_name: str  # 가수명
-    song_name: str    # 곡명
-    model_name: Optional[str] = None  # 사용할 RVC 모델명 (선택사항)
+def generate_s3_paths(title: str, artist: str) -> tuple[str, str]:
+    """제목과 아티스트로 S3 경로들을 생성 (artist 폴더 포함)"""
+    safe_title = title.replace(" ", "_").replace("'", "").replace('"', "")
+    safe_artist = artist.replace(" ", "_").replace("'", "").replace('"', "")
+    # artist 폴더가 중간에 들어가도록 경로 수정
+    vocal_path = f"MusicFile/{safe_artist}/vocal/{safe_artist}_{safe_title}_vocal.wav"
+    mr_path = f"MusicFile/{safe_artist}/inst/{safe_artist}_{safe_title}_inst.wav"
+    return vocal_path, mr_path
 
-class AISynthesisResponse(BaseModel):
-    """AI 음성 합성 응답 모델"""
-    success: bool
-    job_id: str
-    message: str
-    estimated_time: str
+def verify_s3_file_exists(s3_path: str) -> bool:
+    """S3 파일 존재 여부 확인"""
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        s3_client.head_object(Bucket=S3_BUCKET_NAME, Key=s3_path)
+        return True
+    except Exception as e:
+        print(f"S3 파일 확인 실패 {s3_path}: {e}")
+        return False
 
-@router.post("/start-synthesis", response_model=AISynthesisResponse)
-async def start_ai_synthesis(
-    request: AISynthesisRequest,
-    db: Session = Depends(get_db)
-):
+@router.post("/synthesis/start")
+async def start_synthesis(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
-    AI 음성 합성 시작 (테스트용 - 단순 요청 처리)
+    프론트엔드에서 합성 요청을 받으면 Pod에 직접 요청하거나 Serverless Endpoint를 통해 요청
+    """
+    data = await request.json()
+    job_id = str(uuid.uuid4())
     
-    Args:
-        request: AI 합성 요청 정보 (user_id, 가수명, 곡명)
-        
-    Returns:
-        합성 작업 정보
+    # 프론트엔드에서 받은 데이터 로그 출력
+    print(f"프론트엔드에서 받은 데이터: {data}")
+    
+    # 필수 필드 검증
+    required_fields = ["user_id", "song_name", "singer_name", "user_vocal_url"]
+    for field in required_fields:
+        if not data.get(field):
+            raise HTTPException(status_code=400, detail=f"필수 필드가 누락되었습니다: {field}")
+    
+    # Pod 직접 연결 사용 (Serverless Endpoint 제거)
+    background_tasks.add_task(request_pod_direct, job_id, data)
+    
+    return {"job_id": job_id}
+
+def request_pod_direct(job_id, data):
+    """
+    Pod에 직접 합성 요청
     """
     try:
-        print(f"🎵 AI 합성 요청 받음:")
-        print(f"   - 사용자 ID: {request.user_id}")
-        print(f"   - 가수명: {request.singer_name}")
-        print(f"   - 곡명: {request.song_name}")
-        print(f"   - 모델명: {request.model_name}")
+        # 프론트엔드에서 받은 S3 경로 사용
+        user_vocal_s3 = data.get("user_vocal_url")
+        vocal_s3 = data.get("vocal_file_url")  # 프론트엔드에서 받은 보컬 파일 URL
+        inst_s3 = data.get("mr_file_url")      # 프론트엔드에서 받은 MR 파일 URL
         
-        # 3. RunPod에 AI 합성 작업 요청 (테스트용 더미 데이터)
-        synthesis_payload = {
-            "input": {
-                "user_vocal_url": f"https://test-bucket.s3.amazonaws.com/audio/{request.user_id}/test_vocal.wav",
-                "singer_embedding_url": f"https://test-bucket.s3.amazonaws.com/embeddings/{request.singer_name}/test_embedding.json",
-                "singer_name": request.singer_name,
-                "song_name": request.song_name,
-                "user_id": request.user_id,
-                "model_name": request.model_name or f"user_{request.user_id}_model",
-                "synthesis_config": {
-                    "pitch_shift": 0,  # 피치 조정 (필요시)
-                    "formant_shift": 0,  # 포먼트 조정 (필요시)
-                    "output_format": "wav",
-                    "sample_rate": 44100
-                }
-            }
-        }
+        # 사용자 보컬 경로에서 버킷 접두사 제거 (Pod에서 처리)
+        if user_vocal_s3 and user_vocal_s3.startswith('ai-vocal-training-user/'):
+            user_vocal_s3 = user_vocal_s3.replace('ai-vocal-training-user/', '')
         
-        # RunPod API 호출 (실제 호출)
-        print(f"🚀 RunPod에 전송할 페이로드: {json.dumps(synthesis_payload, indent=2, ensure_ascii=False)}")
+        # S3 파일 존재 여부 확인
+        if not verify_s3_file_exists(vocal_s3):
+            print(f"경고: 보컬 파일이 S3에 존재하지 않습니다: {vocal_s3}")
+        if not verify_s3_file_exists(inst_s3):
+            print(f"경고: MR 파일이 S3에 존재하지 않습니다: {inst_s3}")
         
-        try:
-            # 클라우드 GPU 클라이언트 초기화 및 가져오기
-            print(f"🔧 클라우드 GPU 클라이언트 초기화: {CLOUD_GPU_API_URL}")
-            try:
-                from .cloud_gpu_client import cloud_gpu_client
-                if cloud_gpu_client is None:
-                    init_cloud_gpu_client(CLOUD_GPU_API_URL)
-                    from .cloud_gpu_client import cloud_gpu_client
-                print(f"✅ 클라우드 GPU 클라이언트 초기화 완료")
-            except Exception as init_error:
-                print(f"❌ 클라우드 GPU 클라이언트 초기화 실패: {init_error}")
-                raise Exception(f"클라우드 GPU 클라이언트 초기화 실패: {init_error}")
-            
-            # RunPod RVC API 서버에 합성 요청
-            if cloud_gpu_client is None:
-                raise Exception("클라우드 GPU 클라이언트가 초기화되지 않았습니다")
-            
-            print(f"🚀 RunPod RVC API 서버에 합성 요청 전송...")
-            synthesis_response = cloud_gpu_client.start_rvc_synthesis(synthesis_payload)
-            print(f"✅ RunPod RVC API 서버 응답: {synthesis_response}")
-        except Exception as e:
-            print(f"❌ RunPod RVC API 서버 호출 실패: {e}")
-            # API 서버 호출 실패 시에도 테스트용 응답으로 계속 진행
-            synthesis_response = {
-                "id": f"test_job_{request.user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "status": "IN_QUEUE"
-            }
-            print(f"🔄 테스트용 응답으로 대체: {synthesis_response}")
+        # Pod 직접 클라이언트 사용
+        pod_url = os.getenv("POD_DIRECT_URL")
+        if not pod_url:
+            print("경고: POD_DIRECT_URL이 설정되지 않았습니다!")
+            return
         
-        # 4. 데이터베이스에 합성 작업 기록 (테스트 중 비활성화)
-        print("📝 데이터베이스 저장은 테스트 중 비활성화됨")
-        # TODO: 실제 사용자 인증 시스템과 연동 후 활성화
+        client = PodDirectClient(pod_url)
         
-        return AISynthesisResponse(
-            success=True,
-            job_id=synthesis_response["id"],
-            message="AI 음성 합성이 시작되었습니다.",
-            estimated_time="약 2-5분 소요 예상"
+        # Pod에 직접 요청
+        result = client.start_synthesis(
+            user_id=data.get("user_id"),
+            artist=data["singer_name"],
+            title=data["song_name"],
+            user_vocal_s3=user_vocal_s3,
+            vocal_s3=vocal_s3,
+            inst_s3=inst_s3
         )
         
-    except HTTPException:
-        raise
+        print(f"Pod 직접 요청 성공: {result}")
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI 합성 시작 실패: {str(e)}")
+        print(f"Pod 직접 요청 중 오류 발생: {e}")
 
-@router.get("/synthesis-status/{job_id}")
-async def get_synthesis_status(
-    job_id: str,
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """AI 합성 상태 확인"""
+# request_gpu_server 함수 제거 (Serverless Endpoint 사용 안함)
+
+@router.get("/synthesis/status/{job_id}")
+async def get_synthesis_status(job_id: str, db: Session = Depends(get_db)):
+    """
+    job_id로 현재 합성 상태/결과를 반환 (Pod 직접 연결만 사용)
+    """
     try:
-        # RunPod에서 상태 확인
-        status_response = runpod_client.get_synthesis_status(job_id)
+        # URL 디코딩 및 ANSI 색상 코드 제거
+        decoded_job_id = urllib.parse.unquote(job_id)
+        # ANSI 색상 코드 제거 (예: [32m, [0m 등)
+        clean_job_id = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', decoded_job_id).strip()
         
-        # 데이터베이스 업데이트 (기존 AiCover 테이블 사용)
-        ai_cover = db.query(AiCover).filter(
-            AiCover.job_id == job_id,
-            AiCover.user_id == user_id
-        ).first()
+        print(f"원본 job_id: {job_id}")
+        print(f"디코딩된 job_id: {decoded_job_id}")
+        print(f"정리된 job_id: {clean_job_id}")
         
-        if ai_cover:
-            ai_cover.status = status_response.get("status", "UNKNOWN")
-            ai_cover.progress = status_response.get("output", {}).get("progress", 0)
-            if status_response.get("status") == "COMPLETED":
-                ai_cover.completed_at = datetime.now()
-                ai_cover.ai_cover_file = status_response.get("output", {}).get("synthesized_audio_url")
-            elif status_response.get("status") == "FAILED":
-                ai_cover.error_message = status_response.get("output", {}).get("message", "알 수 없는 오류")
-            db.commit()
+        pod_url = os.getenv("POD_DIRECT_URL")
+        if not pod_url:
+            return {
+                "status": "error",
+                "message": "POD_DIRECT_URL이 설정되지 않았습니다."
+            }
         
+        client = PodDirectClient(pod_url)
+        status = client.get_synthesis_status(clean_job_id)
+        return status
+    except Exception as e:
+        print(f"상태 확인 중 오류 발생: {e}")
         return {
-            "job_id": job_id,
-            "status": status_response.get("status"),
-            "progress": status_response.get("output", {}).get("progress", 0),
-            "message": status_response.get("output", {}).get("message", ""),
-            "synthesized_audio_url": status_response.get("output", {}).get("synthesized_audio_url"),
-            "error_message": ai_cover.error_message if ai_cover else None
+            "status": "error",
+            "message": f"상태 확인 실패: {str(e)}"
         }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"상태 확인 실패: {str(e)}")
 
-@router.get("/user-syntheses/{user_id}")
-async def get_user_syntheses(
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """사용자의 AI 합성 결과 목록"""
+@router.post("/synthesis/cancel/{job_id}")
+async def cancel_synthesis(job_id: str, db: Session = Depends(get_db)):
+    """
+    합성 작업 취소 (Pod 직접 연결만 사용)
+    """
     try:
-        ai_covers = db.query(AiCover).filter(
-            AiCover.user_id == user_id
-        ).order_by(AiCover.created_at.desc()).all()
+        # URL 디코딩 및 ANSI 색상 코드 제거
+        decoded_job_id = urllib.parse.unquote(job_id)
+        # ANSI 색상 코드 제거 (예: [32m, [0m 등)
+        clean_job_id = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', decoded_job_id).strip()
         
-        return {
-            "syntheses": [
-                {
-                    "id": ai_cover.ai_cover_id,
-                    "job_id": ai_cover.job_id,
-                    "singer_name": ai_cover.singer_name,
-                    "song_name": ai_cover.song_name,
-                    "status": ai_cover.status,
-                    "created_at": ai_cover.created_at,
-                    "completed_at": ai_cover.completed_at,
-                    "result_url": ai_cover.ai_cover_file,
-                    "progress": ai_cover.progress,
-                    "error_message": ai_cover.error_message
-                }
-                for ai_cover in ai_covers
-            ]
-        }
+        print(f"취소 요청 - 원본 job_id: {job_id}")
+        print(f"취소 요청 - 정리된 job_id: {clean_job_id}")
         
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"합성 목록 조회 실패: {str(e)}")
-
-@router.post("/cancel-synthesis/{job_id}")
-async def cancel_synthesis(
-    job_id: str,
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """AI 합성 작업 취소"""
-    try:
-        # RunPod에서 작업 취소
-        success = runpod_client.cancel_synthesis(job_id)
+        pod_url = os.getenv("POD_DIRECT_URL")
+        if not pod_url:
+            raise HTTPException(status_code=400, detail="POD_DIRECT_URL이 설정되지 않았습니다.")
         
+        client = PodDirectClient(pod_url)
+        success = client.cancel_synthesis(clean_job_id)
         if success:
-            # 데이터베이스 업데이트 (기존 AiCover 테이블 사용)
-            ai_cover = db.query(AiCover).filter(
-                AiCover.job_id == job_id,
-                AiCover.user_id == user_id
-            ).first()
-            
-            if ai_cover:
-                ai_cover.status = "CANCELLED"
-                ai_cover.completed_at = datetime.now()
-                db.commit()
-        
-        return {
-            "success": success,
-            "message": "AI 합성이 취소되었습니다." if success else "취소 실패"
-        }
-        
+            return {"message": "합성 작업이 취소되었습니다."}
+        else:
+            raise HTTPException(status_code=400, detail="합성 작업 취소에 실패했습니다.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"취소 실패: {str(e)}") 
+        print(f"작업 취소 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"작업 취소 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/synthesis/pod-health")
+async def check_pod_health():
+    """
+    Pod 직접 연결 상태 확인
+    """
+    try:
+        pod_url = os.getenv("POD_DIRECT_URL")
+        if not pod_url:
+            return {"status": "not_configured", "message": "POD_DIRECT_URL이 설정되지 않았습니다."}
+        
+        client = PodDirectClient(pod_url)
+        health = client.health_check()
+        return health
+    except Exception as e:
+        return {"status": "error", "message": f"Pod 연결 실패: {str(e)}"} 
