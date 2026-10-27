@@ -1,213 +1,135 @@
-# AI 보컬 트레이닝 시스템 (AVTS) 🎤✨
+# SingSang 🎤
 
-> **개인화된 AI 기반 보컬 트레이닝으로 당신의 노래 실력을 한 단계 업그레이드하세요**
+### 내 목소리를 이해하고, 어울리는 노래를 찾아 연습하는 AI 보컬 트레이닝 서비스
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+SingSang은 사용자의 목소리를 분석해 **음색이 비슷한 가수의 노래를 추천**하고, **내 목소리로 변환한 보컬**을 들어보며, **음정·박자 분석 결과로 연습을 돌아볼 수 있는** 모바일 프로젝트입니다.
 
-## 📖 프로젝트 개요
+Flutter 앱과 FastAPI 기반 API, 음성 처리 모델을 연결해 녹음부터 분석·추천·보컬 합성까지 이어지는 개인화된 연습 경험을 구성했습니다.
 
-**AI 보컬 트레이닝 시스템(AVTS)**은 사용자가 자신의 음성을 녹음하여 개인화된 음성 합성 모델을 만들고, 노래를 따라 부르며 실시간 피드백을 받을 수 있는 혁신적인 AI 기반 보컬 트레이닝 앱입니다.
+[최종 발표자료](docs/SingSang_최종발표.pdf) · [노래 연습·점수 그래프 시연](docs/media/scoring-demo.mp4) · [AI 보컬 합성 시연](docs/media/voice-conversion.mp4)
 
-기존 보컬 교육의 한계를 극복하여 **실시간 피드백**, **개인화된 학습**, **RVC 기반 음성 비교 분석** 기능을 통합, 초보자부터 입시생까지 폭넓은 사용자가 자기주도적으로 실력을 향상시킬 수 있도록 설계되었습니다.
+![SingSang의 노래 연습 화면, 음정·박자 결과 화면, 연습 이력 화면](docs/images/app-overview.png)
 
-## 🌟 핵심 기능
+> 최종 발표자료와 시연 영상을 바탕으로 서비스 기능과 시스템 설계를 정리했습니다.
 
-### 🎯 개인화된 음성 모델 생성
-- **RVC V2 기반** 개인 보이스 모델 생성 (3~5분 녹음)
-- 사용자의 목소리로 노래 합성 및 원곡과 비교 청취
+## 프로젝트 배경
 
-### 🎵 스마트 노래 분석
-- **보컬 분리**: 원곡에서 보컬과 반주 자동 분리
-- **실시간 피치 시각화**: 노래방 스타일 음정 비교
-- **음역대 & 음색 분석**: ECAPA-TDNN 기반 개인 특성 분석
+노래를 연습할 때는 점수뿐 아니라 자신의 목소리에 대한 이해도 필요합니다. SingSang은 다음 세 가지 질문에서 출발했습니다.
 
-### 🤖 AI 기반 피드백 시스템
-- **GPT-4o 자연어 피드백**: "고음 구간에서 음정이 흔들렸습니다. 복식호흡 연습을 권장합니다."
-- **RVC 기반 음성 비교**: 원곡-변환된 노래-사용자 녹음을 3-way 비교하여 구체적 가이드라인 제공
-- **창법 분석**: vibrato, pitch bending 등 스타일 특징 분석
+- **내 목소리에 어울리는 노래는 무엇일까?** → 음색 임베딩을 활용한 곡 추천
+- **내 목소리로 이 노래를 부르면 어떻게 들릴까?** → 개인 음성 모델을 활용한 보컬 합성
+- **어떤 부분을 더 연습해야 할까?** → 음정·박자 분석과 자연어 피드백
 
-### 📊 개인 맞춤 추천 & 인사이트
-- **곡 추천**: 음역대·음색 기반 맞춤 곡 추천
-- **성장 추적**: 연습 이력 및 실력 변화 시각화
-- **스타일 매칭**: 유사한 창법을 가진 가수와 비교 분석
+## 주요 기능
 
-## 🏗️ 기술 아키텍처
+| 기능 | 내용 | 사용 기술 |
+| --- | --- | --- |
+| 음색 기반 노래 추천 | 사용자와 가수의 음색 임베딩을 비교해 유사한 가수의 곡 추천 | SSL-Singer-Identity 계열 보컬 임베딩, 코사인 유사도 |
+| AI 보컬 합성 | 사용자 음성으로 개인 모델을 학습하고, 선택한 곡의 보컬을 사용자 음색으로 변환 | RVC V2 |
+| 노래 연습과 점수 확인 | 노래 연습 후 음정·박자 점수와 종합 결과 확인 | 피치·박자 분석, Flutter UI |
+| 개인화 피드백 | 음정·박자 분석 결과를 바탕으로 자연어 피드백 제공 | GPT-4o |
+| 연습 이력 확인 | 이전 연습 점수와 변화 그래프 확인 | 연습 기록 저장·시각화 |
 
-### Frontend
-- **Flutter** - iOS/Android 크로스 플랫폼 모바일 앱
-- **Chart.js** - 데이터 시각화 (WebView 연동)
+### 시연 영상
 
-### Backend
-- **FastAPI** - RESTful API + WebSocket 실시간 통신
-- **PostgreSQL** - Supabase 기반 데이터베이스
-- **Firebase/AWS S3** - 파일 저장소
+| 노래 연습·점수 그래프 | AI 보컬 합성 |
+| --- | --- |
+| <a href="docs/media/scoring-demo.mp4"><img src="docs/images/scoring-demo-preview.png" alt="음정·박자 점수 결과 시연" height="360"></a> | <a href="docs/media/voice-conversion.mp4"><img src="docs/images/voice-demo-preview.png" alt="AI 보컬 합성 재생 시연" height="360"></a> |
+| [영상 보기 · 약 41초](docs/media/scoring-demo.mp4) | [영상 보기 · 약 14초](docs/media/voice-conversion.mp4) |
+| 노래 연습 → 음정·박자 결과 → 보컬 비교 화면 → 점수 변화 그래프 | 사용자 음색으로 변환한 보컬의 재생 화면 |
 
-### AI/ML Stack
-- **RVC V2** - PyTorch 기반 음성 합성 모델
-- **CREPE/YIN** - 피치 분석
-- **ECAPA-TDNN** - 음색 분석 및 화자 임베딩
-- **DTW, MFCC, Mel-spectrogram** - 음성 비교 분석
-- **GPT-4o** - 자연어 피드백 생성
+※ 영상 링크는 원본 MP4 파일로 연결됩니다. GitHub 화면에서 미리보기가 제공되지 않으면 파일을 다운로드해 재생할 수 있습니다.
 
-### Authentication & Security
-- **Firebase Auth** - Kakao/Google OAuth, SMS 인증
-- **JWT** - 안전한 세션 관리
+## 시스템 구조
 
-## 📁 프로젝트 구조
+사용자가 앱에서 녹음하거나 업로드한 음성을 저장한 뒤, 목적에 따라 세 가지 처리 흐름으로 연결합니다.
 
-```
-VoiceTrainingAI/
-├── 📱 frontend/              # Flutter 모바일 앱
-│   ├── lib/                  # Dart 소스 코드
-│   ├── assets/               # 이미지, 폰트 등 리소스
-│   └── pubspec.yaml         # Flutter 의존성
-├── 🖥️ backend/               # FastAPI 백엔드 서버  
-│   ├── app/                  # API 라우터 및 서비스
-│   ├── models/               # 데이터베이스 모델
-│   └── requirements.txt      # Python 의존성
-├── 🤖 model-server/          # RVC V2 모델 서버
-│   ├── rvc/                  # RVC V2 구현
-│   ├── training/             # 모델 훈련 스크립트
-│   └── inference/            # 추론 서버
-├── 📚 docs/                  # 프로젝트 문서
-├── 🧪 tests/                 # 테스트 코드
-├── 🔧 scripts/               # 유틸리티 스크립트
-└── 📋 .taskmaster/           # 프로젝트 관리
-    ├── tasks/                # 개별 태스크 파일
-    └── docs/                 # PRD 및 기술 문서
-```
+### 전체 시스템 아키텍처
 
-## 🚀 빠른 시작 가이드
+음원 수집·전처리, API 서버, 음성 분석·합성 모델, 저장소를 연결한 전체 구조입니다.
 
-### 사전 요구사항
-- **Python 3.8+** (AI 모델 서버용)
-- **Node.js 16+** (백엔드 의존성)
-- **Flutter SDK 3.0+** (모바일 앱)
-- **CUDA GPU** (모델 훈련, 선택사항)
+![음원 전처리, 모델, API, 저장소와 서비스의 전체 시스템 설계](docs/images/system-architecture.png)
 
-### 1️⃣ 저장소 클론
-```bash
-git clone https://github.com/kennyHyunSeokCho/VoiceTrainAI.git
-cd VoiceTrainingAI
-```
+### 사용자 음성의 처리 흐름
 
-### 2️⃣ 백엔드 설정
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+![음성 업로드부터 보컬 합성, 음색 기반 추천, 피드백까지의 처리 흐름](docs/images/system-overview.png)
 
-### 3️⃣ 모델 서버 설정
-```bash
-cd model-server
-pip install -r requirements.txt
-# GPU 사용 시 PyTorch CUDA 버전 설치
-```
+1. **보컬 합성:** 사용자 음성 → RVC V2 모델 학습·변환 → 사용자 음색의 보컬
+2. **음색 기반 추천:** 사용자 음성 → 보컬 임베딩 → 가수 임베딩과 유사도 비교 → 곡 추천
+3. **연습 피드백:** 사용자 노래 → 음정·박자 정확도 계산 → GPT-4o 기반 자연어 피드백
 
-### 4️⃣ 프론트엔드 설정
-```bash
-cd frontend
-flutter pub get
-flutter run
-```
+API 계층은 사용자·노래 정보, 음성 파일 업로드, 모델 학습·추론 요청, 연습 결과를 연결하도록 설계했습니다. 파일 저장소와 데이터베이스를 통해 음원 파일 및 관련 정보를 관리하는 구조입니다.
 
-### 5️⃣ 환경 변수 설정
-```bash
-cp .env.example .env
-```
+### 기술 스택
 
-`.env` 파일에 다음 API 키들을 설정하세요:
-```env
-# OpenAI API (GPT-4o 피드백용)
-OPENAI_API_KEY=your_openai_api_key
+| 영역 | 기술 | 역할 |
+| --- | --- | --- |
+| 모바일 | Flutter, TarsosDSP | 앱 UI, 음성 입력·분석 |
+| API | Python, FastAPI | 사용자·음원·분석·모델 처리 흐름 연결 |
+| 오디오 처리 | Demucs, Spleeter, librosa | 보컬·반주 분리 및 오디오 분석 |
+| 보컬 변환 | RVC V2 | 개인 음성 모델 학습과 보컬 변환 |
+| 음색 추천 | SSL-Singer-Identity 계열 임베딩 | 사용자·가수 음색의 벡터 표현 및 비교 |
+| 피드백 | GPT-4o | 분석 결과의 자연어 피드백 |
+| 인프라·저장 | AWS S3, Railway, RunPod | 음성 파일 저장, 서버·GPU 실행 환경 |
+| 협업·설계 | GitHub, Notion, Figma | 버전 관리, 작업 관리, 화면 설계 |
 
-# Firebase (인증 및 저장소)
-FIREBASE_API_KEY=your_firebase_key
 
-# Kakao OAuth
-KAKAO_API_KEY=your_kakao_key
+## 음색 추천을 위한 데이터 구성
 
-# Database
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_key
-```
+음색 추천은 사용자 임베딩과 비교할 가수 데이터가 필요합니다. 음원 수집 이후 **보컬·반주 분리 → 보컬 임베딩 생성 → 저장 → 유사도 비교**로 이어지는 데이터 처리 흐름을 구성했습니다.
 
-## 📋 개발 로드맵
+![사용자 음색 임베딩과 가수 임베딩을 비교하는 추천 구조](docs/images/timbre-recommendation.png)
 
-### 🏁 Phase 1 - MVP (현재 단계)
-- [x] **프로젝트 저장소 설정** - Git 구조 및 초기 설정
-- [ ] **사용자 인증 구현** - Firebase Auth + Kakao/Google OAuth + SMS
-- [ ] **음성 녹음 기능** - 고품질 음성 캡처 및 저장
-- [ ] **RVC V2 모델 훈련** - 개인화된 음성 모델 생성
-- [ ] **노래 가져오기 & 음성 교체** - 보컬 분리 및 합성
-- [ ] **실시간 피치 시각화** - 노래방 스타일 UI
+데이터 구성에서는 총량과 함께 **성별별 가수 수와 시간 분포**를 확인했습니다. 가수 수만 비교하면 가수별로 확보한 음성 분량의 차이를 놓칠 수 있어 두 지표를 함께 살펴봤습니다.
 
-### 🚀 Phase 2 - 고도화 기능
-- [ ] **GPT-4o 자연어 피드백** - AI 기반 개인화된 조언
-- [ ] **RVC 기반 음성 비교 분석** - 3-way 비교를 통한 구체적 가이드라인 제공
-- [ ] **음역대·음색 기반 추천** - 맞춤형 곡 추천
-- [ ] **연습 이력 시각화** - 성장 추적 대시보드
+| 구분 | 남성 | 여성 | 합계 |
+| --- | ---: | ---: | ---: |
+| 가수 수 | 62명 | 41명 | 103명 |
+| 가수 수 비율 | 60.2% | 39.8% | 100% |
 
-### 🌟 Phase 3 - 확장 기능  
-- [ ] **가창 스타일 분석** - 유사 가수 매칭
-- [ ] **커뮤니티 기능** - 랭킹, 챌린지 모드
-- [ ] **프리미엄 구독** - 고급 기능 및 콘텐츠
+![발표자료의 성별별 가수 수 비율과 학습 시간 비율](docs/images/dataset-distribution.png)
 
-## 👥 대상 사용자
+발표자료에는 가수 수뿐 아니라 성별별 시간 분포도 함께 정리했습니다. 이후 사용자·가수 간 유사도와 성별별 가수 간 유사도 분포를 비교해 추천에 사용하는 음색 표현을 살펴봤습니다.
 
-- **🎤 일반 노래 연습자** - 취미로 노래를 즐기는 사용자
-- **🎓 보컬 입시생** - 전문적인 보컬 훈련이 필요한 학생
-- **📹 보컬 유튜버** - 콘텐츠 제작을 위한 보컬 개선
-- **🎵 음악 창작자** - 자신의 곡에 보컬 추가
+<details>
+<summary>유사도 분포 분석 보기</summary>
 
-## 🤝 기여하기
+사용자와 가수의 유사도, 성별별 가수 간 유사도, 전체 혼합 유사도 분포를 비교한 발표자료입니다. 유사도 분포를 보여주는 탐색 분석이며 추천 정확도 평가를 의미하지는 않습니다.
 
-프로젝트에 기여하고 싶다면 다음 단계를 따라주세요:
+![발표자료의 사용자·가수 및 가수 간 유사도 분포 비교](docs/images/similarity-analysis.png)
 
-1. **Fork** 이 저장소
-2. **Feature 브랜치** 생성 (`git checkout -b feature/AmazingFeature`)
-3. **변경사항 커밋** (`git commit -m 'Add some AmazingFeature'`)
-4. **브랜치에 Push** (`git push origin feature/AmazingFeature`)
-5. **Pull Request** 생성
+</details>
 
-### 개발 워크플로우
-```bash
-# 다음 작업할 태스크 확인
-task-master next
+## RVC V2 보컬 합성 비교
 
-# 특정 태스크 상세보기  
-task-master show 1
+사용자 음성 모델을 활용해 보컬을 변환하고 재생하는 흐름을 시연했습니다. 최종 발표에서는 **‘3분 학습’, ‘30분 학습’, ‘1시간 학습’**으로 표시된 세 조건의 오디오 샘플을 비교했습니다.
 
-# 태스크 상태 변경
-task-master set-status --id=1 --status=in-progress
+모델 설정에 따른 결과를 직접 들어보기 위한 비교 실험으로, 조건명은 발표자료의 표기를 따랐습니다.
 
-# 서브태스크 진행상황 업데이트
-task-master update-subtask --id=1.1 --prompt="구현 완료"
-```
+[AI 보컬 합성 시연 영상 보기](docs/media/voice-conversion.mp4)
 
-## 📄 라이센스
+## 팀 구성과 역할
 
-이 프로젝트는 [MIT License](LICENSE) 하에 배포됩니다.
+4명이 함께 진행했으며, 발표 일정표에는 6월 23일부터 7월 30일까지 기획·설계·개발·테스트 일정이 정리되어 있습니다.
 
-## 🙏 감사인사
+| 팀원 | 담당 역할 |
+| --- | --- |
+| **조현석 · 팀장** | 전체 시스템·API 설계, 음색 추천용 데이터 수집·가공 및 데이터 분포 점검, 사용자 인증·음성 녹음, RVC V2 훈련 설정, 데이터베이스·저장 솔루션 구성 |
+| 이윤지 | 백엔드 인프라, 음색 기반 추천 알고리즘, 음역대·음색 추출 알고리즘, GPT-4o 기반 자연어 피드백 |
+| 이동욱 | 퍼펙트 스코어 알고리즘, 프론트엔드 UI, 피치·박자 정밀 감지 알고리즘 |
+| 김채민 | 퍼펙트 스코어 알고리즘, 프론트엔드 UI, 피치·박자 정밀 감지 알고리즘 |
 
-- **RVC V2** - 음성 변환 기술
-- **OpenAI GPT-4o** - 자연어 피드백
-- **Flutter 팀** - 크로스 플랫폼 프레임워크
-- **FastAPI** - 현대적인 Python 웹 프레임워크
+역할은 최종 발표자료를 기준으로 정리했으며, 조현석의 시스템·API 설계와 데이터 작업은 본인 설명을 함께 반영했습니다. 추천 알고리즘 개발과 추천용 데이터 구축의 기여를 구분했습니다.
 
-## 📞 연락처
+## 회고와 개선 과제
 
-프로젝트에 대한 질문이나 제안이 있으시면 이슈를 생성해 주세요.
+- **협업:** 각자 맡은 기능을 책임지고 연결했으며, 의사소통 과정에서 발생한 혼선과 일정 손실을 회고했습니다.
+- **개발 환경:** 초기 환경 구축에 시간이 소요되어, 공통 실행 환경을 초기에 정리할 필요성을 확인했습니다.
+- **모바일 경험:** 음성 처리 기능을 모바일에서 원활하게 사용할 수 있도록 최적화가 필요했습니다.
+- **시간 관리:** 데이터 준비, 모델 설정, 기능 통합에 필요한 시간을 함께 고려하는 일정 관리의 중요성을 배웠습니다.
 
----
+## 프로젝트 자료
 
-<div align="center">
-  <strong>🎤 AI 보컬 트레이닝 시스템으로 당신의 노래 실력을 새로운 차원으로! 🎵</strong>
-</div>
-프로젝트에 기여하고 싶다면 이슈를 생성하거나 풀 리퀘스트를 보내주세요. 
+- [최종 발표자료 · PDF 38페이지](docs/SingSang_최종발표.pdf)
+- [노래 연습·점수 그래프 시연](docs/media/scoring-demo.mp4)
+- [AI 보컬 합성 시연](docs/media/voice-conversion.mp4)
